@@ -28,9 +28,12 @@ export const customerApi = {
     invalidateCache("/cart");
     return axiosInstance.put("/cart/update", data);
   },
-  removeFromCart: (productId) => {
+  removeFromCart: (productId, variantSku = "") => {
     invalidateCache("/cart");
-    return axiosInstance.delete(`/cart/remove/${productId}`);
+    const params = {};
+    const normalizedVariantSku = String(variantSku || "").trim();
+    if (normalizedVariantSku) params.variantSku = normalizedVariantSku;
+    return axiosInstance.delete(`/cart/remove/${productId}`, { params });
   },
   clearCart: () => {
     invalidateCache("/cart");

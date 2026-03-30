@@ -2,7 +2,7 @@ import Cart from "../models/cart.js";
 import handleResponse from "../utils/helper.js";
 
 const CART_POPULATE_FIELDS =
-  "name slug price salePrice mainImage stock status headerId categoryId subcategoryId sellerId";
+  "name slug price salePrice mainImage stock status headerId categoryId subcategoryId sellerId variants";
 
 /* ===============================
    GET CUSTOMER CART
@@ -31,7 +31,8 @@ export const getCart = async (req, res) => {
 export const addToCart = async (req, res) => {
   try {
     const customerId = req.user.id;
-    const { productId, quantity = 1 } = req.body;
+    const { productId, quantity = 1, variantSku = "" } = req.body;
+    const normalizedVariantSku = String(variantSku || "").trim();
 
     let cart = await Cart.findOne({ customerId });
 
@@ -40,13 +41,15 @@ export const addToCart = async (req, res) => {
     }
 
     const itemIndex = cart.items.findIndex(
-      (item) => item.productId.toString() === productId,
+      (item) =>
+        item.productId.toString() === productId &&
+        String(item.variantSku || "").trim() === normalizedVariantSku,
     );
 
     if (itemIndex > -1) {
       cart.items[itemIndex].quantity += quantity;
     } else {
-      cart.items.push({ productId, quantity });
+      cart.items.push({ productId, variantSku: normalizedVariantSku, quantity });
     }
 
     await cart.save();
@@ -66,7 +69,8 @@ export const addToCart = async (req, res) => {
 export const updateQuantity = async (req, res) => {
   try {
     const customerId = req.user.id;
-    const { productId, quantity } = req.body;
+    const { productId, quantity, variantSku = "" } = req.body;
+    const normalizedVariantSku = String(variantSku || "").trim();
 
     let cart = await Cart.findOne({ customerId });
 
@@ -75,7 +79,9 @@ export const updateQuantity = async (req, res) => {
     }
 
     const itemIndex = cart.items.findIndex(
-      (item) => item.productId.toString() === productId,
+      (item) =>
+        item.productId.toString() === productId &&
+        String(item.variantSku || "").trim() === normalizedVariantSku,
     );
 
     if (itemIndex > -1) {
@@ -105,6 +111,7 @@ export const removeFromCart = async (req, res) => {
   try {
     const customerId = req.user.id;
     const { productId } = req.params;
+    const normalizedVariantSku = String(req.query?.variantSku || "").trim();
 
     let cart = await Cart.findOne({ customerId });
 
@@ -112,9 +119,15 @@ export const removeFromCart = async (req, res) => {
       return handleResponse(res, 404, "Cart not found");
     }
 
-    cart.items = cart.items.filter(
-      (item) => item.productId.toString() !== productId,
-    );
+    cart.items = cart.items.filter((item) => {
+      if (item.productId.toString() !== productId) return true;
+      // If variantSku is provided, remove only that variant line.
+      if (normalizedVariantSku) {
+        return String(item.variantSku || "").trim() !== normalizedVariantSku;
+      }
+      // If no variantSku is provided, keep legacy behavior: remove all lines for that product.
+      return false;
+    });
 
     await cart.save();
     const updatedCart = await Cart.findById(cart._id).populate(

@@ -304,7 +304,7 @@ const CheckoutPage = () => {
 
   const handleMoveToWishlist = (item) => {
     addToWishlist(item);
-    removeFromCart(item.id);
+    removeFromCart(item.id, item.variantSku);
     showToast(`${item.name} moved to wishlist`, "success");
   };
 
@@ -632,20 +632,21 @@ const CheckoutPage = () => {
     const fetchPreview = async () => {
       try {
         setIsPreviewLoading(true);
-        const payload = {
-          items: cart.map((item) => ({
-            product: item.id || item._id,
-            name: item.name,
-            quantity: item.quantity,
-            price: item.price,
-            image: item.image,
-          })),
-          address: buildAddressForOrder(),
-          discountTotal: discountAmount,
-          taxTotal: 0,
-          paymentMode: selectedPayment === "online" ? "ONLINE" : "COD",
-          timeSlot: selectedTimeSlot,
-        };
+          const payload = {
+            items: cart.map((item) => ({
+              product: item.id || item._id,
+              name: item.name,
+              variantSku: String(item.variantSku || "").trim(),
+              quantity: item.quantity,
+              price: item.price,
+              image: item.image,
+            })),
+            address: buildAddressForOrder(),
+            discountTotal: discountAmount,
+            taxTotal: 0,
+            paymentMode: selectedPayment === "online" ? "ONLINE" : "COD",
+            timeSlot: selectedTimeSlot,
+          };
         const res = await customerApi.checkoutPreview(payload);
         if (res.data?.success) {
           setPricingPreview(res.data.result?.breakdown || null);
@@ -672,21 +673,22 @@ const CheckoutPage = () => {
   const handlePlaceOrder = async () => {
     setIsPlacingOrder(true);
     try {
-      const orderData = {
-        address: buildAddressForOrder(),
-        paymentMode: selectedPayment === "online" ? "ONLINE" : "COD",
-        discountTotal: discountAmount,
-        taxTotal: taxAmount,
-        timeSlot: selectedTimeSlot,
-        walletAmount: walletAmountToUse,
-        items: cart.map((item) => ({
-          product: item.id || item._id,
-          name: item.name,
-          quantity: item.quantity,
-          price: item.price,
-          image: item.image,
-        })),
-      };
+        const orderData = {
+          address: buildAddressForOrder(),
+          paymentMode: selectedPayment === "online" ? "ONLINE" : "COD",
+          discountTotal: discountAmount,
+          taxTotal: taxAmount,
+          timeSlot: selectedTimeSlot,
+          walletAmount: walletAmountToUse,
+          items: cart.map((item) => ({
+            product: item.id || item._id,
+            name: item.name,
+            variantSku: String(item.variantSku || "").trim(),
+            quantity: item.quantity,
+            price: item.price,
+            image: item.image,
+          })),
+        };
 
       const response = await customerApi.createOrder(orderData);
 
@@ -1168,7 +1170,7 @@ const CheckoutPage = () => {
             <motion.div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-4">
               {displayCartItems.map((item) => (
                 <div
-                  key={item.id}
+                  key={`${item.id}::${String(item.variantSku || "").trim()}`}
                   className="flex items-start gap-3 pb-4 border-b border-slate-100 last:border-0 last:pb-0">
                   <div className="h-20 w-20 rounded-xl overflow-hidden bg-slate-50 flex-shrink-0">
                     <img
@@ -1181,7 +1183,11 @@ const CheckoutPage = () => {
                     <h4 className="font-bold text-slate-800 mb-1">
                       {item.name}
                     </h4>
-                    <p className="text-xs text-slate-500 mb-2">75 g</p>
+                    {(item.variantName || item.variantSku) && (
+                      <p className="text-xs text-slate-500 mb-1">
+                        Variant: {item.variantName || item.variantSku}
+                      </p>
+                    )}
                     <button
                       onClick={() => handleMoveToWishlist(item)}
                       className="text-xs text-slate-500 underline hover:text-[#61dafbaa] transition-colors">
@@ -1193,8 +1199,8 @@ const CheckoutPage = () => {
                       <button
                         onClick={() =>
                           item.quantity > 1
-                            ? updateQuantity(item.id, -1)
-                            : removeFromCart(item.id)
+                            ? updateQuantity(item.id, -1, item.variantSku)
+                            : removeFromCart(item.id, item.variantSku)
                         }
                         className="text-white p-1 hover:bg-white/20 rounded transition-colors">
                         <Minus size={14} strokeWidth={3} />
@@ -1203,14 +1209,38 @@ const CheckoutPage = () => {
                         {item.quantity}
                       </span>
                       <button
-                        onClick={() => updateQuantity(item.id, 1)}
+                        onClick={() => updateQuantity(item.id, 1, item.variantSku)}
                         className="text-white p-1 hover:bg-white/20 rounded transition-colors">
                         <Plus size={14} strokeWidth={3} />
                       </button>
                     </div>
-                    <p className="text-base font-black text-slate-800">
-                      ₹{item.price * item.quantity}
-                    </p>
+                    {(() => {
+                      const mrp = Number(item.price || 0);
+                      const sale = Number(item.salePrice || 0);
+                      const qty = Math.max(0, Number(item.quantity || 0));
+                      const hasDiscount =
+                        Number.isFinite(mrp) &&
+                        Number.isFinite(sale) &&
+                        sale > 0 &&
+                        sale < mrp;
+
+                      const unit = hasDiscount ? sale : mrp;
+                      const total = Math.round(unit * qty);
+                      const totalMrp = Math.round(mrp * qty);
+
+                      return (
+                        <div className="text-right leading-tight">
+                          <p className="text-base font-black text-slate-800">
+                            ₹{total}
+                          </p>
+                          {hasDiscount && (
+                            <p className="text-[11px] font-bold text-slate-400 line-through">
+                              ₹{totalMrp}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               ))}
@@ -1227,7 +1257,7 @@ const CheckoutPage = () => {
                     .filter((item) => item.name)
                     .map((item) => (
                       <div
-                        key={item.id}
+                        key={`${item.id}::${String(item.variantSku || "").trim()}`}
                         className="flex-shrink-0 w-[140px] snap-start">
                         <ProductCard product={item} compact={true} />
                       </div>

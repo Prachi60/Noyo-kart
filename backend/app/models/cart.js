@@ -15,6 +15,14 @@ const cartSchema = new mongoose.Schema(
                     ref: "Product",
                     required: true,
                 },
+                // Distinguish product variants inside the cart.
+                // We use variant SKU because Product.variants includes a sku field.
+                // Empty string / null means "base product" (no variant selected).
+                variantSku: {
+                    type: String,
+                    default: "",
+                    trim: true,
+                },
                 quantity: {
                     type: Number,
                     required: true,

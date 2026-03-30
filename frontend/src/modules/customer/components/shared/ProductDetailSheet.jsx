@@ -116,7 +116,14 @@ const ProductDetailSheet = () => {
         return text;
     };
 
-    const cartItem = selectedProduct ? cart.find(item => item.id === selectedProduct.id) : null;
+    const variantKey = String(selectedVariant?.sku || selectedVariant?.name || "").trim();
+    const cartItem = selectedProduct
+        ? cart.find(
+            (item) =>
+                `${item.id || item._id}::${String(item.variantSku || "").trim()}` ===
+                `${selectedProduct.id}::${variantKey || ""}`,
+        )
+        : null;
     const quantity = cartItem ? cartItem.quantity : 0;
     const isWishlisted = selectedProduct ? isInWishlist(selectedProduct.id) : false;
 
@@ -167,17 +174,21 @@ const ProductDetailSheet = () => {
     };
 
     const handleAddToCart = () => {
-        addToCart(selectedProduct);
+        addToCart({
+            ...selectedProduct,
+            variantSku: String(selectedVariant?.sku || selectedVariant?.name || "").trim(),
+        });
         showToast(`${selectedProduct.name} added to cart`, 'success');
     };
 
-    const handleIncrement = () => updateQuantity(selectedProduct.id, 1);
+    const handleIncrement = () =>
+        updateQuantity(selectedProduct.id, 1, String(selectedVariant?.sku || selectedVariant?.name || "").trim());
 
     const handleDecrement = () => {
         if (quantity === 1) {
-            removeFromCart(selectedProduct.id);
+            removeFromCart(selectedProduct.id, String(selectedVariant?.sku || selectedVariant?.name || "").trim());
         } else {
-            updateQuantity(selectedProduct.id, -1);
+            updateQuantity(selectedProduct.id, -1, String(selectedVariant?.sku || selectedVariant?.name || "").trim());
         }
     };
 
@@ -449,7 +460,12 @@ const ProductDetailSheet = () => {
                                                         <span className="text-[12px] font-[700] uppercase tracking-wider">View Cart</span>
                                                     </div>
                                                     <div className="flex items-center justify-center gap-1.5 bg-white/10 px-2 py-1 rounded-lg">
-                                                        <span className="text-[13px] font-[800] tracking-tight">₹{cart.reduce((total, item) => total + (item.price * item.quantity), 0)}</span>
+                                                        <span className="text-[13px] font-[800] tracking-tight">₹{cart.reduce((total, item) => {
+                                                            const mrp = Number(item.price || 0);
+                                                            const sale = Number(item.salePrice || 0);
+                                                            const unit = sale > 0 && sale < mrp ? sale : mrp;
+                                                            return total + (unit * Number(item.quantity || 0));
+                                                        }, 0)}</span>
                                                         <ChevronRight size={14} strokeWidth={2.5} />
                                                     </div>
                                                 </Link>
@@ -1002,7 +1018,12 @@ const ProductDetailSheet = () => {
                                                 <span className="text-[11px] font-bold opacity-90 mt-1">{cartCount} {cartCount === 1 ? 'item' : 'items'} in cart</span>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                <span className="text-[16px] font-[1000] tracking-tight">₹{cart.reduce((total, item) => total + (item.price * item.quantity), 0)}</span>
+                                                <span className="text-[16px] font-[1000] tracking-tight">₹{cart.reduce((total, item) => {
+                                                    const mrp = Number(item.price || 0);
+                                                    const sale = Number(item.salePrice || 0);
+                                                    const unit = sale > 0 && sale < mrp ? sale : mrp;
+                                                    return total + (unit * Number(item.quantity || 0));
+                                                }, 0)}</span>
                                                 <ChevronRight size={18} strokeWidth={4} />
                                             </div>
                                         </Link>

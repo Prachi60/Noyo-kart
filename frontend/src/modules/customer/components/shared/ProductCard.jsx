@@ -26,12 +26,48 @@ const ProductCard = React.memo(
 
     const imageRef = React.useRef(null);
 
+    const defaultVariant = React.useMemo(() => {
+      const variants = Array.isArray(product?.variants) ? product.variants : [];
+      if (variants.length === 0) return null;
+
+      const displayed = Number(product?.price || 0);
+      const displayedOriginal = Number(product?.originalPrice || 0);
+
+      const matchesDisplayedPrice = (variant) => {
+        const mrp = Number(variant?.price || 0);
+        const sale = Number(variant?.salePrice || 0);
+        const effective = sale > 0 && sale < mrp ? sale : mrp;
+
+        if (Number.isFinite(displayedOriginal) && displayedOriginal > displayed) {
+          // Try to match both (sale + original) when card shows a discount.
+          if (effective === displayed && (mrp === displayedOriginal || displayedOriginal === 0)) {
+            return true;
+          }
+        }
+
+        return effective === displayed || mrp === displayed;
+      };
+
+      const picked = variants.find(matchesDisplayedPrice) || variants[0];
+      const key = String(picked?.sku || picked?.name || "").trim();
+      return {
+        key,
+        name: String(picked?.name || "").trim(),
+      };
+    }, [product]);
+
+    const productId = product.id || product._id;
+    const variantKey = String(defaultVariant?.key || "").trim();
+    const cartKey = `${productId}::${variantKey || ""}`;
+
     const cartItem = React.useMemo(
       () =>
         cart.find(
-          (item) => (item.id || item._id) === (product.id || product._id),
+          (item) =>
+            `${item.id || item._id}::${String(item.variantSku || "").trim()}` ===
+            cartKey,
         ),
-      [cart, product.id, product._id],
+      [cart, cartKey],
     );
     const quantity = cartItem ? cartItem.quantity : 0;
     const isWishlisted = isInWishlist(product.id || product._id);
@@ -77,18 +113,22 @@ const ProductCard = React.memo(
             product.image,
           );
         }
-        addToCart(product);
+        addToCart({
+          ...product,
+          variantSku: variantKey,
+          variantName: defaultVariant?.name || "",
+        });
       },
-      [animateAddToCart, product, addToCart],
+      [animateAddToCart, product, addToCart, variantKey, defaultVariant?.name],
     );
 
     const handleIncrement = React.useCallback(
       (e) => {
         e.preventDefault();
         e.stopPropagation();
-        updateQuantity(product.id || product._id, 1);
+        updateQuantity(productId, 1, variantKey);
       },
-      [updateQuantity, product.id, product._id],
+      [updateQuantity, productId, variantKey],
     );
 
     const handleDecrement = React.useCallback(
@@ -98,9 +138,9 @@ const ProductCard = React.memo(
 
         if (quantity === 1) {
           animateRemoveFromCart(product.image);
-          removeFromCart(product.id || product._id);
+          removeFromCart(productId, variantKey);
         } else {
-          updateQuantity(product.id || product._id, -1);
+          updateQuantity(productId, -1, variantKey);
         }
       },
       [
@@ -108,9 +148,9 @@ const ProductCard = React.memo(
         animateRemoveFromCart,
         product.image,
         removeFromCart,
-        product.id,
-        product._id,
+        productId,
         updateQuantity,
+        variantKey,
       ],
     );
 
