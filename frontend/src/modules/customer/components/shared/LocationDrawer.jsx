@@ -367,7 +367,7 @@ const LocationDrawer = ({ isOpen, onClose }) => {
                 <div className="absolute left-4 top-1/2 -translate-y-1/2">
                   <Search
                     size={20}
-                    className="text-[#1A1A1A]/40 group-focus-within:text-[#0c831f] transition-colors"
+                    className="text-[#1A1A1A]/40 group-focus-within:text-[#61dafbaa] transition-colors"
                   />
                 </div>
                 <input
@@ -382,7 +382,7 @@ const LocationDrawer = ({ isOpen, onClose }) => {
                   onBlur={() => {
                     window.setTimeout(() => setIsSearchFocused(false), 120);
                   }}
-                  className="w-full bg-white border-none rounded-2xl py-4 pl-12 pr-4 text-sm font-semibold placeholder:text-[#1A1A1A]/40 shadow-sm focus:ring-2 focus:ring-[#0c831f]/20 transition-all outline-none"
+                  className="w-full bg-white border-none rounded-2xl py-4 pl-12 pr-4 text-sm font-semibold placeholder:text-[#1A1A1A]/40 shadow-sm focus:ring-2 focus:ring-[#61dafbaa]/20 transition-all outline-none"
                 />
               </div>
               <p className="text-[11px] font-semibold text-slate-400 px-1">
@@ -410,7 +410,7 @@ const LocationDrawer = ({ isOpen, onClose }) => {
                       <div className="flex items-start gap-3">
                         <MapPin
                           size={16}
-                          className="text-[#0c831f] mt-0.5 flex-shrink-0"
+                          className="text-[#61dafbaa] mt-0.5 flex-shrink-0"
                         />
                         <div className="min-w-0">
                           <p className="text-[13px] font-bold text-slate-800 truncate">
@@ -449,14 +449,14 @@ const LocationDrawer = ({ isOpen, onClose }) => {
                 data-lenis-prevent-touch
                 onClick={handleSelectCurrentLocation}
                 className="flex items-center gap-4 bg-white p-4 rounded-2xl hover:bg-slate-50 transition-colors group text-left shadow-sm w-full">
-                <div className="h-10 w-10 flex items-center justify-center text-[#0c831f]">
+                <div className="h-10 w-10 flex items-center justify-center text-[#61dafbaa]">
                   <MapPin
                     size={24}
                     className="group-hover:scale-110 transition-transform"
                   />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-bold text-[#0c831f] text-[15px]">
+                  <h3 className="font-bold text-[#61dafbaa] text-[15px]">
                     {isFetchingLocation
                       ? "Detecting your location..."
                       : "Use your current location"}
@@ -472,14 +472,14 @@ const LocationDrawer = ({ isOpen, onClose }) => {
               <button
                 onClick={handleAddAddress}
                 className="flex items-center gap-4 bg-white p-4 rounded-2xl hover:bg-slate-50 transition-colors group text-left shadow-sm">
-                <div className="h-10 w-10 flex items-center justify-center text-[#0c831f]">
+                <div className="h-10 w-10 flex items-center justify-center text-[#61dafbaa]">
                   <Plus
                     size={24}
                     className="group-hover:rotate-90 transition-transform"
                   />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-bold text-[#0c831f] text-[15px]">
+                  <h3 className="font-bold text-[#61dafbaa] text-[15px]">
                     Add new address
                   </h3>
                 </div>
@@ -538,7 +538,7 @@ const LocationDrawer = ({ isOpen, onClose }) => {
                       {/* Selection Glow */}
                       {(addr.address === currentLocation.name ||
                         addr.isCurrent) && (
-                        <div className="absolute top-0 right-0 h-1 w-24 bg-gradient-to-l from-[#0c831f] to-transparent opacity-50" />
+                        <div className="absolute top-0 right-0 h-1 w-24 bg-gradient-to-l from-[#61dafbaa] to-transparent opacity-50" />
                       )}
                     </div>
                   ))}
@@ -553,3 +553,4 @@ const LocationDrawer = ({ isOpen, onClose }) => {
 };
 
 export default LocationDrawer;
+

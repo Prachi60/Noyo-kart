@@ -29,7 +29,7 @@ const OffersPage = () => {
 
   const styleToBg = {
     blue: "bg-blue-600",
-    green: "bg-[#0c831f]",
+    green: "bg-[#61dafbaa]",
     orange: "bg-orange-500",
   };
   const iconFor = (icon) => {
@@ -50,7 +50,7 @@ const OffersPage = () => {
         transition={{ duration: 0.5 }}
         className="mb-10 text-left"
       >
-        <h1 className="text-3xl md:text-5xl font-black tracking-tight text-[#0c831f] mb-3">
+        <h1 className="text-3xl md:text-5xl font-black tracking-tight text-[#61dafbaa] mb-3">
           Best Offers for You
         </h1>
         <p className="text-gray-500 text-lg font-medium">
@@ -103,7 +103,7 @@ const OffersPage = () => {
                         </span>
                       )}
                     </div>
-                    <button className="h-12 w-12 bg-white rounded-full flex items-center justify-center text-[#0c831f] transform transition-transform group-hover:rotate-[-45deg]">
+                    <button className="h-12 w-12 bg-white rounded-full flex items-center justify-center text-[#61dafbaa] transform transition-transform group-hover:rotate-[-45deg]">
                       <ArrowRight size={24} />
                     </button>
                   </div>
@@ -131,3 +131,4 @@ const OffersPage = () => {
 };
 
 export default OffersPage;
+

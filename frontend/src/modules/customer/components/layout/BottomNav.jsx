@@ -35,7 +35,7 @@ const BottomNav = () => {
                                         initial={{ opacity: 0, scale: 0.8 }}
                                         animate={{ opacity: 1, scale: 1 }}
                                         exit={{ opacity: 0, scale: 0.8 }}
-                                        className="absolute -inset-y-2 -inset-x-4 bg-[#0c831f]/5 rounded-[20px] -z-10"
+                                        className="absolute -inset-y-2 -inset-x-4 bg-[#61dafbaa]/5 rounded-[20px] -z-10"
                                         transition={{ type: "spring", stiffness: 400, damping: 30 }}
                                     />
                                 )}
@@ -53,7 +53,7 @@ const BottomNav = () => {
                                     strokeWidth={isActive ? 2.5 : 2}
                                     className={cn(
                                         "transition-colors duration-300",
-                                        isActive ? "text-[#0c831f]" : "text-gray-400"
+                                        isActive ? "text-[#61dafbaa]" : "text-gray-400"
                                     )}
                                 />
                             </motion.div>
@@ -64,7 +64,7 @@ const BottomNav = () => {
                                 }}
                                 className={cn(
                                     "text-[10px] font-bold tracking-tight mt-1 transition-colors duration-300",
-                                    isActive ? "text-[#0c831f]" : "text-gray-400"
+                                    isActive ? "text-[#61dafbaa]" : "text-gray-400"
                                 )}
                             >
                                 {item.label}
@@ -75,7 +75,7 @@ const BottomNav = () => {
                         {isActive && (
                             <motion.div
                                 layoutId="topLine"
-                                className="absolute -top-[1px] w-8 h-[3px] bg-[#0c831f] rounded-full"
+                                className="absolute -top-[1px] w-8 h-[3px] bg-[#61dafbaa] rounded-full"
                                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
                             />
                         )}
@@ -87,3 +87,4 @@ const BottomNav = () => {
 };
 
 export default BottomNav;
+

@@ -63,7 +63,7 @@ const SlideToPay = ({
 
     return (
         <div
-            className="relative h-16 w-full rounded-full overflow-hidden select-none touch-none bg-linear-to-r from-[#0c831f] via-[#16a34a] to-[#0c831f] shadow-[0_18px_45px_rgba(4,120,87,0.35)] border border-white/10"
+            className="relative h-16 w-full rounded-full overflow-hidden select-none touch-none bg-linear-to-r from-[#61dafbaa] via-[#61dafbaa] to-[#61dafbaa] shadow-[0_18px_45px_rgba(4,120,87,0.35)] border border-white/10"
             ref={(el) => el && setContainerWidth(el.offsetWidth)}
         >
             {/* Progress Fill */}
@@ -132,11 +132,11 @@ const SlideToPay = ({
                         className="relative w-full h-full flex items-center justify-center"
                         style={{ rotate }}
                     >
-                        <motion.div className="text-[#0c831f]" style={{ opacity: arrowsOpacity }}>
+                        <motion.div className="text-[#61dafbaa]" style={{ opacity: arrowsOpacity }}>
                             <ChevronRight size={28} strokeWidth={3} />
                         </motion.div>
                         <motion.div
-                            className="absolute inset-0 flex items-center justify-center text-[#0c831f]"
+                            className="absolute inset-0 flex items-center justify-center text-[#61dafbaa]"
                             style={{ opacity: checkOpacity }}
                         >
                             <Check size={24} strokeWidth={3} />
@@ -149,3 +149,5 @@ const SlideToPay = ({
 };
 
 export default SlideToPay;
+
+

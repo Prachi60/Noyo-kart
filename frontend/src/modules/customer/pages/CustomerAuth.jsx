@@ -25,42 +25,42 @@ const CATEGORIES = [
     {
         title: "Grocery",
         icon: <ShoppingBasket size={28} />,
-        color: "#DCFCE7",
-        ring: "#22C55E",
-        text: "#15803D",
-        theme: "#10B981",
-        shadow: "rgba(16, 185, 129, 0.3)",
+        color: "#ecfeff",
+        ring: "#61dafbaa",
+        text: "#0ea5e9",
+        theme: "#61dafb",
+        shadow: "rgba(97, 218, 251, 0.3)",
         img: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=600"
     },
     {
         title: "Store",
         icon: <Smartphone size={28} />,
-        color: "#F0FDFA",
-        ring: "#2DD4BF",
-        text: "#0F766E",
-        theme: "#0D9488",
-        shadow: "rgba(13, 148, 136, 0.3)",
+        color: "#f0f9ff",
+        ring: "#38bdf8",
+        text: "#0369a1",
+        theme: "#0ea5e9",
+        shadow: "rgba(14, 165, 233, 0.3)",
         img: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&q=80&w=600"
     },
     {
         title: "Food",
         icon: <Utensils size={28} />,
-        color: "#ECFDF5",
-        ring: "#34D399",
-        text: "#047857",
-        theme: "#059669",
-        shadow: "rgba(5, 150, 105, 0.3)",
+        color: "#f0fdfa",
+        ring: "#22d3ee",
+        text: "#0e7490",
+        theme: "#0ea5e9",
+        shadow: "rgba(14, 165, 233, 0.3)",
         img: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=600"
     },
     {
         title: "Health",
         icon: <ShieldCheck size={28} />,
-        color: "#F7FEE7",
-        ring: "#A3E635",
-        text: "#4D7C0F",
-        theme: "#84CC16",
-        shadow: "rgba(132, 204, 22, 0.3)",
-        img: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=1200" // Hands holding heart visual
+        color: "#eff6ff",
+        ring: "#60a5fa",
+        text: "#1d4ed8",
+        theme: "#3b82f6",
+        shadow: "rgba(59, 130, 246, 0.3)",
+        img: "https://images.unsplash.com/photo-1512678080530-7760d81faba6?q=80&w=1200&auto=format&fit=crop"
     },
 ];
 
@@ -253,26 +253,28 @@ const CustomerAuth = () => {
 
                     {/* Circular Carousel Control */}
                     <div className="relative -mt-14 flex justify-center z-20">
-                        <div className="w-28 h-28 rounded-full bg-white border-4 border-white shadow-[0_15px_40px_rgba(34,197,94,0.2)] flex items-center justify-center overflow-hidden transition-shadow duration-1000" style={{ boxShadow: `0 15px 40px ${activeCategory.shadow}` }}>
+                        <div className="w-28 h-28 rounded-full bg-white border-4 border-white shadow-[0_15px_40px_rgba(97,218,251,0.2)] flex items-center justify-center overflow-hidden transition-shadow duration-1000" style={{ boxShadow: `0 15px 40px ${activeCategory.shadow}` }}>
                             <AnimatePresence mode="wait">
-                                <motion.div
-                                    key={carouselIndex}
-                                    initial={{ opacity: 0, scale: 0.5, rotate: -20 }}
-                                    animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                                    exit={{ opacity: 0, scale: 1.5, rotate: 20 }}
-                                    className="p-4 rounded-3xl"
-                                    style={{ backgroundColor: activeCategory.color, color: activeCategory.text }}
-                                >
-                                    {logoUrl ? (
-                                        <img
-                                            src={logoUrl}
-                                            alt={`${appName} logo`}
-                                            className="w-14 h-14 object-contain"
-                                        />
-                                    ) : (
-                                        activeCategory.icon
-                                    )}
-                                </motion.div>
+                                    <motion.div
+                                        key={carouselIndex}
+                                        initial={{ opacity: 0, scale: 0.5, rotate: -20 }}
+                                        animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                                        exit={{ opacity: 0, scale: 1.5, rotate: 20 }}
+                                        className="w-full h-full"
+                                        style={{ color: activeCategory.text }}
+                                    >
+                                        {logoUrl ? (
+                                            <img
+                                                src={logoUrl}
+                                                alt={`${appName} logo`}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: activeCategory.color }}>
+                                                {activeCategory.icon}
+                                            </div>
+                                        )}
+                                    </motion.div>
                             </AnimatePresence>
                         </div>
                     </div>
@@ -449,3 +451,5 @@ const CustomerAuth = () => {
 };
 
 export default CustomerAuth;
+
+

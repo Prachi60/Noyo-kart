@@ -163,7 +163,7 @@ const ALL_CATEGORY = {
   name: "All",
   icon: HomeIcon,
   theme: DEFAULT_CATEGORY_THEME,
-  headerColor: "#065f46",
+  headerColor: "#0e7490",
   banner: {
     title: "HOUSEFULL",
     subtitle: "SALE",
@@ -433,11 +433,11 @@ const Home = () => {
       frameColor: "#f0d98a",
     },
     {
-      bgFrom: "#9fe88c",
-      bgVia: "#c3f1b2",
-      bgTo: "#e4f8da",
-      glowColor: "rgba(126,220,141,0.18)",
-      frameColor: "#bfe3b7",
+      bgFrom: "#61dafbaa",
+      bgVia: "#cffafe",
+      bgTo: "#ecfeff",
+      glowColor: "rgba(97,218,251,0.18)",
+      frameColor: "#a5f3fc",
     },
     {
       bgFrom: "#f3a25d",
@@ -943,17 +943,17 @@ const Home = () => {
                     onClick={() => navigate("/category/all")}
                     whileTap={{ scale: 0.96 }}
                     className="min-w-full">
-                    <div className="w-full h-[190px] bg-[#E6F5EC] p-6 relative overflow-hidden flex items-center border-y border-[#0c831f]/10 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
+                    <div className="w-full h-[190px] bg-[#ecfeff] p-6 relative overflow-hidden flex items-center border-y border-[#61dafbaa]/10 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
                       <div className="relative z-10 w-3/5 flex flex-col items-start gap-2">
                         <div className="flex flex-col gap-0.5">
                           <h4 className="text-2xl font-[1000] text-[#1A1A1A] tracking-tighter leading-none">
-                            Get <span className="text-[#0c831f]">Products</span>
+                            Get <span className="text-[#61dafbaa]">Products</span>
                           </h4>
                           <div className="flex items-center gap-1.5 mt-1">
                             <span className="text-sm font-black text-gray-700">
                               at
                             </span>
-                            <div className="bg-[#0c831f] text-white px-2 py-0.5 rounded-lg flex items-center gap-1 shadow-sm">
+                            <div className="bg-[#61dafbaa] text-white px-2 py-0.5 rounded-lg flex items-center gap-1 shadow-sm">
                               <VerifiedIcon sx={{ fontSize: 16 }} />
                               <span className="text-xl font-[1000]">₹0</span>
                             </div>
@@ -976,7 +976,7 @@ const Home = () => {
                           className="w-full h-full object-contain rotate-3 scale-110"
                         />
                       </div>
-                      <div className="absolute top-0 right-0 w-24 h-24 bg-[#0c831f]/5 rounded-full blur-2xl -mt-12 -mr-12" />
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-[#61dafbaa]/5 rounded-full blur-2xl -mt-12 -mr-12" />
                     </div>
                   </motion.div>
                   <motion.div
@@ -996,17 +996,17 @@ const Home = () => {
                     onClick={() => navigate("/category/all")}
                     whileTap={{ scale: 0.96 }}
                     className="min-w-full">
-                    <div className="w-full h-[190px] bg-[#E6F5EC] p-6 relative overflow-hidden flex items-center border-y border-[#0c831f]/10 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
+                    <div className="w-full h-[190px] bg-[#ecfeff] p-6 relative overflow-hidden flex items-center border-y border-[#61dafbaa]/10 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
                       <div className="relative z-10 w-3/5 flex flex-col items-start gap-2">
                         <div className="flex flex-col gap-0.5">
                           <h4 className="text-2xl font-[1000] text-[#1A1A1A] tracking-tighter leading-none">
-                            Get <span className="text-[#0c831f]">Products</span>
+                            Get <span className="text-[#61dafbaa]">Products</span>
                           </h4>
                           <div className="flex items-center gap-1.5 mt-1">
                             <span className="text-sm font-black text-gray-700">
                               at
                             </span>
-                            <div className="bg-[#0c831f] text-white px-2 py-0.5 rounded-lg flex items-center gap-1 shadow-sm">
+                            <div className="bg-[#61dafbaa] text-white px-2 py-0.5 rounded-lg flex items-center gap-1 shadow-sm">
                               <VerifiedIcon sx={{ fontSize: 16 }} />
                               <span className="text-xl font-[1000]">₹0</span>
                             </div>
@@ -1029,7 +1029,7 @@ const Home = () => {
                           className="w-full h-full object-contain rotate-3 scale-110"
                         />
                       </div>
-                      <div className="absolute top-0 right-0 w-24 h-24 bg-[#0c831f]/5 rounded-full blur-2xl -mt-12 -mr-12" />
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-[#61dafbaa]/5 rounded-full blur-2xl -mt-12 -mr-12" />
                     </div>
                   </motion.div>
                 </div>
@@ -1081,7 +1081,7 @@ const Home = () => {
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => scrollQuickCats("left")}
-                className="h-10 w-10 bg-white/90 backdrop-blur-md shadow-xl rounded-full flex items-center justify-center border border-gray-100 cursor-pointer hover:bg-white text-[#0c831f] transition-all">
+                className="h-10 w-10 bg-white/90 backdrop-blur-md shadow-xl rounded-full flex items-center justify-center border border-gray-100 cursor-pointer hover:bg-white text-[#61dafbaa] transition-all">
                 <ChevronLeft size={22} strokeWidth={3} />
               </motion.button>
             </div>
@@ -1115,7 +1115,7 @@ const Home = () => {
                         className="absolute left-1/2 top-3 z-10 h-[68px] w-[68px] -translate-x-1/2 object-contain drop-shadow-[0_5px_12px_rgba(0,0,0,0.10)] mix-blend-multiply group-hover/item:scale-110 transition-transform duration-500"
                       />
                       <div className="absolute inset-x-2 bottom-1.5 z-20 text-center">
-                        <span className="block text-[10px] md:text-[11px] lg:text-[12px] font-semibold text-[#1f2b20] leading-tight whitespace-nowrap overflow-hidden text-ellipsis drop-shadow-[0_1px_0_rgba(255,255,255,0.65)] group-hover/item:text-[#0c831f] transition-colors">
+                        <span className="block text-[10px] md:text-[11px] lg:text-[12px] font-semibold text-[#1f2b20] leading-tight whitespace-nowrap overflow-hidden text-ellipsis drop-shadow-[0_1px_0_rgba(255,255,255,0.65)] group-hover/item:text-[#61dafbaa] transition-colors">
                           {cat.name}
                         </span>
                       </div>
@@ -1131,7 +1131,7 @@ const Home = () => {
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => scrollQuickCats("right")}
-                className="h-10 w-10 bg-white/90 backdrop-blur-md shadow-xl rounded-full flex items-center justify-center border border-gray-100 cursor-pointer hover:bg-white text-[#0c831f] transition-all">
+                className="h-10 w-10 bg-white/90 backdrop-blur-md shadow-xl rounded-full flex items-center justify-center border border-gray-100 cursor-pointer hover:bg-white text-[#61dafbaa] transition-all">
                 <ChevronRight size={22} strokeWidth={3} />
               </motion.button>
             </div>
@@ -1141,20 +1141,20 @@ const Home = () => {
 
       {/* Lowest Price ever Section  (kept as static for now) */}
       <div className="-mt-[40px] mb-4 md:-mt-[40px] md:mb-8">
-        <div className="relative overflow-hidden bg-linear-to-br from-[#0c831f]/10 via-[#0c831f]/5 to-transparent py-7 md:py-16 border-y border-[#0c831f]/10 shadow-sm md:shadow-[inset_0_-10px_40px_rgba(0,0,0,0.02)]">
+        <div className="relative overflow-hidden bg-linear-to-br from-[#61dafbaa]/10 via-[#61dafbaa]/5 to-transparent py-7 md:py-16 border-y border-[#61dafbaa]/10 shadow-sm md:shadow-[inset_0_-10px_40px_rgba(0,0,0,0.02)]">
           {/* Background Decoration */}
-          <div className="absolute -top-10 -right-10 h-40 w-40 md:h-80 md:w-80 bg-[#0c831f]/10 rounded-full blur-3xl opacity-60" />
+          <div className="absolute -top-10 -right-10 h-40 w-40 md:h-80 md:w-80 bg-[#61dafbaa]/10 rounded-full blur-3xl opacity-60" />
           <div className="absolute -bottom-10 -left-10 h-40 w-40 md:h-80 md:w-80 bg-yellow-400/10 rounded-full blur-3xl opacity-60" />
 
           <div className="container mx-auto px-4 md:px-8 lg:px-[50px] relative z-10">
             <div className="flex justify-between items-center mb-6 md:mb-10 px-1">
               <div className="flex flex-col">
                 <h3 className="text-xl md:text-4xl font-[1000] text-[#1A1A1A] tracking-tighter uppercase leading-none pt-[25px]">
-                  Lowest Price <span className="text-[#0c831f]">ever</span>
+                  Lowest Price <span className="text-[#61dafbaa]">ever</span>
                 </h3>
                 <div className="flex items-center gap-1.5 md:gap-2 mt-1.5 md:mt-3">
-                  <div className="h-1 w-1 md:h-2 md:w-2 bg-[#0c831f] rounded-full animate-pulse shadow-[0_0_8px_rgba(12,131,31,0.5)]" />
-                  <span className="text-[10px] md:text-xs font-black text-[#0c831f] uppercase tracking-wider md:tracking-[0.2em] opacity-80">
+                  <div className="h-1 w-1 md:h-2 md:w-2 bg-[#61dafbaa] rounded-full animate-pulse shadow-[0_0_8px_rgba(12,131,31,0.5)]" />
+                  <span className="text-[10px] md:text-xs font-black text-[#61dafbaa] uppercase tracking-wider md:tracking-[0.2em] opacity-80">
                     Unbeatable Savings • Updated hourly
                   </span>
                 </div>
@@ -1163,7 +1163,7 @@ const Home = () => {
                 onClick={() => navigate("/category/all")}
                 whileHover={{ x: 5, scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="flex items-center gap-1 md:gap-2 bg-white px-3 py-1.5 md:px-6 md:py-3 rounded-full text-[#0c831f] font-bold text-[10px] md:text-sm cursor-pointer shadow-sm md:shadow-lg border border-[#0c831f]/5 transition-all">
+                className="flex items-center gap-1 md:gap-2 bg-white px-3 py-1.5 md:px-6 md:py-3 rounded-full text-[#61dafbaa] font-bold text-[10px] md:text-sm cursor-pointer shadow-sm md:shadow-lg border border-[#61dafbaa]/5 transition-all">
                 See all{" "}
                 <ArrowRightIcon
                   sx={{ fontSize: 12, ml: { xs: 0.2, md: 0.5 } }}
@@ -1340,3 +1340,5 @@ const Home = () => {
 };
 
 export default Home;
+
+

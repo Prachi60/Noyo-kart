@@ -150,7 +150,7 @@ const CategoryProductsPage = () => {
                             className={cn(
                                 "flex flex-col items-center py-4 px-1 gap-2 transition-all relative border-l-4",
                                 selectedSubCategory === cat.id
-                                    ? "bg-[#F7FCF5] border-[#0c831f]"
+                                    ? "bg-[#F7FCF5] border-[#61dafbaa]"
                                     : "border-transparent hover:bg-gray-50"
                             )}
                         >
@@ -162,7 +162,7 @@ const CategoryProductsPage = () => {
                             </div>
                             <span className={cn(
                                 "text-[10px] text-center font-bold font-sans leading-tight px-1",
-                                selectedSubCategory === cat.id ? "text-[#0c831f]" : "text-gray-600"
+                                selectedSubCategory === cat.id ? "text-[#61dafbaa]" : "text-gray-600"
                             )}>
                                 {cat.name}
                             </span>
@@ -209,3 +209,4 @@ const CategoryProductsPage = () => {
 };
 
 export default CategoryProductsPage;
+

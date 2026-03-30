@@ -269,7 +269,7 @@ const MainLocationHeader = ({
     value > 150 ? "none" : "block",
   );
 
-  const baseHeaderColor = activeCategory?.headerColor || "#2f7a46";
+  const baseHeaderColor = activeCategory?.headerColor || "#61dafb";
   const headerGradient = buildHeaderGradient(baseHeaderColor);
   const searchBarBg = buildSearchBarBackgroundColor(baseHeaderColor);
   const categoryAccent = "#111111";
@@ -541,3 +541,4 @@ const MainLocationHeader = ({
 };
 
 export default MainLocationHeader;
+

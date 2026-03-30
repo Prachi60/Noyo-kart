@@ -62,7 +62,7 @@ const DeliveryConfirmation = () => {
       particleCount: 150,
       spread: 70,
       origin: { y: 0.6 },
-      colors: ["#22c55e", "#3b82f6", "#f59e0b"],
+      colors: ["#61dafbaa", "#3b82f6", "#f59e0b"],
     });
 
     setTimeout(() => {
@@ -249,3 +249,4 @@ const DeliveryConfirmation = () => {
 };
 
 export default DeliveryConfirmation;
+

@@ -32,7 +32,7 @@ class ErrorBoundary extends Component {
                         <div className="space-y-3">
                             <button
                                 onClick={() => window.location.reload()}
-                                className="w-full bg-[#0c831f] hover:bg-[#0a6d1a] text-white font-semibold py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-100"
+                                className="w-full bg-[#61dafbaa] hover:bg-[#0a6d1a] text-white font-semibold py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-100"
                             >
                                 <RefreshCw className="w-5 h-5" />
                                 Refresh Page
@@ -54,7 +54,7 @@ class ErrorBoundary extends Component {
                         </div>
                     </div>
 
-                    <div className="mt-8 flex items-center gap-2 text-[#0c831f] font-semibold">
+                    <div className="mt-8 flex items-center gap-2 text-[#61dafbaa] font-semibold">
                         <ShoppingBag className="w-6 h-6" />
                         <span className="text-xl tracking-tight">App</span>
                     </div>
@@ -67,3 +67,4 @@ class ErrorBoundary extends Component {
 }
 
 export default ErrorBoundary;
+

@@ -20,7 +20,7 @@ export function shiftHex(hex, amount) {
     .join("")}`;
 }
 
-const DEFAULT_BASE = "#2f7a46";
+const DEFAULT_BASE = "#61dafb";
 
 /** Blend hex toward white (t=0 base, t≈1 near-white). */
 export function mixHexWithWhite(hex, t) {
@@ -72,3 +72,4 @@ export function buildMiniCartGradient(baseHeaderColor) {
   const deep = shiftHex(mid, -32);
   return `linear-gradient(135deg, ${top} 0%, ${mid} 48%, ${deep} 100%)`;
 }
+

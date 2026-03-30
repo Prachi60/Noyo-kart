@@ -222,9 +222,9 @@ const MapPicker = ({
       map: mapRef.current,
       center: marker,
       radius: radius * 1000,
-      fillColor: "#0ea5e9",
+      fillColor: "#61dafbaa",
       fillOpacity: 0.1,
-      strokeColor: "#0ea5e9",
+      strokeColor: "#61dafbaa",
       strokeOpacity: 0.5,
       strokeWeight: 2,
       clickable: false,
@@ -405,3 +405,4 @@ const MapPicker = ({
 };
 
 export default MapPicker;
+

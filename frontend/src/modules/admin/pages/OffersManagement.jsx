@@ -18,7 +18,7 @@ import { adminApi } from '../services/adminApi';
 
 const STYLE_OPTIONS = [
     { id: 'blue', label: 'Blue', className: 'bg-blue-600' },
-    { id: 'green', label: 'Green', className: 'bg-[#0c831f]' },
+    { id: 'green', label: 'Green', className: 'bg-[#61dafbaa]' },
     { id: 'orange', label: 'Orange', className: 'bg-orange-500' },
 ];
 
@@ -624,4 +624,5 @@ const OffersManagement = () => {
 };
 
 export default OffersManagement;
+
 

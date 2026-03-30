@@ -137,7 +137,7 @@ const ProfilePage = () => {
                                 label="Your Orders"
                                 sub="Track, return or buy things again"
                                 path="/orders"
-                                color="#0c831f"
+                                color="#61dafbaa"
                                 bg="rgba(16,185,129,0.10)"
                             />
                             <MenuItem
@@ -169,7 +169,7 @@ const ProfilePage = () => {
                                 label="Saved Addresses"
                                 sub="Manage your delivery locations"
                                 path="/addresses"
-                                color="#0ea5e9"
+                                color="#61dafbaa"
                                 bg="rgba(56,189,248,0.10)"
                             />
                         </div>
@@ -249,3 +249,5 @@ const MenuItem = ({ icon: Icon, label, sub, path, color = '#334155', bg = 'rgba(
 );
 
 export default ProfilePage;
+
+

@@ -18,9 +18,9 @@ export const BACKGROUND_COLOR_OPTIONS = [
   {
     id: "green",
     label: "Green",
-    value: "#0c831f",
+    value: "#61dafbaa",
     start: "#BBF7D0",
-    end: "#16A34A",
+    end: "#61dafbaa",
   },
   {
     id: "blue",
@@ -97,3 +97,5 @@ export const getBackgroundGradientByValue = (value) => {
     BACKGROUND_COLOR_OPTIONS[0];
   return `linear-gradient(135deg, ${opt.start}, ${opt.end})`;
 };
+
+

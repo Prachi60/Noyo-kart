@@ -201,7 +201,7 @@ const DeliveryTracking = () => {
                       ? "#e0f2fe"
                       : stat.color === "text-amber-600"
                         ? "#fef3c7"
-                        : "#dcfce7"
+                        : "#cffafe"
                   }>
                   <div className="flex items-center gap-4 p-5 relative z-10">
                     <div
@@ -425,3 +425,4 @@ const DeliveryTracking = () => {
 };
 
 export default DeliveryTracking;
+

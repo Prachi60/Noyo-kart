@@ -123,7 +123,7 @@ const ProductCard = React.memo(
             ? "bg-white border-[1.5px] border-emerald-50 shadow-[0_8px_20px_-8px_rgba(0,0,0,0.08)]"
             : neutralBg
               ? "bg-white border border-slate-100 shadow-[0_8px_20px_-8px_rgba(0,0,0,0.08)]"
-              : "bg-[#FAFEF0] border border-green-100",
+              : "bg-[#ecfeff] border border-green-100",
           className,
         )}
         onClick={handleProductClick}>
@@ -135,7 +135,7 @@ const ProductCard = React.memo(
             product.originalPrice > product.price) && (
             <div
               className={cn(
-                "absolute z-10 bg-[#0c831f] text-white font-[900] rounded-md shadow-sm uppercase tracking-wider flex items-center justify-center",
+                "absolute z-10 bg-[#61dafbaa] text-white font-[900] rounded-md shadow-sm uppercase tracking-wider flex items-center justify-center",
                 compact
                   ? "top-2 left-2 px-1.5 py-0.5 text-[7px]"
                   : "top-3 left-3 px-2 py-1 text-[9px]",
@@ -270,24 +270,24 @@ const ProductCard = React.memo(
               {quantity > 0 ? (
                 <div
                   className={cn(
-                    "flex items-center bg-white border-[1.5px] border-[#0c831f] rounded-lg p-0.5 justify-between",
+                    "flex items-center bg-white border-[1.5px] border-[#61dafbaa] rounded-lg p-0.5 justify-between",
                     compact ? "min-w-[80px]" : "min-w-[90px] md:min-w-[100px]",
                   )}>
                   <button
                     onClick={handleDecrement}
-                    className="p-1 px-1.5 text-[#0c831f] active:scale-90 transition-transform">
+                    className="p-1 px-1.5 text-[#61dafbaa] active:scale-90 transition-transform">
                     <Minus size={compact ? 12 : 14} strokeWidth={3.5} />
                   </button>
                   <span
                     className={cn(
-                      "font-black text-[#0c831f]",
+                      "font-black text-[#61dafbaa]",
                       compact ? "text-[12px]" : "text-[13px] md:text-sm",
                     )}>
                     {quantity}
                   </span>
                   <button
                     onClick={handleIncrement}
-                    className="p-1 px-1.5 text-[#0c831f] active:scale-90 transition-transform">
+                    className="p-1 px-1.5 text-[#61dafbaa] active:scale-90 transition-transform">
                     <Plus size={compact ? 12 : 14} strokeWidth={3.5} />
                   </button>
                 </div>
@@ -296,7 +296,7 @@ const ProductCard = React.memo(
                   whileTap={{ scale: 0.95 }}
                   onClick={handleAddToCart}
                   className={cn(
-                    "bg-white border-[1.5px] border-[#0c831f] text-[#0c831f] rounded-lg font-black shadow-sm hover:bg-[#0c831f]/5 mb-0 transition-all uppercase tracking-wide leading-none",
+                    "bg-white border-[1.5px] border-[#61dafbaa] text-[#61dafbaa] rounded-lg font-black shadow-sm hover:bg-[#61dafbaa]/5 mb-0 transition-all uppercase tracking-wide leading-none",
                     compact
                       ? "px-5 py-1.5 text-[12px]"
                       : "px-7 py-2 text-[13px] md:text-sm md:px-8 md:py-2.5",
@@ -313,3 +313,4 @@ const ProductCard = React.memo(
 );
 
 export default ProductCard;
+

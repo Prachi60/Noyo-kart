@@ -133,7 +133,7 @@ const ProductDetailPage = () => {
     return (
         <div className="relative z-10 py-8 w-full max-w-[1920px] mx-auto px-4 md:px-[50px] animate-in fade-in duration-700 mt-48 md:mt-24">
             {/* Back Button */}
-            <Link to={-1} className="inline-flex items-center gap-2 text-slate-500 hover:text-[#0c831f] font-bold mb-6 transition-colors group">
+            <Link to={-1} className="inline-flex items-center gap-2 text-slate-500 hover:text-[#61dafbaa] font-bold mb-6 transition-colors group">
                 <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" /> Back
             </Link>
 
@@ -164,7 +164,7 @@ const ProductDetailPage = () => {
                                 onClick={() => setActiveImage(img)}
                                 className={cn(
                                     "relative h-20 w-20 md:h-24 md:w-24 rounded-2xl overflow-hidden flex-shrink-0 transition-all border-2",
-                                    activeImage === img ? "border-[#0c831f] shadow-lg scale-95" : "border-transparent opacity-70 hover:opacity-100"
+                                    activeImage === img ? "border-[#61dafbaa] shadow-lg scale-95" : "border-transparent opacity-70 hover:opacity-100"
                                 )}
                             >
                                 <img src={img} alt={`Angle ${idx}`} className="w-full h-full object-cover" />
@@ -177,7 +177,7 @@ const ProductDetailPage = () => {
                 <div className="lg:w-[55%] xl:w-[60%] space-y-6 md:space-y-8">
                     <div>
                         <div className="flex items-center gap-3 mb-4">
-                            <span className="bg-[#0c831f]/10 text-[#0c831f] px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border border-[#0c831f]/20">
+                            <span className="bg-[#61dafbaa]/10 text-[#61dafbaa] px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border border-[#61dafbaa]/20">
                                 {product.category}
                             </span>
                             <div className="flex items-center gap-1 text-orange-500 font-bold bg-orange-50 px-3 py-0.5 rounded-full text-xs">
@@ -190,7 +190,7 @@ const ProductDetailPage = () => {
                         </h1>
 
                         <div className="flex items-baseline gap-4 mb-5">
-                            <span className="text-4xl font-black text-[#0c831f]">₹{product.price}</span>
+                            <span className="text-4xl font-black text-[#61dafbaa]">₹{product.price}</span>
                             <span className="text-lg text-slate-400 line-through font-bold">₹{product.originalPrice}</span>
                             <span className="text-xs bg-red-50 text-red-500 px-2 py-1 rounded-lg font-black uppercase">
                                 {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
@@ -205,7 +205,7 @@ const ProductDetailPage = () => {
                     {/* Order Controls */}
                     <div className="flex flex-col sm:flex-row items-center gap-6 p-6 bg-slate-50 rounded-[2.5rem] border border-slate-100">
                         {quantity > 0 ? (
-                            <div className="flex items-center bg-[#0c831f] text-white rounded-2xl h-16 w-full sm:w-auto px-2 shadow-xl shadow-green-100">
+                            <div className="flex items-center bg-[#61dafbaa] text-white rounded-2xl h-16 w-full sm:w-auto px-2 shadow-xl shadow-green-100">
                                 <button
                                     onClick={() => updateQuantity(product.id, -1)}
                                     className="w-12 h-12 flex items-center justify-center hover:bg-white/20 rounded-xl transition-all"
@@ -226,14 +226,14 @@ const ProductDetailPage = () => {
                                     addToCart(product);
                                     showToast(`${product.name} added to cart`, 'success');
                                 }}
-                                className="h-16 w-full sm:w-64 bg-[#0c831f] hover:bg-[#0b721b] text-white text-lg font-black rounded-2xl shadow-xl shadow-green-100 transition-all hover:-translate-y-1"
+                                className="h-16 w-full sm:w-64 bg-[#61dafbaa] hover:bg-[#0b721b] text-white text-lg font-black rounded-2xl shadow-xl shadow-green-100 transition-all hover:-translate-y-1"
                             >
                                 <Plus className="mr-2" size={24} strokeWidth={3} /> ADD TO CART
                             </Button>
                         )}
 
                         <div className="flex flex-col gap-1 text-center sm:text-left">
-                            <span className="text-xs font-black text-[#0c831f] uppercase tracking-widest flex items-center justify-center sm:justify-start gap-1">
+                            <span className="text-xs font-black text-[#61dafbaa] uppercase tracking-widest flex items-center justify-center sm:justify-start gap-1">
                                 <ShieldCheck size={14} /> Hygiene Guaranteed
                             </span>
                             <span className="text-sm font-bold text-slate-400 flex items-center justify-center sm:justify-start gap-1">
@@ -288,7 +288,7 @@ const ProductDetailPage = () => {
                                         value={newReview.comment}
                                         onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })}
                                         placeholder="What did you like or dislike?"
-                                        className="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm font-bold min-h-[120px] outline-none ring-1 ring-transparent focus:ring-[#0c831f]/20 transition-all"
+                                        className="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm font-bold min-h-[120px] outline-none ring-1 ring-transparent focus:ring-[#61dafbaa]/20 transition-all"
                                     />
                                 </div>
 
@@ -310,15 +310,15 @@ const ProductDetailPage = () => {
                     <div className="lg:w-[60%] space-y-8">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-3xl font-black text-slate-800">Customer Reviews</h3>
-                            <div className="flex items-center gap-2 px-4 py-2 bg-[#0c831f]/5 rounded-xl border border-[#0c831f]/10">
-                                <MessageSquare size={18} className="text-[#0c831f]" />
-                                <span className="font-black text-[#0c831f]">{reviews.length} Verified</span>
+                            <div className="flex items-center gap-2 px-4 py-2 bg-[#61dafbaa]/5 rounded-xl border border-[#61dafbaa]/10">
+                                <MessageSquare size={18} className="text-[#61dafbaa]" />
+                                <span className="font-black text-[#61dafbaa]">{reviews.length} Verified</span>
                             </div>
                         </div>
 
                         {reviewLoading ? (
                             <div className="flex justify-center p-20">
-                                <Loader2 className="animate-spin text-[#0c831f]" size={32} />
+                                <Loader2 className="animate-spin text-[#61dafbaa]" size={32} />
                             </div>
                         ) : reviews.length > 0 ? (
                             <div className="space-y-6">
@@ -377,3 +377,4 @@ const ProductDetailPage = () => {
 };
 
 export default ProductDetailPage;
+
