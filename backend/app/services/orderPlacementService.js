@@ -433,7 +433,7 @@ export async function placeOrderAtomic({
       user.walletBalance -= walletAmount;
       await user.save({ session });
 
-      await Transaction.create([{
+      await Transaction.create({
         user: customerId,
         userModel: "User",
         type: "Wallet Payment",
@@ -441,7 +441,7 @@ export async function placeOrderAtomic({
         status: "Settled",
         reference: `WLT-CHOUT-${checkoutGroupId}`,
         meta: { checkoutGroupId }
-      }], { session });
+      }, { session });
     }
 
     const transactionRows = orders.map((order) => ({
@@ -457,7 +457,7 @@ export async function placeOrderAtomic({
       },
     }));
     if (transactionRows.length > 0) {
-      await Transaction.create(transactionRows, { session });
+      await Transaction.create(transactionRows, { session, ordered: true });
     }
 
     await consumeCartItems({

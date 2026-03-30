@@ -8,11 +8,8 @@ import {
   CartesianGrid,
 } from "recharts";
 import {
-  IndianRupee,
   TrendingUp,
-  Wallet,
   ArrowUpRight,
-  Filter,
   Download,
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -37,9 +34,9 @@ const Earnings = () => {
   const fetchEarnings = async () => {
     try {
       setLoading(true);
-      const response = await deliveryApi.getEarnings();
-      if (response.data.success && response.data.result) {
-        const result = response.data.result;
+      const earningsRes = await deliveryApi.getEarnings();
+      if (earningsRes.data.success && earningsRes.data.result) {
+        const result = earningsRes.data.result;
         setEarningsData({
           totalEarnings: result.totalEarnings || 0,
           incentives: result.incentives || 0,
@@ -195,35 +192,91 @@ const Earnings = () => {
           </Card>
         </motion.div>
 
-        {/* Breakdown */}
-        <motion.div variants={itemVariants} className="grid grid-cols-2 gap-4">
-          <Card className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className="p-2 bg-brand-50 text-brand-600 rounded-lg">
-                <Wallet size={20} />
+        <motion.div variants={itemVariants}>
+          <Card className="p-6">
+            <div className="flex items-start justify-between gap-4 mb-4">
+              <div>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
+                  COD Cash Management
+                </p>
+                <p className="text-3xl font-extrabold text-gray-900">
+                  â‚¹{Number(codCash.systemFloatCOD || 0).toLocaleString()}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Net cash to remit (gross âˆ’ your commission)
+                </p>
               </div>
-              <span className="text-xs font-bold text-brand-600 bg-brand-50 px-2 py-0.5 rounded">
-                +8%
-              </span>
-            </div>
-            <p className="text-gray-500 text-xs font-medium uppercase">
-              Online Pay
-            </p>
-            <p className="text-xl font-bold text-gray-900">₹{earningsData.onlinePay.toLocaleString()}</p>
-          </Card>
-          <Card className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className="p-2 bg-orange-50 text-orange-600 rounded-lg">
-                <IndianRupee size={20} />
+              <div className="p-3 rounded-xl bg-orange-50 text-orange-600">
+                <IndianRupee size={22} />
               </div>
-              <span className="text-xs font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded">
-                0%
-              </span>
             </div>
-            <p className="text-gray-500 text-xs font-medium uppercase">
-              Cash (COD)
-            </p>
-            <p className="text-xl font-bold text-gray-900">₹{earningsData.cashCollected.toLocaleString()}</p>
+
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="rounded-xl bg-gray-50 border border-gray-100 p-3">
+                <p className="text-[11px] font-bold text-gray-500 uppercase">
+                  Cash In Hand
+                </p>
+                <p className="text-lg font-bold text-gray-900">
+                  â‚¹{Number(codCash.cashInHand || 0).toLocaleString()}
+                </p>
+              </div>
+              <div className="rounded-xl bg-gray-50 border border-gray-100 p-3">
+                <p className="text-[11px] font-bold text-gray-500 uppercase">
+                  Pending Orders
+                </p>
+                <p className="text-lg font-bold text-gray-900">
+                  {(Array.isArray(codCash.toRemit) ? codCash.toRemit.length : 0) +
+                    (Array.isArray(codCash.toCollect) ? codCash.toCollect.length : 0)}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {(Array.isArray(codCash.toCollect) ? codCash.toCollect : []).slice(0, 3).map((row) => (
+                <div
+                  key={`collect-${row.orderId}`}
+                  className="flex items-center justify-between rounded-xl border border-orange-100 bg-orange-50/40 p-3"
+                >
+                  <div>
+                    <p className="text-sm font-bold text-gray-900">
+                      Order #{row.orderId}
+                    </p>
+                    <p className="text-xs text-gray-600">
+                      Collect from customer â€¢ Gross â‚¹{Number(row.amountGross || 0).toLocaleString()}
+                    </p>
+                  </div>
+                  <p className="text-sm font-extrabold text-orange-700">
+                    â‚¹{Number(row.amountNetExpected || 0).toLocaleString()}
+                  </p>
+                </div>
+              ))}
+
+              {(Array.isArray(codCash.toRemit) ? codCash.toRemit : []).slice(0, 5).map((row) => (
+                <div
+                  key={row.orderId}
+                  className="flex items-center justify-between rounded-xl border border-gray-100 bg-white p-3"
+                >
+                  <div>
+                    <p className="text-sm font-bold text-gray-900">
+                      Order #{row.orderId}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Remit to platform â€¢ Net of commission
+                    </p>
+                  </div>
+                  <p className="text-sm font-extrabold text-gray-900">
+                    â‚¹{Number(row.amountNetPending || 0).toLocaleString()}
+                  </p>
+                </div>
+              ))}
+
+              {((!Array.isArray(codCash.toRemit) || codCash.toRemit.length === 0) &&
+                (!Array.isArray(codCash.toCollect) || codCash.toCollect.length === 0)) && (
+                <div className="rounded-xl border border-dashed border-gray-200 p-4 text-center text-sm text-gray-400">
+                  No COD cash pending.
+                </div>
+              )}
+            </div>
           </Card>
         </motion.div>
 

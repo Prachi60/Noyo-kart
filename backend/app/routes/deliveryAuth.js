@@ -9,6 +9,8 @@ import {
 import {
   getDeliveryStats,
   getDeliveryEarnings,
+  getDeliveryCodCashSummary,
+  submitDeliveryCodCashToAdmin,
   getMyDeliveryOrders,
   requestWithdrawal,
   updateDeliveryLocation,
@@ -34,6 +36,8 @@ router.get("/profile", verifyToken, getDeliveryProfile);
 router.put("/profile", verifyToken, updateDeliveryProfile);
 router.get("/stats", verifyToken, getDeliveryStats);
 router.get("/earnings", verifyToken, getDeliveryEarnings);
+router.get("/cod/summary", verifyToken, allowRoles("delivery"), getDeliveryCodCashSummary);
+router.post("/cod/pay", verifyToken, allowRoles("delivery"), submitDeliveryCodCashToAdmin);
 router.get("/wallet/summary", verifyToken, allowRoles("delivery"), getRiderWalletSummaryController);
 router.get(
   "/order-history",

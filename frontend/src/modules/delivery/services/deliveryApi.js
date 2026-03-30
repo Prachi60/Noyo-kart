@@ -9,6 +9,8 @@ export const deliveryApi = {
   updateProfile: (data) => axiosInstance.put("/delivery/profile", data),
   getStats: () => axiosInstance.get("/delivery/stats"),
   getEarnings: () => axiosInstance.get("/delivery/earnings"),
+  getCodCashSummary: () => axiosInstance.get("/delivery/cod/summary"),
+  payCodCashToAdmin: (data) => axiosInstance.post("/delivery/cod/pay", data),
   getWalletSummary: () => axiosInstance.get("/delivery/wallet/summary"),
   getOrderHistory: (params, config = {}) =>
     axiosInstance.get("/delivery/order-history", { params, ...config }),

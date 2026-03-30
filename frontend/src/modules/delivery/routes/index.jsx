@@ -7,7 +7,8 @@ import Dashboard from "../pages/Dashboard";
 import OrderDetails from "../pages/OrderDetails";
 import Navigation from "../pages/Navigation";
 import DeliveryConfirmation from "../pages/DeliveryConfirmation";
-import Earnings from "../pages/Earnings";
+import EarningsPage from "../pages/EarningsPage";
+import CodCash from "../pages/CodCash";
 import OrderHistory from "../pages/OrderHistory";
 import Profile from "../pages/Profile";
 import PersonalDetails from "../pages/profile/PersonalDetails";
@@ -31,7 +32,8 @@ const DeliveryRoutes = () => {
         <Route path="order-details/:orderId" element={<OrderDetails />} />
         <Route path="navigation" element={<Navigation />} />
         <Route path="confirm-delivery/:orderId" element={<DeliveryConfirmation />} />
-        <Route path="earnings" element={<Earnings />} />
+        <Route path="earnings" element={<EarningsPage />} />
+        <Route path="cod-cash" element={<CodCash />} />
         <Route path="history" element={<OrderHistory />} />
         <Route path="profile" element={<Profile />} />
         <Route path="profile/personal-details" element={<PersonalDetails />} />

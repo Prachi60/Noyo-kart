@@ -72,8 +72,8 @@ export async function createLedgerEntry(
   };
 
   const options = session ? { session } : {};
-  const entry = await LedgerEntry.create([payload], options);
-  return entry[0];
+  const entry = await LedgerEntry.create(payload, options);
+  return entry;
 }
 
 export async function getLedgerEntries({
