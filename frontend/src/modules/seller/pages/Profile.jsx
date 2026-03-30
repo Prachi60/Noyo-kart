@@ -160,7 +160,7 @@ const SellerProfile = () => {
                 {profile?.role}
               </span>
               <span
-                className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-[2px] rounded-full border ${profile?.isActive ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-red-500/10 text-red-400 border-red-500/20"}`}
+                className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-[2px] rounded-full border ${profile?.isActive ? "bg-brand-500/10 text-brand-400 border-brand-500/20" : "bg-red-500/10 text-red-400 border-red-500/20"}`}
                 style={{ backdropFilter: "blur(12px)" }}>
                 {profile?.isActive ? "Active" : "Inactive"}
               </span>
@@ -318,7 +318,7 @@ const SellerProfile = () => {
                     <div
                       className={`h-12 w-12 rounded-xl flex items-center justify-center transition-all ${
                         formData.lat
-                          ? "bg-emerald-100 text-emerald-600 shadow-[0_8px_20px_-6px_rgba(16,185,129,0.3)]"
+                          ? "bg-brand-100 text-brand-600 shadow-[0_8px_20px_-6px_rgba(16,185,129,0.3)]"
                           : "bg-white text-slate-400 shadow-sm"
                       }`}>
                       <MapPin size={24} />

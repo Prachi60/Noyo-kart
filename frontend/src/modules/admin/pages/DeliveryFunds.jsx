@@ -127,8 +127,8 @@ const DeliveryFunds = () => {
                 <div>
                     <h1 className="ds-h1 flex items-center gap-3">
                         Funds Settlement
-                        <div className="p-1.5 bg-emerald-100 rounded-lg shadow-inner">
-                            <ShieldCheck className="h-5 w-5 text-emerald-600" />
+                        <div className="p-1.5 bg-brand-100 rounded-lg shadow-inner">
+                            <ShieldCheck className="h-5 w-5 text-brand-600" />
                         </div>
                     </h1>
                     <p className="ds-description mt-1">Audit and execute secure fund transfers to your fleet partners.</p>
@@ -152,7 +152,7 @@ const DeliveryFunds = () => {
                         <div className="flex items-center gap-4 relative z-10">
                             <div className={cn(
                                 "p-3.5 rounded-2xl transition-all duration-500 group-hover:rotate-12 shadow-lg",
-                                stat.color === 'emerald' ? "bg-emerald-500/10 text-emerald-600 shadow-emerald-100" :
+                                stat.color === 'emerald' ? "bg-brand-500/10 text-brand-600 shadow-brand-100" :
                                     stat.color === 'amber' ? "bg-amber-500/10 text-amber-600 shadow-amber-100" :
                                         stat.color === 'indigo' ? "bg-indigo-500/10 text-indigo-600 shadow-indigo-100" :
                                             "bg-rose-500/10 text-rose-600 shadow-rose-100"
@@ -269,7 +269,7 @@ const DeliveryFunds = () => {
                                         <td className="px-4 py-7">
                                             <div className="flex items-center gap-2">
                                                 {tx.status === 'settled' ? (
-                                                    <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0" />
+                                                    <CheckCircle className="h-4 w-4 text-brand-500 shrink-0" />
                                                 ) : tx.status === 'pending' ? (
                                                     <Clock className="h-4 w-4 text-amber-500 shrink-0 animate-spin-slow" />
                                                 ) : (
@@ -285,7 +285,7 @@ const DeliveryFunds = () => {
                                                 {tx.status === 'pending' && (
                                                     <button
                                                         onClick={() => handleSettleSingle(tx._id)}
-                                                        className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-500 hover:text-white transition-all shadow-sm active:scale-95"
+                                                        className="p-2.5 bg-brand-50 text-brand-600 rounded-xl hover:bg-brand-500 hover:text-white transition-all shadow-sm active:scale-95"
                                                         title="Settle Transaction"
                                                     >
                                                         <CheckCircle className="h-4 w-4" />
@@ -348,7 +348,7 @@ const DeliveryFunds = () => {
                                                     handleSettleSingle(viewingTxn._id);
                                                     setViewingTxn(null);
                                                 }}
-                                                className="px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl text-[10px] font-bold hover:bg-emerald-500 hover:text-white transition-all"
+                                                className="px-4 py-2 bg-brand-50 text-brand-600 rounded-xl text-[10px] font-bold hover:bg-brand-500 hover:text-white transition-all"
                                             >
                                                 SETTLE NOW
                                             </button>
@@ -362,7 +362,7 @@ const DeliveryFunds = () => {
                                 <div className="text-center mb-10">
                                     <div className={cn(
                                         "h-20 w-20 rounded-xl flex items-center justify-center mx-auto mb-6 shadow-lg",
-                                        viewingTxn.status === 'completed' ? "bg-emerald-50 text-emerald-600" :
+                                        viewingTxn.status === 'completed' ? "bg-brand-50 text-brand-600" :
                                             viewingTxn.status === 'pending' ? "bg-amber-50 text-amber-600" : "bg-rose-50 text-rose-600"
                                     )}>
                                         <Banknote className="h-10 w-10" />

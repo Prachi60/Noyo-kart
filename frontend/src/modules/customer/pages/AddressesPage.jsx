@@ -369,9 +369,9 @@ const AddressesPage = () => {
                         <div className="grid gap-2">
                             <Label>Address Type</Label>
                             <div className="flex gap-2">
-                                <Button type="button" variant="outline" className={`flex-1 ${addForm.type === 'home' ? 'border-[#61dafbaa] text-[#61dafbaa] bg-green-50' : ''}`} onClick={() => setAddForm(f => ({ ...f, type: 'home' }))}>Home</Button>
-                                <Button type="button" variant="outline" className={`flex-1 ${addForm.type === 'work' ? 'border-[#61dafbaa] text-[#61dafbaa] bg-green-50' : ''}`} onClick={() => setAddForm(f => ({ ...f, type: 'work' }))}>Work</Button>
-                                <Button type="button" variant="outline" className={`flex-1 ${addForm.type === 'other' ? 'border-[#61dafbaa] text-[#61dafbaa] bg-green-50' : ''}`} onClick={() => setAddForm(f => ({ ...f, type: 'other' }))}>Other</Button>
+                                <Button type="button" variant="outline" className={`flex-1 ${addForm.type === 'home' ? 'border-[#61dafbaa] text-[#61dafbaa] bg-brand-50' : ''}`} onClick={() => setAddForm(f => ({ ...f, type: 'home' }))}>Home</Button>
+                                <Button type="button" variant="outline" className={`flex-1 ${addForm.type === 'work' ? 'border-[#61dafbaa] text-[#61dafbaa] bg-brand-50' : ''}`} onClick={() => setAddForm(f => ({ ...f, type: 'work' }))}>Work</Button>
+                                <Button type="button" variant="outline" className={`flex-1 ${addForm.type === 'other' ? 'border-[#61dafbaa] text-[#61dafbaa] bg-brand-50' : ''}`} onClick={() => setAddForm(f => ({ ...f, type: 'other' }))}>Other</Button>
                             </div>
                         </div>
                         <div className="grid gap-2">
@@ -430,9 +430,9 @@ const AddressesPage = () => {
                         <div className="grid gap-2">
                             <Label>Address Type</Label>
                             <div className="flex gap-2">
-                                <Button type="button" variant="outline" className={`flex-1 ${editForm.type === 'home' ? 'border-[#61dafbaa] text-[#61dafbaa] bg-green-50' : ''}`} onClick={() => setEditForm(f => ({ ...f, type: 'home' }))}>Home</Button>
-                                <Button type="button" variant="outline" className={`flex-1 ${editForm.type === 'work' ? 'border-[#61dafbaa] text-[#61dafbaa] bg-green-50' : ''}`} onClick={() => setEditForm(f => ({ ...f, type: 'work' }))}>Work</Button>
-                                <Button type="button" variant="outline" className={`flex-1 ${editForm.type === 'other' ? 'border-[#61dafbaa] text-[#61dafbaa] bg-green-50' : ''}`} onClick={() => setEditForm(f => ({ ...f, type: 'other' }))}>Other</Button>
+                                <Button type="button" variant="outline" className={`flex-1 ${editForm.type === 'home' ? 'border-[#61dafbaa] text-[#61dafbaa] bg-brand-50' : ''}`} onClick={() => setEditForm(f => ({ ...f, type: 'home' }))}>Home</Button>
+                                <Button type="button" variant="outline" className={`flex-1 ${editForm.type === 'work' ? 'border-[#61dafbaa] text-[#61dafbaa] bg-brand-50' : ''}`} onClick={() => setEditForm(f => ({ ...f, type: 'work' }))}>Work</Button>
+                                <Button type="button" variant="outline" className={`flex-1 ${editForm.type === 'other' ? 'border-[#61dafbaa] text-[#61dafbaa] bg-brand-50' : ''}`} onClick={() => setEditForm(f => ({ ...f, type: 'other' }))}>Other</Button>
                             </div>
                         </div>
                         <div className="grid gap-2">

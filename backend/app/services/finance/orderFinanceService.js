@@ -84,6 +84,7 @@ function syncLegacyPricing(order) {
     tip: order.pricing?.tip || 0,
     discount: breakdown.discountTotal || order.pricing?.discount || 0,
     total: breakdown.grandTotal || order.pricing?.total || 0,
+    walletAmount: breakdown.walletAmount || order.pricing?.walletAmount || 0,
   };
 }
 
@@ -117,6 +118,7 @@ export function freezeFinancialSnapshot(order, breakdown) {
     codCollectedAmount: roundCurrency(sanitized.codCollectedAmount || 0),
     codRemittedAmount: roundCurrency(sanitized.codRemittedAmount || 0),
     codPendingAmount: roundCurrency(sanitized.codPendingAmount || 0),
+    walletAmount: roundCurrency(sanitized.walletAmount || order.pricing?.walletAmount || 0),
   };
   ensurePaymentBreakdownSnapshots(order);
 
@@ -726,6 +728,35 @@ export async function reverseOrderFinanceOnCancellation(
         );
       }
       order.paymentStatus = ORDER_PAYMENT_STATUS.REFUNDED;
+    }
+
+    // NEW: Refund Wallet Amount Used
+    const walletUsed = roundCurrency(order.pricing?.walletAmount || order.paymentBreakdown?.walletAmount || 0);
+    if (walletUsed > 0) {
+      await creditWallet({
+        ownerType: OWNER_TYPE.CUSTOMER,
+        ownerId: order.customer,
+        amount: walletUsed,
+        bucket: "available",
+        session,
+      });
+
+      const customerWallet = await getOrCreateWallet(OWNER_TYPE.CUSTOMER, order.customer, { session });
+      await createLedgerEntry(
+        {
+          orderId: order._id,
+          walletId: customerWallet._id,
+          actorType: OWNER_TYPE.CUSTOMER,
+          actorId: order.customer,
+          type: LEDGER_TRANSACTION_TYPE.WALLET_REFUND,
+          direction: LEDGER_DIRECTION.CREDIT,
+          amount: walletUsed,
+          paymentMode: "WALLET",
+          description: `Refund for wallet payment: ${reason}`,
+          reference: order.orderId,
+        },
+        { session },
+      );
     }
 
     order.settlementStatus = {

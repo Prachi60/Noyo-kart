@@ -39,7 +39,7 @@ const BankAccount = () => {
           
           <div className="flex justify-between items-start mb-8 relative z-10">
             <Landmark size={32} className="text-white/80" />
-            <span className="bg-green-500/20 text-green-300 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border border-green-500/30 flex items-center">
+            <span className="bg-brand-500/20 text-brand-300 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border border-brand-500/30 flex items-center">
               <CheckCircle2 size={12} className="mr-1" /> Active
             </span>
           </div>

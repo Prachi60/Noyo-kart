@@ -121,7 +121,7 @@ const SafetyPrivacy = () => {
                 <h4 className="font-medium text-gray-800">Share Live Location</h4>
                 <p className="text-xs text-gray-500">Allow customers to track you during delivery</p>
               </div>
-              <div className="relative inline-block w-12 h-6 transition duration-200 ease-in-out rounded-full bg-green-500 cursor-pointer">
+              <div className="relative inline-block w-12 h-6 transition duration-200 ease-in-out rounded-full bg-brand-500 cursor-pointer">
                 <span className="absolute left-6 top-1 bg-white w-4 h-4 rounded-full shadow-sm transition-transform duration-200 ease-in-out transform"></span>
               </div>
             </div>
@@ -130,7 +130,7 @@ const SafetyPrivacy = () => {
                 <h4 className="font-medium text-gray-800">Profile Visibility</h4>
                 <p className="text-xs text-gray-500">Show your photo to customers</p>
               </div>
-              <div className="relative inline-block w-12 h-6 transition duration-200 ease-in-out rounded-full bg-green-500 cursor-pointer">
+              <div className="relative inline-block w-12 h-6 transition duration-200 ease-in-out rounded-full bg-brand-500 cursor-pointer">
                 <span className="absolute left-6 top-1 bg-white w-4 h-4 rounded-full shadow-sm transition-transform duration-200 ease-in-out transform"></span>
               </div>
             </div>

@@ -205,7 +205,7 @@ const CouponManagement = () => {
                         <div className="flex items-center justify-between mb-4">
                             <div className={cn("p-2.5 rounded-2xl",
                                 s.color === 'indigo' && "bg-indigo-50 text-indigo-600",
-                                s.color === 'emerald' && "bg-emerald-50 text-emerald-600",
+                                s.color === 'emerald' && "bg-brand-50 text-brand-600",
                                 s.color === 'amber' && "bg-amber-50 text-amber-600",
                                 s.color === 'rose' && "bg-rose-50 text-rose-600",
                             )}>

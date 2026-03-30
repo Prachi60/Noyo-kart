@@ -149,7 +149,7 @@ const ActiveDeliveryBoys = () => {
                 <div>
                     <h1 className="ds-h1 flex items-center gap-3">
                         Delivery Boys
-                        <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <div className="h-2 w-2 rounded-full bg-brand-500 animate-pulse" />
                     </h1>
                     <p className="ds-description mt-1">Manage all your active delivery partners here.</p>
                 </div>
@@ -174,7 +174,7 @@ const ActiveDeliveryBoys = () => {
                             <div className={cn(
                                 "p-3 rounded-2xl transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 shadow-lg",
                                 stat.color === 'indigo' ? "bg-indigo-500/10 text-indigo-600 shadow-indigo-100" :
-                                    stat.color === 'emerald' ? "bg-emerald-500/10 text-emerald-600 shadow-emerald-100" :
+                                    stat.color === 'emerald' ? "bg-brand-500/10 text-brand-600 shadow-brand-100" :
                                         stat.color === 'amber' ? "bg-amber-500/10 text-amber-600 shadow-amber-100" :
                                             "bg-rose-500/10 text-rose-600 shadow-rose-100"
                             )}>
@@ -260,7 +260,7 @@ const ActiveDeliveryBoys = () => {
                                                     </div>
                                                     <div className={cn(
                                                         "absolute -bottom-1 -right-1 h-5 w-5 rounded-full border-4 border-white shadow-sm",
-                                                        rider.status === 'available' ? 'bg-emerald-500' :
+                                                        rider.status === 'available' ? 'bg-brand-500' :
                                                             rider.status === 'busy' ? 'bg-amber-500' : 'bg-slate-300'
                                                     )} />
                                                 </div>
@@ -283,7 +283,7 @@ const ActiveDeliveryBoys = () => {
                                             <div className="bg-slate-50 p-3 rounded-2xl">
                                                 <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">Today Earnings</p>
                                                 <div className="flex items-center gap-1.5">
-                                                    <DollarSign className="h-3.5 w-3.5 text-emerald-500" />
+                                                    <DollarSign className="h-3.5 w-3.5 text-brand-500" />
                                                     <span className="text-xs font-black text-slate-900">₹{rider.todayEarnings}</span>
                                                 </div>
                                             </div>
@@ -435,7 +435,7 @@ const ActiveDeliveryBoys = () => {
                                     </div>
                                     <div className="text-center border-l border-slate-200">
                                         <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Wallet Creds</p>
-                                        <span className="text-lg font-black text-slate-900 text-emerald-600">₹4,250</span>
+                                        <span className="text-lg font-black text-slate-900 text-brand-600">₹4,250</span>
                                     </div>
                                 </div>
 

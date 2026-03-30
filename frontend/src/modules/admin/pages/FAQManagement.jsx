@@ -226,7 +226,7 @@ const FAQManagement = () => {
                 {[
                     { label: 'Total FAQs', value: faqs.length, icon: MessageSquare, bg: 'bg-pink-50', iconColor: 'text-pink-600' },
                     { label: 'Total Views', value: faqs.reduce((acc, f) => acc + f.views, 0).toLocaleString(), icon: TrendingUp, bg: 'bg-sky-50', iconColor: 'text-sky-600' },
-                    { label: 'Published', value: faqs.filter(f => f.status === 'published').length, icon: CheckCircle2, bg: 'bg-emerald-50', iconColor: 'text-emerald-600' },
+                    { label: 'Published', value: faqs.filter(f => f.status === 'published').length, icon: CheckCircle2, bg: 'bg-brand-50', iconColor: 'text-brand-600' },
                     { label: 'Drafts', value: faqs.filter(f => f.status === 'draft').length, icon: Edit3, bg: 'bg-amber-50', iconColor: 'text-amber-600' },
                 ].map((stat, i) => (
                     <Card key={i} className="p-5 border-none shadow-sm ring-1 ring-slate-100 bg-white group hover:ring-pink-200 transition-all overflow-hidden relative text-left">
@@ -355,7 +355,7 @@ const FAQManagement = () => {
                                                             </button>
                                                             <button
                                                                 onClick={() => handleEditClick(faq)}
-                                                                className="p-2 transition-all text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 rounded-lg"
+                                                                className="p-2 transition-all text-slate-400 hover:text-brand-500 hover:bg-brand-50 rounded-lg"
                                                             >
                                                                 <Edit3 className="h-4 w-4" />
                                                             </button>

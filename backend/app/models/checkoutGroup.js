@@ -98,6 +98,10 @@ const checkoutGroupSchema = new mongoose.Schema(
         type: Number,
         default: 0,
       },
+      walletAmount: {
+        type: Number,
+        default: 0,
+      },
       sellerPayoutTotal: {
         type: Number,
         default: 0,

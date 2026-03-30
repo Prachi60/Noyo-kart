@@ -70,7 +70,7 @@ const CheckoutPage = () => {
   const { showToast } = useToast();
   const { user, isAuthenticated } = useAuth();
   const { settings } = useSettings();
-
+ 
   // Fetch full wishlist data if not already fetched
   useEffect(() => {
     if (isAuthenticated && !isFullDataFetched) {
@@ -98,6 +98,8 @@ const CheckoutPage = () => {
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [isResolvingAddressCoords, setIsResolvingAddressCoords] = useState(false);
   const [isCouponModalOpen, setIsCouponModalOpen] = useState(false);
+  const [useWallet, setUseWallet] = useState(false);
+  const [walletAmountToUse, setWalletAmountToUse] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
   const [orderId, setOrderId] = useState(null);
   const [pricingPreview, setPricingPreview] = useState(null);
@@ -230,6 +232,18 @@ const CheckoutPage = () => {
       setSelectedPayment(paymentMethods[0].id);
     }
   }, [paymentMethods, selectedPayment]);
+
+  useEffect(() => {
+    if (useWallet && user?.walletBalance && pricingPreview?.grandTotal) {
+      const maxAvailable = Number(user.walletBalance || 0);
+      const totalToPay = Number(pricingPreview.grandTotal || 0);
+      setWalletAmountToUse(Math.min(maxAvailable, totalToPay));
+    } else {
+      setWalletAmountToUse(0);
+    }
+  }, [useWallet, user?.walletBalance, pricingPreview?.grandTotal]);
+
+  const finalAmountToPay = Math.max(0, (pricingPreview?.grandTotal || 0) - walletAmountToUse);
 
   const buildAddressForOrder = () => {
     if (savedRecipient) {
@@ -664,6 +678,7 @@ const CheckoutPage = () => {
         discountTotal: discountAmount,
         taxTotal: taxAmount,
         timeSlot: selectedTimeSlot,
+        walletAmount: walletAmountToUse,
         items: cart.map((item) => ({
           product: item.id || item._id,
           name: item.name,
@@ -676,11 +691,23 @@ const CheckoutPage = () => {
       const response = await customerApi.createOrder(orderData);
 
       if (response.data.success) {
-        const order = response.data.result;
-        clearCart();
+        const result = response.data.result;
+        const mainOrder = result.order || (Array.isArray(result.orders) ? result.orders[0] : null);
+        const mainOrderId = mainOrder?.orderId || result.orderId;
+        
+        console.log("[CheckoutPage] Order placed. Result:", result, "Target ID:", mainOrderId);
+        
+        if (!mainOrderId) {
+          console.error("[CheckoutPage] CRITICAL: Order ID missing from response!", result);
+          setIsPlacingOrder(false);
+          showToast("Order placed but ID not received. Checking order history...", "warning");
+          navigate("/orders");
+          return;
+        }
 
+        clearCart();
         showToast(`Order placed — waiting for seller to accept.`, "success");
-        setOrderId(order.orderId);
+        setOrderId(mainOrderId);
         setShowSuccess(true);
 
         if (postOrderNavigateRef.current) {
@@ -688,18 +715,22 @@ const CheckoutPage = () => {
         }
         postOrderNavigateRef.current = setTimeout(() => {
           postOrderNavigateRef.current = null;
-          navigate(`/orders/${order.orderId}`);
+          setIsPlacingOrder(false); 
+          navigate(`/orders/${mainOrderId}`);
         }, 3000);
+      } else {
+        // Handle case where success is false but didn't throw (unlikely with Axios)
+        setIsPlacingOrder(false);
+        showToast(response.data.message || "Could not place order.", "error");
       }
     } catch (error) {
       console.error("Failed to place order:", error);
+      setIsPlacingOrder(false);
       showToast(
         error.response?.data?.message ||
           "Failed to place order. Please try again.",
         "error",
       );
-    } finally {
-      setIsPlacingOrder(false);
     }
   };
 
@@ -758,7 +789,7 @@ const CheckoutPage = () => {
     return (
       <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans">
         {/* Artistic Background Elements */}
-        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-green-50/50 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-brand-50/50 via-transparent to-transparent pointer-events-none" />
         <motion.div
           animate={{
             scale: [1, 1.2, 1],
@@ -766,7 +797,7 @@ const CheckoutPage = () => {
             opacity: [0.3, 0.5, 0.3],
           }}
           transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-          className="absolute -top-20 -right-20 w-80 h-80 bg-green-100/30 rounded-full blur-3xl pointer-events-none"
+          className="absolute -top-20 -right-20 w-80 h-80 bg-cyan-100/30 rounded-full blur-3xl pointer-events-none"
         />
         <motion.div
           animate={{
@@ -784,7 +815,7 @@ const CheckoutPage = () => {
             <motion.div
               animate={{ y: [-8, 8, -8] }}
               transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-              className="relative z-10 rounded-[2rem] bg-white/90 p-6 shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-emerald-100">
+              className="relative z-10 rounded-[2rem] bg-white/90 p-6 shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-brand-100">
               <Lottie
                 animationData={emptyBoxAnimation}
                 loop
@@ -809,7 +840,7 @@ const CheckoutPage = () => {
 
           <Link
             to="/"
-            className="group relative inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-[#61dafbaa] to-[#10b981] text-white font-bold rounded-2xl overflow-hidden shadow-xl shadow-green-600/20 transition-all hover:scale-[1.02] active:scale-95 w-full sm:w-auto">
+            className="group relative inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-[#61dafbaa] to-[#38bdf8] text-white font-bold rounded-2xl overflow-hidden shadow-xl shadow-cyan-600/20 transition-all hover:scale-[1.02] active:scale-95 w-full sm:w-auto">
             <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
             <span className="relative flex items-center gap-2 text-lg">
               Start Shopping <ChevronRight size={20} />
@@ -850,9 +881,9 @@ const CheckoutPage = () => {
   return (
     <div className="min-h-screen bg-[#f5f1e8] pb-32 font-sans">
       {/* Premium Header - Curved on mobile, integrated on desktop */}
-      <div className="bg-gradient-to-br from-[#0a5f17] via-[#0b721b] to-[#084a12] pt-6 pb-12 md:pb-24 relative z-10 shadow-lg md:rounded-b-[4rem] rounded-b-[2rem] overflow-hidden">
+      <div className="bg-gradient-to-br from-[#0086a8] via-[#00a3cc] to-[#38bdf8] pt-6 pb-12 md:pb-24 relative z-10 shadow-lg md:rounded-b-[4rem] rounded-b-[2rem] overflow-hidden">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/5 rounded-full blur-[100px] -mr-32 -mt-64 pointer-events-none" />
-        <div className="absolute bottom-0 left-1/4 w-64 h-64 bg-green-400/10 rounded-full blur-[80px] pointer-events-none" />
+        <div className="absolute bottom-0 left-1/4 w-64 h-64 bg-cyan-400/10 rounded-full blur-[80px] pointer-events-none" />
 
         {/* Header Content */}
         <div className="max-w-7xl mx-auto px-4 md:px-8 relative z-10">
@@ -868,8 +899,8 @@ const CheckoutPage = () => {
                 Checkout
               </h1>
               <div className="flex items-center gap-2 mt-1">
-                <span className="h-1.5 w-1.5 bg-green-400 rounded-full animate-pulse" />
-                <p className="text-green-100/90 text-[10px] md:text-xs font-black tracking-[0.2em] uppercase">
+                <span className="h-1.5 w-1.5 bg-cyan-400 rounded-full animate-pulse" />
+                <p className="text-cyan-100/90 text-[10px] md:text-xs font-black tracking-[0.2em] uppercase">
                   {cartCount} {cartCount === 1 ? "Item" : "Items"} in cart
                 </p>
               </div>
@@ -894,7 +925,7 @@ const CheckoutPage = () => {
             {/* Delivery Time Banner */}
             <motion.div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 mt-3">
               <div className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0">
+                <div className="h-12 w-12 rounded-full bg-brand-50 flex items-center justify-center flex-shrink-0">
                   <Clock size={24} className="text-[#61dafbaa]" />
                 </div>
                 <div>
@@ -926,9 +957,9 @@ const CheckoutPage = () => {
               </div>
 
               {savedRecipient && !showRecipientForm && (
-                <div className="mb-4 p-4 bg-green-50 border border-green-100 rounded-2xl flex items-start justify-between">
+                <div className="mb-4 p-4 bg-cyan-50 border border-cyan-100 rounded-2xl flex items-start justify-between">
                   <div className="flex gap-3">
-                    <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center text-[#61dafbaa] flex-shrink-0">
+                    <div className="h-10 w-10 rounded-full bg-cyan-100 flex items-center justify-center text-[#61dafbaa] flex-shrink-0">
                       <Contact2 size={18} />
                     </div>
                     <div>
@@ -1047,7 +1078,7 @@ const CheckoutPage = () => {
 
                       <Button
                         onClick={handleSaveRecipient}
-                        className="w-full h-12 bg-[#2d8618] hover:bg-[#236b11] text-white font-bold rounded-xl">
+                        className="w-full h-12 bg-[#0086a8] hover:bg-[#00a3cc] text-white font-bold rounded-xl">
                         Save address
                       </Button>
                     </div>
@@ -1064,7 +1095,7 @@ const CheckoutPage = () => {
               </div>
 
               {/* Address Card */}
-              <div className="border rounded-xl p-3 mb-3 relative cursor-pointer transition-all border-[#61dafbaa] bg-green-50/50">
+              <div className="border rounded-xl p-3 mb-3 relative cursor-pointer transition-all border-[#61dafbaa] bg-brand-50/50">
                 <div className="flex items-start gap-3">
                   {/* Radio/Check Button */}
                   <div className="mt-1">
@@ -1118,15 +1149,15 @@ const CheckoutPage = () => {
                   : "Use current live location"}
               </button>
               {/* Manual address info banner */}
-              <motion.div className="mt-3 rounded-2xl border border-emerald-100 bg-emerald-50/70 px-4 py-3 flex items-center gap-3 shadow-sm">
-                <div className="h-8 w-8 rounded-full bg-emerald-600 flex items-center justify-center shadow-emerald-500/40 shadow-md">
+              <motion.div className="mt-3 rounded-2xl border border-cyan-100 bg-cyan-50/70 px-4 py-3 flex items-center gap-3 shadow-sm">
+                <div className="h-8 w-8 rounded-full bg-cyan-600 flex items-center justify-center shadow-cyan-500/40 shadow-md">
                   <Check size={16} className="text-white stroke-[3]" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-[13px] font-semibold text-emerald-900">
+                  <p className="text-[13px] font-semibold text-cyan-900">
                     Delivery address confirmed
                   </p>
-                  <p className="text-[11px] font-medium text-emerald-800/80">
+                  <p className="text-[11px] font-medium text-cyan-800/80">
                     We&apos;ll deliver to the address you&apos;ve entered above.
                   </p>
                 </div>
@@ -1297,9 +1328,47 @@ const CheckoutPage = () => {
               </div>
             </motion.div>
 
+            {/* Wallet Section */}
+            {user?.walletBalance > 0 && (
+              <motion.div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 overflow-hidden relative">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="h-8 w-8 rounded-full bg-brand-50 flex items-center justify-center">
+                      <Wallet size={16} className="text-[#61dafbaa]" />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-slate-800 text-sm tracking-tight uppercase">Use Wallet Balance</h3>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Available: ₹{user.walletBalance}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setUseWallet(!useWallet)}
+                    className={`w-12 h-6 rounded-full transition-all duration-300 relative flex items-center px-1 ${
+                      useWallet ? "bg-[#61dafbaa]" : "bg-slate-200"
+                    }`}>
+                    <motion.div
+                      animate={{ x: useWallet ? 24 : 0 }}
+                      className="h-4 w-4 rounded-full bg-white shadow-sm"
+                    />
+                  </button>
+                </div>
+                {useWallet && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    className="pt-2 border-t border-slate-50 mt-2">
+                    <div className="flex justify-between items-center bg-brand-50/50 p-2 rounded-xl">
+                      <span className="text-[11px] font-bold text-slate-600 uppercase">Amount to be used</span>
+                      <span className="text-[13px] font-black text-[#61dafbaa]">₹{walletAmountToUse}</span>
+                    </div>
+                  </motion.div>
+                )}
+              </motion.div>
+            )}
+
             {/* Payment Method */}
             <motion.div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-              <h3 className="font-black text-slate-800 mb-4">Payment Method</h3>
+              <h3 className="font-black text-slate-800 mb-4 uppercase text-sm tracking-widest">Payment Method</h3>
               <div className="space-y-2">
                 {paymentMethods.map((method) => {
                   const Icon = method.icon;
@@ -1309,13 +1378,13 @@ const CheckoutPage = () => {
                       onClick={() => setSelectedPayment(method.id)}
                       className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
                         selectedPayment === method.id
-                          ? "border-[#61dafbaa] bg-green-50"
+                          ? "border-[#61dafbaa] bg-brand-50"
                           : "border-slate-200 bg-white hover:border-slate-300"
                       }`}>
                       <div
                         className={`h-10 w-10 rounded-full flex items-center justify-center ${
                           selectedPayment === method.id
-                            ? "bg-green-100"
+                            ? "bg-brand-100"
                             : "bg-slate-100"
                         }`}>
                         <Icon
@@ -1355,7 +1424,7 @@ const CheckoutPage = () => {
             {/* Bill Details */}
             <motion.div className="bg-white rounded-[2rem] p-6 shadow-xl shadow-gray-200/50 border border-slate-100">
               <div className="flex items-center gap-2 mb-6">
-                <div className="h-10 w-10 rounded-2xl bg-green-50 flex items-center justify-center">
+                <div className="h-10 w-10 rounded-2xl bg-brand-50 flex items-center justify-center">
                   <Clipboard size={20} className="text-[#61dafbaa]" />
                 </div>
                 <h3 className="font-[1000] text-slate-800 text-xl tracking-tight uppercase">
@@ -1413,7 +1482,7 @@ const CheckoutPage = () => {
                   <motion.div
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className="flex justify-between items-center px-3 py-2 bg-green-50 rounded-xl border border-green-100">
+                    className="flex justify-between items-center px-3 py-2 bg-cyan-50 rounded-xl border border-cyan-100">
                     <span className="text-[#61dafbaa] font-black text-xs flex items-center gap-2 uppercase tracking-wider">
                       <Tag size={14} />
                       Coupon Reserved
@@ -1436,28 +1505,43 @@ const CheckoutPage = () => {
                   </div>
                 )}
 
+                {walletAmountToUse > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, x: -5 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="flex justify-between items-center px-3 py-2 bg-brand-50 rounded-xl border border-brand-100 mb-2">
+                    <span className="text-[#61dafbaa] font-black text-[11px] flex items-center gap-2 uppercase tracking-tight">
+                      <Wallet size={14} />
+                      Wallet Applied
+                    </span>
+                    <span className="font-black text-[#61dafbaa]">
+                      -₹{walletAmountToUse}
+                    </span>
+                  </motion.div>
+                )}
+                
                 <div className="mt-4 pt-6 border-t-2 border-dashed border-slate-100">
                   <div className="flex justify-between items-center mb-6">
                     <div className="flex flex-col">
                       <span className="font-[1000] text-slate-800 text-lg uppercase tracking-tight">
-                        To Pay
+                        {finalAmountToPay === 0 ? "Fully Covered" : "Total Payable"}
                       </span>
                       <span className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">
-                        Safe & Secure Payment
+                        {finalAmountToPay === 0 ? "Paid via Wallet" : "Safe & Secure Payment"}
                       </span>
                     </div>
                     <span className="font-[1000] text-[#61dafbaa] text-3xl tracking-tighter italic">
-                      {isPreviewLoading ? "Calculating..." : `₹${totalAmount}`}
+                      {isPreviewLoading ? "Calculating..." : `₹${Math.ceil(finalAmountToPay)}`}
                     </span>
                   </div>
 
                   {/* Desktop Integrated Slide to Pay */}
                   <div className="hidden lg:block">
                     <SlideToPay
-                      amount={totalAmount}
+                      amount={finalAmountToPay}
                       onSuccess={handlePlaceOrder}
                       isLoading={isPlacingOrder || isPreviewLoading || !pricingPreview}
-                      text="Order Now"
+                      text={finalAmountToPay === 0 ? "Place Free Order" : "Order Now"}
                     />
                     <p className="text-center text-[10px] text-slate-400 font-bold mt-4 uppercase tracking-[0.1em]">
                       🔒 SSL encrypted secure checkout
@@ -1474,10 +1558,10 @@ const CheckoutPage = () => {
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-4 py-4 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-50 rounded-t-3xl">
         <div className="max-w-4xl mx-auto">
           <SlideToPay
-            amount={totalAmount}
+            amount={finalAmountToPay}
             onSuccess={handlePlaceOrder}
             isLoading={isPlacingOrder || isPreviewLoading || !pricingPreview}
-            text="Slide to Pay"
+            text={finalAmountToPay === 0 ? "Place Free Order" : "Slide to Pay"}
           />
         </div>
       </div>
@@ -1499,7 +1583,7 @@ const CheckoutPage = () => {
                 disabled={isResolvingAddressCoords}
                 className={`w-full p-4 rounded-2xl border-2 text-left transition-all ${
                   currentAddress.id === addr.id
-                    ? "border-[#61dafbaa] bg-green-50 shadow-sm"
+                    ? "border-[#61dafbaa] bg-brand-50 shadow-sm"
                     : "border-slate-100 bg-white hover:border-slate-200"
                 }`}>
                 <div className="flex items-center gap-3 mb-2">
@@ -1528,7 +1612,7 @@ const CheckoutPage = () => {
           <DialogFooter>
             <Button
               variant="outline"
-              className="w-full border-green-600 text-green-600 hover:bg-green-50"
+              className="w-full border-cyan-600 text-cyan-600 hover:bg-cyan-50"
               onClick={() => navigate("/addresses")}>
               <Plus size={16} className="mr-2" /> Add New Address
             </Button>
@@ -1642,7 +1726,7 @@ const CheckoutPage = () => {
                 key={coupon.code}
                 className={`p-4 rounded-2xl border-2 transition-all relative overflow-hidden ${
                   selectedCoupon?.code === coupon.code
-                    ? "border-[#61dafbaa] bg-green-50 shadow-sm"
+                    ? "border-[#61dafbaa] bg-brand-50 shadow-sm"
                     : "border-slate-100 bg-white hover:border-slate-200"
                 }`}>
                 {selectedCoupon?.code === coupon.code && (
@@ -1745,7 +1829,7 @@ const CheckoutPage = () => {
               initial={{ scale: 0.5, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", damping: 12 }}
-              className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center text-[#61dafbaa] mb-6">
+              className="w-24 h-24 bg-brand-100 rounded-full flex items-center justify-center text-[#61dafbaa] mb-6">
               <Check size={48} strokeWidth={4} />
             </motion.div>
             <motion.h2
@@ -1769,7 +1853,7 @@ const CheckoutPage = () => {
               initial={{ width: 0 }}
               animate={{ width: "100%" }}
               transition={{ duration: 2.5, ease: "linear" }}
-              className="w-48 h-1.5 bg-green-100 rounded-full overflow-hidden">
+              className="w-48 h-1.5 bg-brand-100 rounded-full overflow-hidden">
               <div className="h-full bg-[#61dafbaa]" />
             </motion.div>
           </motion.div>

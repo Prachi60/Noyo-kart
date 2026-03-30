@@ -154,12 +154,12 @@ const Dashboard = () => {
           onClick={handleOnlineToggle}
           className={`relative w-full h-16 rounded-full flex items-center p-1 cursor-pointer shadow-inner transition-colors duration-500 ${
             isOnline
-              ? "bg-green-500/10 border border-green-200"
+              ? "bg-brand-500/10 border border-brand-200"
               : "bg-red-500/10 border border-red-200"
           }`}
           whileTap={{ scale: 0.98 }}>
           <div
-            className={`w-1/2 h-full flex items-center justify-center font-bold tracking-wide z-10 transition-all duration-300 ${isOnline ? "text-green-700" : "text-gray-400 opacity-50"}`}>
+            className={`w-1/2 h-full flex items-center justify-center font-bold tracking-wide z-10 transition-all duration-300 ${isOnline ? "text-brand-700" : "text-gray-400 opacity-50"}`}>
             ONLINE
           </div>
           <div
@@ -169,7 +169,7 @@ const Dashboard = () => {
           <motion.div
             className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full shadow-lg flex items-center justify-center border transition-colors duration-300 ${
               isOnline
-                ? "bg-green-500 border-green-400"
+                ? "bg-brand-500 border-brand-400"
                 : "bg-red-500 border-red-400"
             }`}
             animate={{ x: isOnline ? "100%" : "0%" }}
@@ -210,7 +210,7 @@ const Dashboard = () => {
             <span className="text-4xl font-extrabold text-gray-900 tracking-tight">
               {earnings.today}
             </span>
-            <span className="ml-3 text-green-600 text-xs font-bold flex items-center bg-green-50 border border-green-100 px-2 py-1 rounded-full">
+            <span className="ml-3 text-brand-600 text-xs font-bold flex items-center bg-brand-50 border border-brand-100 px-2 py-1 rounded-full">
               <TrendingUp size={12} className="mr-1" /> +12%
             </span>
           </div>
@@ -231,7 +231,7 @@ const Dashboard = () => {
               <p className="font-bold text-gray-900">₹{earnings.incentives}</p>
             </div>
             <div className="text-center group cursor-pointer">
-              <div className="flex justify-center mb-2 text-green-600 bg-green-50 group-hover:bg-green-100 transition-colors w-10 h-10 rounded-full items-center mx-auto">
+              <div className="flex justify-center mb-2 text-brand-600 bg-brand-50 group-hover:bg-brand-100 transition-colors w-10 h-10 rounded-full items-center mx-auto">
                 <IndianRupee size={18} />
               </div>
               <p className="ds-caption mb-0.5">Cash</p>
@@ -266,7 +266,7 @@ const Dashboard = () => {
                   ends.
                 </p>
                 <div className="mt-4 flex items-center justify-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                  <span className="w-2 h-2 bg-brand-500 rounded-full animate-pulse" />
                   Listening for assignments
                 </div>
               </motion.div>

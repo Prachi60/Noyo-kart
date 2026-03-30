@@ -23,6 +23,10 @@ const Returns = () => {
     const [activeTab, setActiveTab] = useState("All");
     const [selectedReturn, setSelectedReturn] = useState(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+    const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+    const [rejectReason, setRejectReason] = useState("");
+    const [submittingReject, setSubmittingReject] = useState(false);
+    const [assigningPickup, setAssigningPickup] = useState(false);
 
     const tabs = [
         "All",
@@ -122,14 +126,15 @@ const Returns = () => {
         }
     };
 
-    const handleReject = async (orderId) => {
-        const reason = window.prompt(
-            "Please enter reason for rejecting the return request:"
-        );
-        if (!reason) return;
+    const handleReject = async () => {
+        if (!rejectReason.trim() || !selectedReturn) return;
         try {
-            await sellerApi.rejectReturn(orderId, { reason });
+            setSubmittingReject(true);
+            await sellerApi.rejectReturn(selectedReturn.orderId, { reason: rejectReason });
             showToast("Return rejected", "success");
+            setIsRejectModalOpen(false);
+            setRejectReason("");
+            setIsDetailsOpen(false);
             await fetchReturns();
         } catch (error) {
             console.error("Failed to reject return", error);
@@ -137,6 +142,27 @@ const Returns = () => {
                 error.response?.data?.message || "Failed to reject return",
                 "error"
             );
+        } finally {
+            setSubmittingReject(false);
+        }
+    };
+
+    const handleAssignPickup = async (orderId) => {
+        try {
+            setAssigningPickup(true);
+            // Calling with empty body triggers backend auto-assignment
+            await sellerApi.assignReturnDelivery(orderId, {});
+            showToast("Riders notified for return pickup", "success");
+            setIsDetailsOpen(false);
+            await fetchReturns();
+        } catch (error) {
+            console.error("Failed to assign pickup", error);
+            showToast(
+                error.response?.data?.message || "No nearby riders found or assignment failed",
+                "error"
+            );
+        } finally {
+            setAssigningPickup(false);
         }
     };
 
@@ -442,7 +468,7 @@ const Returns = () => {
                                 </div>
                             </div>
 
-                            <div className="px-4 py-3 sm:px-6 sm:py-4 border-t border-slate-100 bg-slate-50 flex flex-col sm:flex-row gap-3 sm:gap-0 sm:items-center justify-end">
+                             <div className="px-4 py-3 sm:px-6 sm:py-4 border-t border-slate-100 bg-slate-50 flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-center justify-end">
                                 <div className="flex gap-2 items-center">
                                     <button
                                         onClick={() => setIsDetailsOpen(false)}
@@ -450,33 +476,94 @@ const Returns = () => {
                                     >
                                         Close
                                     </button>
-                                    {selectedReturn.returnStatus ===
-                                        "return_requested" && (
+                                    
+                                    {/* Action: Approve/Reject */}
+                                    {selectedReturn.returnStatus === "return_requested" && (
                                         <>
                                             <Button
                                                 variant="outline"
-                                                className="text-xs font-bold"
-                                                onClick={() =>
-                                                    handleReject(
-                                                        selectedReturn.orderId
-                                                    )
-                                                }
+                                                className="text-xs font-bold border-rose-200 text-rose-600 hover:bg-rose-50"
+                                                onClick={() => setIsRejectModalOpen(true)}
                                             >
-                                                Reject
+                                                Reject Request
                                             </Button>
                                             <Button
-                                                className="text-xs font-bold"
-                                                onClick={() =>
-                                                    handleApprove(
-                                                        selectedReturn.orderId
-                                                    )
-                                                }
+                                                className="text-xs font-bold bg-slate-900"
+                                                onClick={() => handleApprove(selectedReturn.orderId)}
                                             >
-                                                Approve
+                                                Approve Return
                                             </Button>
                                         </>
                                     )}
+
+                                    {/* Action: Assign Pickup */}
+                                    {(selectedReturn.returnStatus === "return_approved") && (
+                                        <Button
+                                            className="text-xs font-bold bg-brand-600 hover:bg-brand-700"
+                                            disabled={assigningPickup}
+                                            onClick={() => handleAssignPickup(selectedReturn.orderId)}
+                                        >
+                                            {assigningPickup ? (
+                                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                            ) : (
+                                                <HiOutlineInboxStack className="h-4 w-4 mr-2" />
+                                            )}
+                                            Assign Pickup
+                                        </Button>
+                                    )}
                                 </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+            <AnimatePresence>
+                {isRejectModalOpen && (
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+                            onClick={() => !submittingReject && setIsRejectModalOpen(false)}
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="w-full max-w-md relative z-10 bg-white rounded-3xl shadow-2xl p-6 space-y-4"
+                        >
+                            <h3 className="text-xl font-black text-slate-900">Reject Return</h3>
+                            <p className="text-sm text-slate-600 font-medium">Please provide a reason for rejecting this return request. This will be shared with the customer.</p>
+                            
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Reason for Rejection</label>
+                                <textarea
+                                    className="w-full rounded-2xl border border-slate-200 p-4 text-sm font-medium focus:ring-2 focus:ring-slate-900/10 outline-none transition-all"
+                                    rows={4}
+                                    placeholder="e.g. Product returned in damaged condition..."
+                                    value={rejectReason}
+                                    onChange={(e) => setRejectReason(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="flex gap-2 pt-2">
+                                <Button
+                                    variant="outline"
+                                    className="flex-1 font-bold"
+                                    onClick={() => setIsRejectModalOpen(false)}
+                                    disabled={submittingReject}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    className="flex-1 font-bold bg-rose-600 hover:bg-rose-700"
+                                    onClick={handleReject}
+                                    isLoading={submittingReject}
+                                    disabled={!rejectReason.trim() || submittingReject}
+                                >
+                                    Reject Request
+                                </Button>
                             </div>
                         </motion.div>
                     </div>

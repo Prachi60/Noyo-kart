@@ -704,16 +704,16 @@ const DeliveryAuth = () => {
                                 <label
                                   htmlFor={doc.id}
                                   className={`flex items-center justify-between p-4 rounded-2xl border-2 border-dashed transition-all cursor-pointer ${doc.state
-                                    ? "border-green-200 bg-green-50/50"
+                                    ? "border-brand-200 bg-brand-50/50"
                                     : "border-gray-100 bg-gray-50 hover:border-indigo-200 hover:bg-indigo-50/30"
                                     }`}
                                 >
                                   <div className="flex items-center gap-3">
-                                    <div className={`p-2 rounded-xl ${doc.state ? "bg-green-100 text-green-600" : "bg-white text-gray-400 shadow-sm"}`}>
+                                    <div className={`p-2 rounded-xl ${doc.state ? "bg-brand-100 text-brand-600" : "bg-white text-gray-400 shadow-sm"}`}>
                                       {doc.state ? <CheckCircle className="w-4 h-4" /> : <Upload className="w-4 h-4" />}
                                     </div>
                                     <div className="text-left">
-                                      <p className={`text-xs font-black uppercase tracking-tight ${doc.state ? "text-green-700" : "text-gray-500"}`}>
+                                      <p className={`text-xs font-black uppercase tracking-tight ${doc.state ? "text-brand-700" : "text-gray-500"}`}>
                                         {doc.label}
                                       </p>
                                       <p className="text-[10px] text-gray-400 font-bold truncate max-w-[180px]">
@@ -728,7 +728,7 @@ const DeliveryAuth = () => {
                                         e.preventDefault();
                                         doc.setter(null);
                                       }}
-                                      className="p-1.5 hover:bg-green-100 rounded-lg text-green-600 transition-colors"
+                                      className="p-1.5 hover:bg-brand-100 rounded-lg text-brand-600 transition-colors"
                                     >
                                       <X className="w-3.5 h-3.5" />
                                     </button>
@@ -755,7 +755,7 @@ const DeliveryAuth = () => {
                                     )}
 
                                     {!isScanning && dlVerified === true && (
-                                      <div className="flex items-center gap-1.5 text-emerald-600 animate-in zoom-in-95 duration-300">
+                                      <div className="flex items-center gap-1.5 text-brand-600 animate-in zoom-in-95 duration-300">
                                         <CheckCircle className="w-3.5 h-3.5" />
                                         <span className="text-[10px] font-black uppercase tracking-wider">AI Verified: Valid DL Found</span>
                                       </div>
@@ -790,7 +790,7 @@ const DeliveryAuth = () => {
                                     )}
 
                                     {!isScanning && panVerified === true && (
-                                      <div className="flex items-center gap-1.5 text-emerald-600 animate-in zoom-in-95 duration-300">
+                                      <div className="flex items-center gap-1.5 text-brand-600 animate-in zoom-in-95 duration-300">
                                         <CheckCircle className="w-3.5 h-3.5" />
                                         <span className="text-[10px] font-black uppercase tracking-wider">AI Verified: Valid PAN Found</span>
                                       </div>
@@ -825,7 +825,7 @@ const DeliveryAuth = () => {
                                     )}
 
                                     {!isScanning && aadharVerified === true && (
-                                      <div className="flex items-center gap-1.5 text-emerald-600 animate-in zoom-in-95 duration-300">
+                                      <div className="flex items-center gap-1.5 text-brand-600 animate-in zoom-in-95 duration-300">
                                         <CheckCircle className="w-3.5 h-3.5" />
                                         <span className="text-[10px] font-black uppercase tracking-wider">AI Verified: Valid Aadhar Found</span>
                                       </div>

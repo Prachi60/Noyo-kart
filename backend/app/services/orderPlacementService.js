@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Cart from "../models/cart.js";
 import CheckoutGroup from "../models/checkoutGroup.js";
 import Order from "../models/order.js";
+import User from "../models/customer.js";
 import Transaction from "../models/transaction.js";
 import { WORKFLOW_STATUS, DEFAULT_SELLER_TIMEOUT_MS } from "../constants/orderWorkflow.js";
 import { ORDER_PAYMENT_STATUS } from "../constants/finance.js";
@@ -280,6 +281,16 @@ export async function placeOrderAtomic({
       ? new Date(Date.now() + IDEMPOTENCY_RECORD_TTL_MS)
       : null;
     const source = placementSource(normalizedPayload);
+    const walletAmount = Math.max(0, Number(normalizedPayload.walletAmount || 0));
+
+    // 1. Fetch user and validate wallet
+    const user = await User.findById(customerId).session(session);
+    if (walletAmount > 0) {
+      if (!user) throw new Error("User not found");
+      if (user.walletBalance < walletAmount) {
+        throw new Error("Insufficient wallet balance");
+      }
+    }
 
     const {
       orderItemsInput,
@@ -307,6 +318,7 @@ export async function placeOrderAtomic({
       status: buildCheckoutGroupStatus(paymentMode),
       stockReservation: checkoutReservation,
       pricingSummary: pricingSnapshot.aggregateBreakdown,
+      walletAmount,
       sellerCount: pricingSnapshot.sellerCount,
       itemCount: pricingSnapshot.itemCount,
       addressSnapshot: normalizedAddress,
@@ -343,6 +355,10 @@ export async function placeOrderAtomic({
         paymentMode,
       });
 
+      const orderGrandTotal = Number(entry.breakdown?.grandTotal || 0);
+      const groupGrandTotal = Number(pricingSnapshot.aggregateBreakdown?.grandTotal || 1);
+      const proportionateWallet = (orderGrandTotal / groupGrandTotal) * walletAmount;
+
       const order = new Order({
         orderId,
         customer: customerId,
@@ -357,6 +373,11 @@ export async function placeOrderAtomic({
         payment: {
           method: paymentMode === "ONLINE" ? "online" : "cash",
           status: "pending",
+        },
+        pricing: {
+          ...entry.breakdown, // This might overwrite fields, be careful
+          total: entry.breakdown.grandTotal,
+          walletAmount: proportionateWallet,
         },
         status: "pending",
         orderStatus: "pending",
@@ -402,6 +423,22 @@ export async function placeOrderAtomic({
       grandTotal: Number(order.paymentBreakdown?.grandTotal || 0),
     }));
     await checkoutGroup.save({ session });
+
+    // Deduct wallet balance if used
+    if (walletAmount > 0) {
+      user.walletBalance -= walletAmount;
+      await user.save({ session });
+
+      await Transaction.create([{
+        user: customerId,
+        userModel: "User",
+        type: "Wallet Payment",
+        amount: -walletAmount,
+        status: "Settled",
+        reference: `WLT-CHOUT-${checkoutGroupId}`,
+        meta: { checkoutGroupId }
+      }], { session });
+    }
 
     const transactionRows = orders.map((order) => ({
       user: order.seller,

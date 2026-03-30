@@ -41,6 +41,10 @@ import { createFinanceOrderSchema } from "../validation/financeValidation.js";
 import { placeOrderAtomic } from "../services/orderPlacementService.js";
 import { emitNotificationEvent } from "../modules/notifications/notification.emitter.js";
 import { NOTIFICATION_EVENTS } from "../modules/notifications/notification.constants.js";
+import { getDeliveryPartnerIdsWithinSellerRadius } from "../services/deliveryNearbyService.js";
+import { emitDeliveryBroadcastForSeller } from "../services/orderSocketEmitter.js";
+import * as walletService from "../services/finance/walletService.js";
+import { OWNER_TYPE } from "../constants/finance.js";
 
 function validateWithJoi(schema, payload) {
   const { error, value } = schema.validate(payload, {
@@ -518,17 +522,16 @@ export const requestReturn = async (req, res) => {
       );
     }
 
+    const returnWindowMinutes = parseInt(process.env.RETURN_WINDOW_MINUTES || "2", 10);
     const now = new Date();
-    const deliveredAt = order.deliveredAt || order.updatedAt || order.createdAt;
-    const deadline =
-      order.returnDeadline ||
-      new Date(deliveredAt.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const placedAt = order.createdAt;
+    const deadline = new Date(placedAt.getTime() + returnWindowMinutes * 60 * 1000);
 
     if (now > deadline) {
       return handleResponse(
         res,
         400,
-        "Return window has expired for this order.",
+        `Return window has expired. You can only request a return within ${returnWindowMinutes} minutes of placing the order.`,
       );
     }
 
@@ -571,6 +574,15 @@ export const requestReturn = async (req, res) => {
     order.returnDeadline = deadline;
 
     await order.save();
+
+    emitNotificationEvent(NOTIFICATION_EVENTS.RETURN_REQUESTED, {
+      orderId: order.orderId,
+      customerId: order.customer,
+      sellerId: order.seller,
+      data: {
+        reason: order.returnReason,
+      },
+    });
 
     return handleResponse(
       res,
@@ -898,7 +910,7 @@ export const approveReturnRequest = async (req, res) => {
     order.returnDeliveryCommission = returnCommission;
 
     await order.save();
-    emitNotificationEvent(NOTIFICATION_EVENTS.REFUND_INITIATED, {
+    emitNotificationEvent(NOTIFICATION_EVENTS.RETURN_APPROVED, {
       orderId: order.orderId,
       customerId: order.customer,
       userId: order.customer,
@@ -963,6 +975,16 @@ export const rejectReturnRequest = async (req, res) => {
 
     await order.save();
 
+    emitNotificationEvent(NOTIFICATION_EVENTS.RETURN_REJECTED, {
+      orderId: order.orderId,
+      customerId: order.customer,
+      userId: order.customer,
+      sellerId: order.seller,
+      data: {
+        reason: order.returnRejectedReason,
+      },
+    });
+
     return handleResponse(res, 200, "Return request rejected", order);
   } catch (error) {
     return handleResponse(res, 500, error.message);
@@ -988,13 +1010,11 @@ export const assignReturnDelivery = async (req, res) => {
     }
 
     const order = await Order.findOne(orderKey);
-
     if (!order) {
       return handleResponse(res, 404, "Order not found");
     }
 
-    const isOwnerSeller =
-      role === "seller" && order.seller?.toString() === userId;
+    const isOwnerSeller = role === "seller" && order.seller?.toString() === userId;
     const isAdmin = role === "admin";
 
     if (!isOwnerSeller && !isAdmin) {
@@ -1005,29 +1025,62 @@ export const assignReturnDelivery = async (req, res) => {
       );
     }
 
-    if (order.returnStatus !== "return_approved") {
+    if (order.returnStatus !== "return_requested" && order.returnStatus !== "return_approved") {
       return handleResponse(
         res,
         400,
-        "Return pickup can only be assigned after approval.",
+        "Return pickup can only be assigned for pending or approved returns.",
       );
     }
 
-    const partner = await Delivery.findById(deliveryBoyId);
-    if (!partner) {
-      return handleResponse(res, 404, "Delivery partner not found.");
+    let riderId = deliveryBoyId;
+    
+    // If Admin/Seller manually specified a rider
+    if (riderId) {
+      const partner = await Delivery.findById(riderId);
+      if (!partner) {
+        return handleResponse(res, 404, "Delivery partner not found.");
+      }
+      order.returnDeliveryBoy = riderId;
+    } else {
+      // If undefined/empty object, we want nearby riders to pick it up via broadcast (available orders pool)
+      // `orderQueryService` will serve orders where `returnStatus="return_pickup_assigned"` and `returnDeliveryBoy=null`
+      order.returnDeliveryBoy = null; 
     }
 
-    order.returnDeliveryBoy = deliveryBoyId;
     order.returnStatus = "return_pickup_assigned";
 
     await order.save();
-    emitNotificationEvent(NOTIFICATION_EVENTS.ORDER_READY, {
-      orderId: order.orderId,
-      deliveryId: deliveryBoyId,
-      sellerId: order.seller,
-      customerId: order.customer,
-    });
+    if (riderId) {
+      emitNotificationEvent(NOTIFICATION_EVENTS.RETURN_PICKUP_ASSIGNED, {
+        orderId: order.orderId,
+        deliveryId: riderId,
+        sellerId: order.seller,
+        customerId: order.customer,
+      });
+    } else {
+      // Trigger broadcast for nearby riders
+      const previewText = `Return Pickup: ${order.orderId}`;
+      const payload = {
+        orderId: order.orderId,
+        type: "RETURN_PICKUP",
+        preview: {
+          pickup: "Customer Address",
+          drop: "Seller Store",
+          total: order.pricing?.total || 0,
+        },
+        deliverySearchExpiresAt: new Date(Date.now() + 60 * 1000).toISOString(),
+      };
+      
+      // Emit websocket broadcast
+      emitDeliveryBroadcastForSeller(order.seller, payload);
+
+      emitNotificationEvent(NOTIFICATION_EVENTS.RETURN_PICKUP_ASSIGNED, {
+        orderId: order.orderId,
+        sellerId: order.seller,
+        customerId: order.customer,
+      });
+    }
 
     return handleResponse(
       res,
@@ -1040,7 +1093,102 @@ export const assignReturnDelivery = async (req, res) => {
   }
 };
 
-const completeReturnAndRefund = async (order) => {
+/* ===============================
+   ACCEPT RETURN PICKUP (Delivery)
+================================ */
+export const acceptReturnPickup = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { id: userId, role } = req.user;
+
+    if (role !== "delivery" && role !== "admin") {
+      return handleResponse(res, 403, "Access denied.");
+    }
+
+    const orderKey = orderMatchQueryFromRouteParam(orderId);
+    const order = await Order.findOne(orderKey);
+
+    if (!order) return handleResponse(res, 404, "Order not found");
+
+    if (order.returnDeliveryBoy && order.returnDeliveryBoy.toString() !== userId) {
+      return handleResponse(
+        res,
+        403,
+        "This return pickup is already assigned to another rider.",
+      );
+    }
+
+    if (!order.returnDeliveryBoy) {
+      order.returnDeliveryBoy = userId;
+      order.returnStatus = "return_pickup_assigned";
+      await order.save();
+    }
+
+    return handleResponse(res, 200, "Return pickup accepted", order);
+  } catch (error) {
+    return handleResponse(res, 500, error.message);
+  }
+};
+
+/* ===============================
+   REJECT RETURN PICKUP (Delivery)
+================================ */
+export const rejectReturnPickup = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { id: userId, role } = req.user;
+
+    if (role !== "delivery" && role !== "admin") {
+      return handleResponse(res, 403, "Access denied.");
+    }
+
+    const orderKey = orderMatchQueryFromRouteParam(orderId);
+    const order = await Order.findOne(orderKey);
+
+    if (!order) return handleResponse(res, 404, "Order not found");
+
+    if (order.returnDeliveryBoy?.toString() !== userId) {
+      // If it's a broadcast order, add to skippedBy
+      if (!order.returnDeliveryBoy) {
+        if (!order.skippedBy.includes(userId)) {
+           order.skippedBy.push(userId);
+           await order.save();
+        }
+        return handleResponse(res, 200, "Return pickup skipped");
+      }
+      return handleResponse(
+        res,
+        403,
+        "You are not assigned to this return pickup.",
+      );
+    }
+
+    if (order.returnStatus !== "return_pickup_assigned") {
+      return handleResponse(res, 400, "Cannot reject in current status.");
+    }
+
+    order.returnDeliveryBoy = null;
+    if (!order.skippedBy.includes(userId)) {
+      order.skippedBy.push(userId);
+    }
+    order.returnStatus = "return_approved"; 
+    await order.save();
+
+    // Notify seller
+    emitNotificationEvent(NOTIFICATION_EVENTS.RETURN_REJECTED, {
+      orderId: order.orderId,
+      sellerId: order.seller,
+      customerId: order.customer,
+      data: { reason: "Delivery partner rejected the pickup request." },
+    });
+
+    return handleResponse(res, 200, "Pickup rejected successfully.");
+  } catch (error) {
+    return handleResponse(res, 500, error.message);
+  }
+};
+
+export const completeReturnAndRefund = async (order) => {
   if (!order) return null;
   if (order.returnStatus === "refund_completed") {
     return order;
@@ -1056,35 +1204,69 @@ const completeReturnAndRefund = async (order) => {
       : 0);
 
   const commission = order.returnDeliveryCommission || 0;
+  const isCOD = order.paymentMode === "COD" || order.paymentMethod?.toLowerCase() === "cod";
+  const totalPaidByWallet = Number(order.pricing?.walletAmount || 0);
+  const totalOrderAmount = Number(order.pricing?.total || 1);
+  const walletPortionOfReturn = (refundAmount / totalOrderAmount) * totalPaidByWallet;
 
-  // 1. Credit customer wallet
-  if (order.customer && refundAmount > 0) {
+  // 1. Credit customer wallet (Proportion of wallet used + 100% for ONLINE)
+  const walletRefundTotal = isCOD ? walletPortionOfReturn : refundAmount;
+
+  if (order.customer && walletRefundTotal > 0) {
     const customer = await User.findById(order.customer);
     if (customer) {
-      customer.walletBalance = (customer.walletBalance || 0) + refundAmount;
+      customer.walletBalance = (customer.walletBalance || 0) + Number(walletRefundTotal.toFixed(2));
       await customer.save();
 
       await Transaction.create({
         user: customer._id,
         userModel: "User",
         order: order._id,
-        type: "Refund",
-        amount: refundAmount,
+        type: "Wallet Refund (Return)",
+        amount: Number(walletRefundTotal.toFixed(2)),
         status: "Settled",
-        reference: `REF-CUST-${order.orderId}`,
+        reference: `WLT-REF-${order.orderId}`,
+        meta: { orderId: order._id, type: "return" }
       });
     }
+  } else if (isCOD && cashPortionOfReturn > 0) {
+     // For COD, the delivery boy physically hands cash to the user.
+     // We still record a transaction for the system to know the refund happened.
+     await Transaction.create({
+        user: order.customer,
+        userModel: "User",
+        order: order._id,
+        type: "Cash Refund (Return)",
+        amount: Number(cashPortionOfReturn.toFixed(2)),
+        status: "Settled",
+        note: `Physical Cash Refund (Net of wallet: ₹${walletPortionOfReturn.toFixed(2)})`,
+        reference: `REF-CUST-CASH-${order.orderId}`,
+        meta: { orderId: order._id, type: "return_cash" }
+     });
   }
 
   // 2. Seller adjustment (refund + return commission)
   if (order.seller && (refundAmount > 0 || commission > 0)) {
-    const adjustment = -Math.abs(refundAmount + commission);
+    const adjustment = Math.abs(refundAmount + commission);
+    
+    // Debit seller wallet
+    try {
+      await walletService.debitWallet({
+        ownerType: "SELLER",
+        ownerId: order.seller,
+        amount: adjustment,
+        bucket: "available"
+      });
+    } catch (error) {
+      console.warn(`[ReturnFinance] Seller ${order.seller} balance low.`, error.message);
+    }
+
     await Transaction.create({
       user: order.seller,
       userModel: "Seller",
       order: order._id,
       type: "Refund",
-      amount: adjustment,
+      amount: -adjustment,
       status: "Settled",
       reference: `REF-SELL-${order.orderId}`,
     });
@@ -1092,6 +1274,17 @@ const completeReturnAndRefund = async (order) => {
 
   // 3. Delivery partner earning for return pickup
   if (order.returnDeliveryBoy && commission > 0) {
+    try {
+      await walletService.creditWallet({
+        ownerType: "DELIVERY_PARTNER",
+        ownerId: order.returnDeliveryBoy,
+        amount: commission,
+        bucket: "available"
+      });
+    } catch (error) {
+      console.error(`[ReturnFinance] Failed to credit delivery boy ${order.returnDeliveryBoy}`, error.message);
+    }
+
     await Transaction.create({
       user: order.returnDeliveryBoy,
       userModel: "Delivery",
@@ -1118,6 +1311,7 @@ const completeReturnAndRefund = async (order) => {
     data: {
       refundAmount,
       returnDeliveryCommission: commission,
+      isCOD
     },
   });
   return order;

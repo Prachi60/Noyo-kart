@@ -276,7 +276,7 @@ const OffersManagement = () => {
                                             </p>
                                         )}
                                         {offer.appliesOnOrderNumber && (
-                                            <p className="text-[10px] font-bold text-emerald-600 mt-0.5">
+                                            <p className="text-[10px] font-bold text-brand-600 mt-0.5">
                                                 On order #{offer.appliesOnOrderNumber}
                                             </p>
                                         )}
@@ -562,7 +562,7 @@ const OffersManagement = () => {
                                             className={cn(
                                                 "px-2.5 py-1.5 rounded-full text-[11px] font-bold border transition-all",
                                                 isSelected
-                                                    ? "bg-emerald-500 text-white border-emerald-500"
+                                                    ? "bg-brand-500 text-white border-brand-500"
                                                     : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-white"
                                             )}
                                         >

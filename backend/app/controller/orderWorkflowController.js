@@ -9,6 +9,8 @@ import {
 import { getCachedRoute } from "../services/mapsRouteService.js";
 import Order from "../models/order.js";
 import { orderMatchQueryFromRouteParam } from "../utils/orderLookup.js";
+import { generateReturnPickupOtp, validateReturnPickupOtp } from "../services/deliveryOtpService.js";
+import { completeReturnAndRefund } from "./orderController.js";
 
 export const confirmPickup = async (req, res) => {
   try {
@@ -121,6 +123,48 @@ export const getOrderRoute = async (req, res) => {
 
     const route = await getCachedRoute(origin, dest, "driving", orderId, phase);
     return handleResponse(res, 200, "Route", route);
+  } catch (e) {
+    return handleResponse(res, 500, e.message);
+  }
+};
+
+export const requestReturnPickupOtp = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const result = await generateReturnPickupOtp(orderId);
+    if (!result.success) {
+      return handleResponse(res, 400, result.error);
+    }
+    return handleResponse(res, 200, "Return OTP generated", result);
+  } catch (e) {
+    return handleResponse(res, 500, e.message);
+  }
+};
+
+export const verifyReturnPickupOtp = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { code } = req.body || {};
+    const validation = await validateReturnPickupOtp(orderId, code);
+
+    if (!validation.valid) {
+      return handleResponse(res, 400, validation.message);
+    }
+
+    // Mark as picked up and complete the loop.
+    const orderKey = orderMatchQueryFromRouteParam(orderId);
+    const order = await Order.findOne(orderKey);
+
+    if (!order) return handleResponse(res, 404, "Order not found");
+
+    order.returnStatus = "returned"; // Final flow step
+    order.returnPickedAt = new Date();
+    await order.save();
+
+    // Auto-complete refund/commission logic
+    const completed = await completeReturnAndRefund(order);
+
+    return handleResponse(res, 200, "Return pickup verified and completed", completed);
   } catch (e) {
     return handleResponse(res, 500, e.message);
   }

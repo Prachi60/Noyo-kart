@@ -304,9 +304,9 @@ const PendingDeliveryBoys = () => {
                                     <div className="pt-6 border-t border-slate-200">
                                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">System Confidence</p>
                                         <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
-                                            <div className="h-full bg-emerald-500 w-[85%]" />
+                                            <div className="h-full bg-brand-500 w-[85%]" />
                                         </div>
-                                        <p className="text-[9px] font-bold text-emerald-600 mt-2">85% Verification Score</p>
+                                        <p className="text-[9px] font-bold text-brand-600 mt-2">85% Verification Score</p>
                                     </div>
                                 </div>
                             </div>
@@ -344,14 +344,14 @@ const PendingDeliveryBoys = () => {
 
                                     <div className="space-y-4">
                                         <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Vehicle Identification</h4>
-                                        <div className="p-6 bg-slate-50 rounded-xl border-2 border-emerald-500/10">
+                                        <div className="p-6 bg-slate-50 rounded-xl border-2 border-brand-500/10">
                                             <div className="flex items-center gap-4">
-                                                <div className="h-12 w-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-emerald-600">
+                                                <div className="h-12 w-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-brand-600">
                                                     <Truck className="h-6 w-6" />
                                                 </div>
                                                 <div>
                                                     <p className="text-sm font-black text-slate-900">{viewingRider.vehicle}</p>
-                                                    <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest mt-0.5">Eco-Friendly Ready</p>
+                                                    <p className="text-[9px] font-bold text-brand-600 uppercase tracking-widest mt-0.5">Eco-Friendly Ready</p>
                                                 </div>
                                             </div>
                                         </div>

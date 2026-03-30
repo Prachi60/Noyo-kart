@@ -13,6 +13,12 @@ const orderOtpSchema = new mongoose.Schema(
       ref: "Order",
       required: true,
     },
+    type: {
+      type: String,
+      enum: ["delivery", "return_pickup"],
+      default: "delivery",
+      index: true,
+    },
     codeHash: {
       type: String,
       required: true,

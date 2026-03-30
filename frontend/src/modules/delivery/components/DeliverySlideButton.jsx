@@ -16,16 +16,17 @@ import { deliveryApi } from "../services/deliveryApi";
  * @param {Function} props.onSuccess - Callback when OTP is successfully generated
  * @param {Function} props.onError - Callback when an error occurs
  * @param {string} props.label - Label text for the slide button (default: "SLIDE TO GENERATE OTP")
- * @param {string} props.bgColor - Background color class (default: "bg-green-600")
- * @param {string} props.bgColorLight - Light background color class (default: "bg-green-50")
+ * @param {string} props.bgColor - Background color class (default: "bg-brand-600")
+ * @param {string} props.bgColorLight - Light background color class (default: "bg-brand-50")
  */
 const DeliverySlideButton = ({
   orderId,
   onSuccess,
   onError,
+  isReturn = false,
   label = "SLIDE TO GENERATE OTP",
-  bgColor = "bg-green-600",
-  bgColorLight = "bg-green-50",
+  bgColor = "bg-brand-600",
+  bgColorLight = "bg-brand-50",
 }) => {
   const [isSlideComplete, setIsSlideComplete] = useState(false);
   const [dragX, setDragX] = useState(0);
@@ -51,9 +52,10 @@ const DeliverySlideButton = ({
     setIsLoading(true);
 
     try {
-      // Call generate-otp endpoint without location parameter
-      // The backend will use the delivery person's stored location
-      const response = await deliveryApi.generateDeliveryOtp(orderId);
+      // Call appropriate endpoint based on flow type
+      const response = isReturn 
+        ? await deliveryApi.requestReturnOtp(orderId, {})
+        : await deliveryApi.generateDeliveryOtp(orderId);
 
       // Handle success
       toast.success(response.data?.message || "OTP generated and sent to customer");
@@ -113,7 +115,7 @@ const DeliverySlideButton = ({
         <div className="absolute inset-0 flex items-center justify-center">
           <Loader2 className="animate-spin text-primary" size={24} />
           <span className="ml-2 text-sm font-medium text-gray-600">
-            Generating OTP...
+            {isReturn ? "Requesting OTP..." : "Generating OTP..."}
           </span>
         </div>
       )}

@@ -235,7 +235,7 @@ const OrderHistory = () => {
                           </span>
                           <span
                             className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${displayOrderStatus(order) === "delivered"
-                              ? "bg-green-100 text-green-700"
+                              ? "bg-brand-100 text-brand-700"
                               : displayOrderStatus(order) === "cancelled"
                                 ? "bg-red-100 text-red-700"
                                 : "bg-blue-100 text-blue-700"
@@ -249,7 +249,7 @@ const OrderHistory = () => {
                         </div>
                       </div>
                       <div className="text-right">
-                        <span className="block font-bold text-lg text-green-600">
+                        <span className="block font-bold text-lg text-brand-600">
                           ₹{Math.round((order.pricing?.total || 0) * 0.1)}
                         </span>
                         <span className="ds-caption text-gray-400">Earnings</span>
@@ -258,7 +258,7 @@ const OrderHistory = () => {
 
                     <div className="border-t border-b border-gray-50 py-3 my-3 space-y-2">
                       <div className="flex items-start">
-                        <div className="w-2 h-2 rounded-full bg-green-500 mt-1.5 mr-2 flex-shrink-0 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
+                        <div className="w-2 h-2 rounded-full bg-brand-500 mt-1.5 mr-2 flex-shrink-0 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
                         <div>
                           <p className="ds-caption text-gray-500 mb-0.5">Store</p>
                           <p className="text-sm font-medium text-gray-800 line-clamp-1">

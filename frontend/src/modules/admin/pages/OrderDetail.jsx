@@ -73,7 +73,7 @@ const OrderDetail = () => {
             case 'confirmed': return 'bg-blue-100 text-blue-600 border-blue-200';
             case 'packed': return 'bg-indigo-100 text-indigo-600 border-indigo-200';
             case 'out_for_delivery': return 'bg-purple-100 text-purple-600 border-purple-200';
-            case 'delivered': return 'bg-emerald-100 text-emerald-600 border-emerald-200';
+            case 'delivered': return 'bg-brand-100 text-brand-600 border-brand-200';
             case 'cancelled': return 'bg-rose-100 text-rose-600 border-rose-200';
             default: return 'bg-slate-100 text-slate-600 border-slate-200';
         }
@@ -149,7 +149,7 @@ const OrderDetail = () => {
                         Print Invoice
                     </button>
                     <button className="flex items-center gap-2 px-5 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl active:scale-95">
-                        <Download className="h-4 w-4 text-emerald-400" />
+                        <Download className="h-4 w-4 text-brand-400" />
                         Export Intelligence
                     </button>
                 </div>
@@ -212,7 +212,7 @@ const OrderDetail = () => {
                             </div>
                             <div className="flex items-center justify-between w-full max-w-[240px]">
                                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Delivery Fee</span>
-                                <span className="text-sm font-bold text-emerald-600">₹{order.pricing?.deliveryFee || 0}</span>
+                                <span className="text-sm font-bold text-brand-600">₹{order.pricing?.deliveryFee || 0}</span>
                             </div>
                             <div className="h-px w-full max-w-[240px] bg-slate-200 my-2" />
                             <div className="flex items-center justify-between w-full max-w-[240px]">
@@ -234,7 +234,7 @@ const OrderDetail = () => {
                             </div>
                             <div className="text-left">
                                 <h3 className="text-lg font-black text-slate-900 leading-tight">{order.seller?.shopName || 'Unknown Shop'}</h3>
-                                <p className="text-xs font-bold text-emerald-600 uppercase tracking-tighter">Verified Anchor Partner</p>
+                                <p className="text-xs font-bold text-brand-600 uppercase tracking-tighter">Verified Anchor Partner</p>
                                 <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">OWNER: {order.seller?.name}</p>
                             </div>
                         </div>
@@ -243,13 +243,13 @@ const OrderDetail = () => {
                     {/* Logistical Nodes */}
                     <Card className="border-none shadow-xl ring-1 ring-slate-100 bg-white rounded-xl p-6">
                         <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-8 flex items-center gap-3">
-                            <Navigation className="h-4 w-4 text-emerald-500" />
+                            <Navigation className="h-4 w-4 text-brand-500" />
                             Logistical Real-time State
                         </h3>
                         <div className="space-y-6 relative ml-4">
                             <div className="absolute top-0 bottom-0 left-[7.5px] w-0.5 bg-slate-100" />
                             <div className="flex gap-6 relative">
-                                <div className="h-4 w-4 rounded-full ring-4 ring-white z-10 mt-1 bg-emerald-500 shadow-lg shadow-emerald-200" />
+                                <div className="h-4 w-4 rounded-full ring-4 ring-white z-10 mt-1 bg-brand-500 shadow-lg shadow-brand-200" />
                                 <div className="flex-1 pb-4">
                                     <div className="flex items-center justify-between mb-1">
                                         <h4 className="text-xs font-black uppercase tracking-tight text-slate-900">
@@ -324,9 +324,9 @@ const OrderDetail = () => {
                             </div>
                             {order.address?.type === "Other" &&
                                 (order.address?.name || order.address?.phone) && (
-                                    <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 space-y-2">
+                                    <div className="p-4 bg-brand-50 rounded-2xl border border-brand-100 space-y-2">
                                         <div className="flex items-center justify-between gap-2 mb-1">
-                                            <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">
+                                            <span className="text-[10px] font-black text-brand-700 uppercase tracking-widest">
                                                 Recipient (Order For Someone Else)
                                             </span>
                                         </div>
@@ -334,7 +334,7 @@ const OrderDetail = () => {
                                             {order.address?.name}
                                         </p>
                                         {order.address?.phone && (
-                                            <p className="text-[11px] font-bold text-emerald-700 flex items-center gap-2">
+                                            <p className="text-[11px] font-bold text-brand-700 flex items-center gap-2">
                                                 <Phone className="h-3.5 w-3.5" />
                                                 {order.address.phone}
                                             </p>
@@ -358,7 +358,7 @@ const OrderDetail = () => {
                             <div className="flex items-center gap-3 mt-2">
                                 <div className="h-10 w-10 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center text-slate-300 overflow-hidden">
                                     {order.deliveryBoy ? (
-                                        <div className="h-full w-full flex items-center justify-center font-black text-slate-400 bg-emerald-50 ds-h3">{order.deliveryBoy.name.charAt(0)}</div>
+                                        <div className="h-full w-full flex items-center justify-center font-black text-slate-400 bg-brand-50 ds-h3">{order.deliveryBoy.name.charAt(0)}</div>
                                     ) : (
                                         <User className="h-5 w-5" />
                                     )}
@@ -375,14 +375,14 @@ const OrderDetail = () => {
                     <Card className="border-none shadow-xl ring-1 ring-slate-100 bg-white rounded-2xl overflow-hidden text-left">
                         <div className="p-6 bg-slate-900 text-white">
                             <h4 className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-white">
-                                <CreditCard className="h-4 w-4 text-emerald-400" />
+                                <CreditCard className="h-4 w-4 text-brand-400" />
                                 Payment Vector
                             </h4>
                         </div>
                         <div className="p-4 space-y-6">
                             <div className="flex justify-between items-center bg-slate-50 p-4 rounded-2xl">
                                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Protocol Summary</span>
-                                <Badge className={cn("border-none text-[8px] font-black uppercase", order.payment?.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700')}>
+                                <Badge className={cn("border-none text-[8px] font-black uppercase", order.payment?.status === 'completed' ? 'bg-brand-100 text-brand-700' : 'bg-amber-100 text-amber-700')}>
                                     {order.payment?.status || 'PENDING'}
                                 </Badge>
                             </div>

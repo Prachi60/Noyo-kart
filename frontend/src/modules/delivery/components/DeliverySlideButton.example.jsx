@@ -129,8 +129,8 @@ function OrderDetailsIntegrationExample({ order, phase }) {
         <DeliverySlideButton
           orderId={order.orderId}
           label="SLIDE TO GENERATE OTP"
-          bgColor="bg-green-700"
-          bgColorLight="bg-green-50"
+          bgColor="bg-brand-700"
+          bgColorLight="bg-brand-50"
           onSuccess={() => {
             // Navigate to OTP input screen
             navigate(`/delivery/confirm-delivery/${order.orderId}`);

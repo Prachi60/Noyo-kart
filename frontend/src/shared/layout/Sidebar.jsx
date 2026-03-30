@@ -15,14 +15,14 @@ const colorMap = {
     "text-amber-600 bg-amber-50 border-amber-100 group-hover:bg-amber-100/50",
   blue: "text-blue-600 bg-blue-50 border-blue-100 group-hover:bg-blue-100/50",
   emerald:
-    "text-emerald-600 bg-emerald-50 border-emerald-100 group-hover:bg-emerald-100/50",
+    "text-brand-600 bg-brand-50 border-brand-100 group-hover:bg-brand-100/50",
   violet:
     "text-violet-600 bg-violet-50 border-violet-100 group-hover:bg-violet-100/50",
   cyan: "text-cyan-600 bg-cyan-50 border-cyan-100 group-hover:bg-cyan-100/50",
   orange:
     "text-orange-600 bg-orange-50 border-orange-100 group-hover:bg-orange-100/50",
   green:
-    "text-green-600 bg-green-50 border-green-100 group-hover:bg-green-100/50",
+    "text-brand-600 bg-brand-50 border-brand-100 group-hover:bg-brand-100/50",
   sky: "text-sky-600 bg-sky-50 border-sky-100 group-hover:bg-sky-100/50",
   pink: "text-pink-600 bg-pink-50 border-pink-100 group-hover:bg-pink-100/50",
   fuchsia:
@@ -259,7 +259,7 @@ const SidebarContent = ({ items, title, onClose, openMenu, handleToggle, hovered
               <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary via-indigo-500 to-violet-600 flex items-center justify-center text-white font-black text-xs shadow-lg group-hover:scale-110 transition-all duration-500">
                 A
               </div>
-              <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-emerald-500 rounded-full border-2 border-[#0a0c10] shadow-sm animate-pulse"></div>
+              <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-brand-500 rounded-full border-2 border-[#0a0c10] shadow-sm animate-pulse"></div>
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-bold text-white truncate group-hover:text-primary transition-colors">

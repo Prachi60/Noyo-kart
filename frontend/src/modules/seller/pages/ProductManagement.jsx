@@ -439,8 +439,8 @@ const ProductManagement = () => {
             label: "Active Items",
             val: stats.active,
             icon: HiOutlineCheckCircle,
-            color: "text-emerald-600",
-            bg: "bg-emerald-50",
+            color: "text-brand-600",
+            bg: "bg-brand-50",
             status: "Active",
           },
           {
@@ -835,8 +835,8 @@ const ProductManagement = () => {
                   ))}
 
                   <div className="pt-8 px-4">
-                    <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
-                      <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest mb-1">
+                    <div className="p-4 bg-brand-50 rounded-2xl border border-brand-100">
+                      <p className="text-[9px] font-bold text-brand-600 uppercase tracking-widest mb-1">
                         Status
                       </p>
                       <select
@@ -844,7 +844,7 @@ const ProductManagement = () => {
                         onChange={(e) =>
                           setFormData({ ...formData, status: e.target.value })
                         }
-                        className="w-full bg-transparent border-none text-xs font-bold text-emerald-700 outline-none p-0 cursor-pointer focus:ring-0">
+                        className="w-full bg-transparent border-none text-xs font-bold text-brand-700 outline-none p-0 cursor-pointer focus:ring-0">
                         <option value="active">PUBLISHED</option>
                         <option value="inactive">DRAFT</option>
                       </select>
@@ -1135,12 +1135,12 @@ const ProductManagement = () => {
                               }} placeholder="Price" className="w-full bg-white px-3 py-2 rounded-xl text-xs ring-1 ring-slate-100 outline-none" />
                             </div>
                             <div className="space-y-1">
-                              <label className="text-[8px] font-bold text-emerald-400 uppercase tracking-widest ml-1">Sale Price</label>
+                              <label className="text-[8px] font-bold text-brand-400 uppercase tracking-widest ml-1">Sale Price</label>
                               <input type="number" value={v.salePrice} onChange={e => {
                                 const news = [...formData.variants];
                                 news[i].salePrice = e.target.value;
                                 setFormData({ ...formData, variants: news });
-                              }} placeholder="Sale" className="w-full bg-emerald-50/50 px-3 py-2 rounded-xl text-xs ring-1 ring-emerald-100 text-emerald-700 outline-none" />
+                              }} placeholder="Sale" className="w-full bg-brand-50/50 px-3 py-2 rounded-xl text-xs ring-1 ring-brand-100 text-brand-700 outline-none" />
                             </div>
                             <div className="space-y-1">
                               <label className="text-[8px] font-bold text-slate-600 uppercase tracking-widest ml-1">Stock</label>
@@ -1290,7 +1290,7 @@ const ProductManagement = () => {
                     <td className="px-6 py-4 text-center">
                       <div className="flex flex-col items-center">
                         <span className={cn("text-xs font-bold", v.salePrice > 0 ? "text-slate-600 line-through scale-90" : "text-slate-900")}>₹{v.price}</span>
-                        {v.salePrice > 0 && <span className="text-xs font-bold text-emerald-600">₹{v.salePrice}</span>}
+                        {v.salePrice > 0 && <span className="text-xs font-bold text-brand-600">₹{v.salePrice}</span>}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-center">

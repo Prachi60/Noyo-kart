@@ -375,9 +375,9 @@
 }
 
 .ds-badge-success {
-  background-color: rgb(240 253 244);
-  color: rgb(21 128 61);
-  border: 1px solid rgb(187 247 208);
+  background-color: rgb(236 254 255); /* Cyan 50 */
+  color: rgb(8 145 178); /* Cyan 700 */
+  border: 1px solid rgb(165 243 252); /* Cyan 200 */
 }
 
 .ds-badge-warning {

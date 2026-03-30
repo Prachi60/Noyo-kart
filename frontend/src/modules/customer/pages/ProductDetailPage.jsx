@@ -205,7 +205,7 @@ const ProductDetailPage = () => {
                     {/* Order Controls */}
                     <div className="flex flex-col sm:flex-row items-center gap-6 p-6 bg-slate-50 rounded-[2.5rem] border border-slate-100">
                         {quantity > 0 ? (
-                            <div className="flex items-center bg-[#61dafbaa] text-white rounded-2xl h-16 w-full sm:w-auto px-2 shadow-xl shadow-green-100">
+                            <div className="flex items-center bg-[#61dafbaa] text-white rounded-2xl h-16 w-full sm:w-auto px-2 shadow-xl shadow-brand-100">
                                 <button
                                     onClick={() => updateQuantity(product.id, -1)}
                                     className="w-12 h-12 flex items-center justify-center hover:bg-white/20 rounded-xl transition-all"
@@ -226,7 +226,7 @@ const ProductDetailPage = () => {
                                     addToCart(product);
                                     showToast(`${product.name} added to cart`, 'success');
                                 }}
-                                className="h-16 w-full sm:w-64 bg-[#61dafbaa] hover:bg-[#0b721b] text-white text-lg font-black rounded-2xl shadow-xl shadow-green-100 transition-all hover:-translate-y-1"
+                                className="h-16 w-full sm:w-64 bg-[#61dafbaa] hover:bg-[#0b721b] text-white text-lg font-black rounded-2xl shadow-xl shadow-brand-100 transition-all hover:-translate-y-1"
                             >
                                 <Plus className="mr-2" size={24} strokeWidth={3} /> ADD TO CART
                             </Button>

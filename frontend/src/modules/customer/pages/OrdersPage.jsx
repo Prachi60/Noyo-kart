@@ -28,7 +28,7 @@ const OrdersPage = () => {
         return (
             <div className="min-h-screen flex items-center justify-center bg-slate-50">
                 <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-white shadow-sm border border-slate-100">
-                    <Loader2 className="animate-spin text-emerald-600" size={22} />
+                    <Loader2 className="animate-spin text-brand-600" size={22} />
                     <span className="text-sm font-medium text-slate-600">Loading your orders…</span>
                 </div>
             </div>
@@ -102,7 +102,7 @@ const OrdersPage = () => {
                                     <span
                                         className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${
                                             legacy === 'delivered'
-                                                ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                                                ? 'bg-brand-50 text-brand-700 border-brand-100'
                                                 : legacy === 'cancelled'
                                                     ? 'bg-rose-50 text-rose-700 border-rose-100'
                                                     : 'bg-sky-50 text-sky-700 border-sky-100'
@@ -113,7 +113,7 @@ const OrdersPage = () => {
                                                 size={9}
                                                 className={`${
                                                     legacy === 'delivered'
-                                                        ? 'text-emerald-600'
+                                                        ? 'text-brand-600'
                                                         : legacy === 'cancelled'
                                                             ? 'text-rose-500'
                                                             : 'text-sky-500'

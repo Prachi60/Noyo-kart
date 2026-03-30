@@ -69,7 +69,7 @@ const HelpSupport = () => {
             <p className="text-xs text-gray-500 mt-1">Wait time: ~2 mins</p>
           </Card>
           <Card className="p-4 flex flex-col items-center justify-center text-center cursor-pointer hover:shadow-md transition-shadow">
-            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-3">
+            <div className="w-12 h-12 bg-brand-100 rounded-full flex items-center justify-center text-brand-600 mb-3">
               <Phone size={24} />
             </div>
             <h4 className="font-bold text-gray-800">Call Support</h4>

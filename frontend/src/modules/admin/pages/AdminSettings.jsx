@@ -185,8 +185,8 @@ const AdminSettings = () => {
                         onClick={handleSave}
                         disabled={isSaving}
                         className={cn(
-                            "flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-emerald-100 active:scale-95",
-                            isSaving ? "opacity-70 cursor-wait" : "hover:bg-emerald-700"
+                            "flex items-center gap-2 px-6 py-3 bg-brand-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-brand-100 active:scale-95",
+                            isSaving ? "opacity-70 cursor-wait" : "hover:bg-brand-700"
                         )}
                     >
                         {isSaving ? (
@@ -209,11 +209,11 @@ const AdminSettings = () => {
                             className={cn(
                                 "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-left",
                                 activeTab === tab.id
-                                    ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 shadow-sm"
+                                    ? "bg-brand-50 text-brand-700 ring-1 ring-brand-200 shadow-sm"
                                     : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
                             )}
                         >
-                            <tab.icon className={cn("h-4 w-4", activeTab === tab.id ? "text-emerald-600" : "text-slate-400")} />
+                            <tab.icon className={cn("h-4 w-4", activeTab === tab.id ? "text-brand-600" : "text-slate-400")} />
                             {tab.label}
                         </button>
                     ))}
@@ -245,7 +245,7 @@ const AdminSettings = () => {
                                         type="text"
                                         value={settings.appName}
                                         onChange={(e) => handleInputChange('appName', e.target.value)}
-                                        className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all"
+                                        className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-brand-500/10 transition-all"
                                     />
                                 </div>
                                 <div className="space-y-3">
@@ -256,7 +256,7 @@ const AdminSettings = () => {
                                             type="email"
                                             value={settings.supportEmail}
                                             onChange={(e) => handleInputChange('supportEmail', e.target.value)}
-                                            className="w-full pl-12 pr-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all"
+                                            className="w-full pl-12 pr-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-brand-500/10 transition-all"
                                         />
                                     </div>
                                 </div>
@@ -268,7 +268,7 @@ const AdminSettings = () => {
                                             type="text"
                                             value={settings.supportPhone}
                                             onChange={(e) => handleInputChange('supportPhone', e.target.value)}
-                                            className="w-full pl-12 pr-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all"
+                                            className="w-full pl-12 pr-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-brand-500/10 transition-all"
                                         />
                                     </div>
                                 </div>
@@ -278,7 +278,7 @@ const AdminSettings = () => {
                                         type="text"
                                         value={settings.currencySymbol}
                                         onChange={(e) => handleInputChange('currencySymbol', e.target.value)}
-                                        className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all"
+                                        className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-brand-500/10 transition-all"
                                     />
                                 </div>
                             </div>
@@ -306,11 +306,11 @@ const AdminSettings = () => {
                                             onKeyDown={(e) => e.key === 'Enter' && !logoUploading && logoInputRef.current?.click()}
                                             className={cn(
                                                 "h-40 w-full rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-all group overflow-hidden",
-                                                settings.logoUrl ? "border-slate-200 bg-slate-50/50" : "border-slate-200 hover:border-emerald-500/50 hover:bg-emerald-50/10 cursor-pointer"
+                                                settings.logoUrl ? "border-slate-200 bg-slate-50/50" : "border-slate-200 hover:border-brand-500/50 hover:bg-brand-50/10 cursor-pointer"
                                             )}
                                         >
                                             {logoUploading ? (
-                                                <Loader2 className="h-10 w-10 text-emerald-600 animate-spin" />
+                                                <Loader2 className="h-10 w-10 text-brand-600 animate-spin" />
                                             ) : settings.logoUrl ? (
                                                 <>
                                                     <img src={settings.logoUrl} alt="App logo" className="max-h-24 w-auto object-contain" />
@@ -322,13 +322,13 @@ const AdminSettings = () => {
                                             ) : (
                                                 <>
                                                     <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                                        <Upload className="h-5 w-5 text-slate-400 group-hover:text-emerald-600" />
+                                                        <Upload className="h-5 w-5 text-slate-400 group-hover:text-brand-600" />
                                                     </div>
-                                                    <span className="text-xs font-bold text-slate-400 group-hover:text-emerald-600">Click to upload logo</span>
+                                                    <span className="text-xs font-bold text-slate-400 group-hover:text-brand-600">Click to upload logo</span>
                                                 </>
                                             )}
                                         </div>
-                                        <input type="url" value={settings.logoUrl} onChange={(e) => handleInputChange('logoUrl', e.target.value)} placeholder="Or paste logo URL" className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500/20" />
+                                        <input type="url" value={settings.logoUrl} onChange={(e) => handleInputChange('logoUrl', e.target.value)} placeholder="Or paste logo URL" className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-brand-500/20" />
                                     </div>
                                     <div className="space-y-3">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Favicon</label>
@@ -339,11 +339,11 @@ const AdminSettings = () => {
                                             onKeyDown={(e) => e.key === 'Enter' && !faviconUploading && faviconInputRef.current?.click()}
                                             className={cn(
                                                 "h-40 w-full rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-all group overflow-hidden",
-                                                settings.faviconUrl ? "border-slate-200 bg-slate-50/50" : "border-slate-200 hover:border-emerald-500/50 hover:bg-emerald-50/10 cursor-pointer"
+                                                settings.faviconUrl ? "border-slate-200 bg-slate-50/50" : "border-slate-200 hover:border-brand-500/50 hover:bg-brand-50/10 cursor-pointer"
                                             )}
                                         >
                                             {faviconUploading ? (
-                                                <Loader2 className="h-10 w-10 text-emerald-600 animate-spin" />
+                                                <Loader2 className="h-10 w-10 text-brand-600 animate-spin" />
                                             ) : settings.faviconUrl ? (
                                                 <>
                                                     <img src={settings.faviconUrl} alt="Favicon" className="max-h-16 w-auto object-contain" />
@@ -355,13 +355,13 @@ const AdminSettings = () => {
                                             ) : (
                                                 <>
                                                     <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                                        <Upload className="h-5 w-5 text-slate-400 group-hover:text-emerald-600" />
+                                                        <Upload className="h-5 w-5 text-slate-400 group-hover:text-brand-600" />
                                                     </div>
-                                                    <span className="text-xs font-bold text-slate-400 group-hover:text-emerald-600">Click to upload favicon</span>
+                                                    <span className="text-xs font-bold text-slate-400 group-hover:text-brand-600">Click to upload favicon</span>
                                                 </>
                                             )}
                                         </div>
-                                        <input type="url" value={settings.faviconUrl} onChange={(e) => handleInputChange('faviconUrl', e.target.value)} placeholder="Or paste favicon URL" className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500/20" />
+                                        <input type="url" value={settings.faviconUrl} onChange={(e) => handleInputChange('faviconUrl', e.target.value)} placeholder="Or paste favicon URL" className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-brand-500/20" />
                                     </div>
                                 </div>
                                 <div className="space-y-3">
@@ -377,7 +377,7 @@ const AdminSettings = () => {
                                             type="text"
                                             value={settings.primaryColor}
                                             onChange={(e) => handleInputChange('primaryColor', e.target.value)}
-                                            className="w-full px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all font-mono"
+                                            className="w-full px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-brand-500/10 transition-all font-mono"
                                         />
                                     </div>
                                 </div>
@@ -394,7 +394,7 @@ const AdminSettings = () => {
                                             type="text"
                                             value={settings.secondaryColor}
                                             onChange={(e) => handleInputChange('secondaryColor', e.target.value)}
-                                            className="w-full px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all font-mono"
+                                            className="w-full px-5 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-brand-500/10 transition-all font-mono"
                                         />
                                     </div>
                                 </div>
@@ -418,7 +418,7 @@ const AdminSettings = () => {
                                             type="text"
                                             value={settings.companyName}
                                             onChange={(e) => handleInputChange('companyName', e.target.value)}
-                                            className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all"
+                                            className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-brand-500/10 transition-all"
                                         />
                                     </div>
                                     <div className="space-y-3">
@@ -429,7 +429,7 @@ const AdminSettings = () => {
                                                 type="text"
                                                 value={settings.taxId}
                                                 onChange={(e) => handleInputChange('taxId', e.target.value)}
-                                                className="w-full pl-12 pr-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all"
+                                                className="w-full pl-12 pr-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-brand-500/10 transition-all"
                                             />
                                         </div>
                                     </div>
@@ -442,7 +442,7 @@ const AdminSettings = () => {
                                             rows={3}
                                             value={settings.address}
                                             onChange={(e) => handleInputChange('address', e.target.value)}
-                                            className="w-full pl-12 pr-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all resize-none"
+                                            className="w-full pl-12 pr-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-brand-500/10 transition-all resize-none"
                                         />
                                     </div>
                                 </div>
@@ -470,7 +470,7 @@ const AdminSettings = () => {
                                                 type="url"
                                                 value={settings.facebook}
                                                 onChange={(e) => handleInputChange('facebook', e.target.value)}
-                                                className="w-full pl-12 pr-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all"
+                                                className="w-full pl-12 pr-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-brand-500/10 transition-all"
                                             />
                                         </div>
                                     </div>
@@ -482,7 +482,7 @@ const AdminSettings = () => {
                                                 type="url"
                                                 value={settings.twitter}
                                                 onChange={(e) => handleInputChange('twitter', e.target.value)}
-                                                className="w-full pl-12 pr-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all"
+                                                className="w-full pl-12 pr-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-brand-500/10 transition-all"
                                             />
                                         </div>
                                     </div>
@@ -494,7 +494,7 @@ const AdminSettings = () => {
                                                 type="url"
                                                 value={settings.instagram}
                                                 onChange={(e) => handleInputChange('instagram', e.target.value)}
-                                                className="w-full pl-12 pr-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all"
+                                                className="w-full pl-12 pr-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-brand-500/10 transition-all"
                                             />
                                         </div>
                                     </div>
@@ -506,7 +506,7 @@ const AdminSettings = () => {
                                                 type="url"
                                                 value={settings.youtube}
                                                 onChange={(e) => handleInputChange('youtube', e.target.value)}
-                                                className="w-full pl-12 pr-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all"
+                                                className="w-full pl-12 pr-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-brand-500/10 transition-all"
                                             />
                                         </div>
                                     </div>
@@ -515,12 +515,12 @@ const AdminSettings = () => {
                                     <div className="space-y-3">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Play Store Link (Android)</label>
                                         <div className="relative group">
-                                            <Smartphone className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-green-600" />
+                                            <Smartphone className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-brand-600" />
                                             <input
                                                 type="url"
                                                 value={settings.playStoreLink}
                                                 onChange={(e) => handleInputChange('playStoreLink', e.target.value)}
-                                                className="w-full pl-12 pr-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all"
+                                                className="w-full pl-12 pr-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-brand-500/10 transition-all"
                                             />
                                         </div>
                                     </div>
@@ -532,7 +532,7 @@ const AdminSettings = () => {
                                                 type="url"
                                                 value={settings.appStoreLink}
                                                 onChange={(e) => handleInputChange('appStoreLink', e.target.value)}
-                                                className="w-full pl-12 pr-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all"
+                                                className="w-full pl-12 pr-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-brand-500/10 transition-all"
                                             />
                                         </div>
                                     </div>
@@ -556,7 +556,7 @@ const AdminSettings = () => {
                                         type="text"
                                         value={settings.metaTitle}
                                         onChange={(e) => handleInputChange('metaTitle', e.target.value)}
-                                        className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all"
+                                        className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-brand-500/10 transition-all"
                                     />
                                 </div>
                                 <div className="space-y-3">
@@ -565,7 +565,7 @@ const AdminSettings = () => {
                                         rows={3}
                                         value={settings.metaDescription}
                                         onChange={(e) => handleInputChange('metaDescription', e.target.value)}
-                                        className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all resize-none"
+                                        className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-brand-500/10 transition-all resize-none"
                                     />
                                     <p className="text-[10px] font-bold text-slate-400 italic text-right">Recommended length: 150-160 characters</p>
                                 </div>
@@ -575,7 +575,7 @@ const AdminSettings = () => {
                                         type="text"
                                         value={settings.metaKeywords}
                                         onChange={(e) => handleInputChange('metaKeywords', e.target.value)}
-                                        className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all"
+                                        className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-brand-500/10 transition-all"
                                         placeholder="keyword1, keyword2, keyword3"
                                     />
                                     <p className="text-[10px] font-bold text-slate-400 italic text-right">Separate keywords with commas</p>

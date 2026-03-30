@@ -127,14 +127,14 @@ const AdvancedAnalytics = () => {
                         <div className="flex items-center justify-between mb-4">
                             <div className={cn("p-2.5 rounded-2xl",
                                 goal.color === 'indigo' && "bg-indigo-50 text-indigo-600",
-                                goal.color === 'emerald' && "bg-emerald-50 text-emerald-600",
+                                goal.color === 'emerald' && "bg-brand-50 text-brand-600",
                                 goal.color === 'amber' && "bg-amber-50 text-amber-600",
                                 goal.color === 'rose' && "bg-rose-50 text-rose-600",
                             )}>
                                 <goal.icon className="h-6 w-6" />
                             </div>
                             <div className={cn("flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-black",
-                                goal.trend.startsWith('+') ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
+                                goal.trend.startsWith('+') ? "bg-brand-50 text-brand-600" : "bg-rose-50 text-rose-600"
                             )}>
                                 {goal.trend.startsWith('+') ? <HiOutlineArrowTrendingUp className="h-3 w-3" /> : <HiOutlineArrowTrendingDown className="h-3 w-3" />}
                                 {goal.trend}
@@ -145,7 +145,7 @@ const AdvancedAnalytics = () => {
                         <div className="mt-4 h-1 w-full bg-slate-50 rounded-full overflow-hidden">
                             <div className={cn("h-full rounded-full animate-progress",
                                 goal.color === 'indigo' && "bg-indigo-500",
-                                goal.color === 'emerald' && "bg-emerald-500",
+                                goal.color === 'emerald' && "bg-brand-500",
                                 goal.color === 'amber' && "bg-amber-500",
                                 goal.color === 'rose' && "bg-rose-500",
                             )} style={{ width: '70%' }} />
@@ -276,7 +276,7 @@ const AdvancedAnalytics = () => {
                                 <div className="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden">
                                     <div
                                         className={cn("h-full rounded-full transition-all duration-1000",
-                                            item.load > 80 ? "bg-rose-500" : item.load > 60 ? "bg-amber-500" : "bg-emerald-500"
+                                            item.load > 80 ? "bg-rose-500" : item.load > 60 ? "bg-amber-500" : "bg-brand-500"
                                         )}
                                         style={{ width: `${item.load}%` }}
                                     />
@@ -294,7 +294,7 @@ const AdvancedAnalytics = () => {
                             <div>
                                 <div className="flex items-end justify-between mb-2">
                                     <h5 className="text-3xl font-black">78.4%</h5>
-                                    <Badge variant="success" className="bg-emerald-500/20 text-emerald-400 border-none">+4.2%</Badge>
+                                    <Badge variant="success" className="bg-brand-500/20 text-brand-400 border-none">+4.2%</Badge>
                                 </div>
                                 <p className="text-[10px] font-black opacity-50 uppercase tracking-[0.2em]">Customers Who Return</p>
                             </div>
@@ -340,7 +340,7 @@ const AdvancedAnalytics = () => {
                                     <p className="text-[9px] font-bold text-slate-400 group-hover:text-white/50">{zone.sales} Total GMV</p>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-xs font-black text-emerald-500 group-hover:text-emerald-400">{zone.growth}</p>
+                                    <p className="text-xs font-black text-brand-500 group-hover:text-brand-400">{zone.growth}</p>
                                     <span className="text-[8px] font-black opacity-40 uppercase tracking-widest">{zone.status}</span>
                                 </div>
                             </div>

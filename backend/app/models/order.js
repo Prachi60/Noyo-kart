@@ -90,6 +90,10 @@ const orderSchema = new mongoose.Schema(
         default: 0,
       },
       total: Number,
+      walletAmount: {
+        type: Number,
+        default: 0,
+      },
     },
     paymentMode: {
       type: String,
@@ -226,6 +230,7 @@ const orderSchema = new mongoose.Schema(
       codCollectedAmount: { type: Number, default: 0 },
       codRemittedAmount: { type: Number, default: 0 },
       codPendingAmount: { type: Number, default: 0 },
+      walletAmount: { type: Number, default: 0 },
       distanceKmActual: { type: Number, default: 0 },
       distanceKmRounded: { type: Number, default: 0 },
       snapshots: {

@@ -256,7 +256,7 @@ const AdminProfile = () => {
                                     <div className="space-y-3">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">New Password</label>
                                         <div className="relative group">
-                                            <Lock className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
+                                            <Lock className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-brand-500" />
                                             <input
                                                 type="password"
                                                 value={security.newPassword}
@@ -269,7 +269,7 @@ const AdminProfile = () => {
                                     <div className="space-y-3">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Confirm New Password</label>
                                         <div className="relative group">
-                                            <Lock className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
+                                            <Lock className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-brand-500" />
                                             <input
                                                 type="password"
                                                 value={security.confirmPassword}

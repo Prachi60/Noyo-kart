@@ -128,8 +128,8 @@ const BillingCharges = () => {
                         onClick={handleSave}
                         disabled={isSaving}
                         className={cn(
-                            "flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-emerald-100 active:scale-95",
-                            isSaving ? "opacity-70 cursor-wait" : "hover:bg-emerald-700"
+                            "flex items-center gap-2 px-6 py-3 bg-brand-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-brand-100 active:scale-95",
+                            isSaving ? "opacity-70 cursor-wait" : "hover:bg-brand-700"
                         )}
                     >
                         {isSaving ? (
@@ -308,7 +308,7 @@ const BillingCharges = () => {
                                             onChange={(e) =>
                                                 setReturnDeliveryCommission(Number(e.target.value) || 0)
                                             }
-                                            className="w-full pl-10 pr-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-black text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all"
+                                            className="w-full pl-10 pr-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-black text-slate-900 outline-none focus:ring-2 focus:ring-brand-500/10 transition-all"
                                         />
                                     </div>
                                     <p className="text-[10px] font-bold text-slate-400">

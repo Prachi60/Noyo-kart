@@ -380,7 +380,7 @@ const MainLocationHeader = ({
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
                 style={{ backgroundColor: searchBarBg }}
-                className="rounded-full px-4 h-11 shadow-md flex items-center border border-white/50 transition-all duration-200 focus-within:ring-2 focus-within:ring-emerald-400/60 cursor-pointer">
+                className="rounded-full px-4 h-11 shadow-md flex items-center border border-white/50 transition-all duration-200 focus-within:ring-2 focus-within:ring-cyan-400/60 cursor-pointer">
                 <SearchIcon sx={{ color: "#000000", fontSize: 20 }} />
                 <input
                   type="text"
@@ -410,7 +410,7 @@ const MainLocationHeader = ({
                 onClick={() => navigate("/checkout")}
                 className="text-slate-900 hover:text-slate-700 transition-all relative group">
                 <ShoppingCartOutlinedIcon sx={{ fontSize: 24 }} />
-                <span className="absolute -top-1.5 -right-1.5 bg-yellow-400 text-emerald-900 text-[9px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center border-2 border-green-800 shadow-sm transition-transform group-hover:-translate-y-0.5">
+                <span className="absolute -top-1.5 -right-1.5 bg-yellow-400 text-cyan-900 text-[9px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center border-2 border-cyan-800 shadow-sm transition-transform group-hover:-translate-y-0.5">
                   0
                 </span>
               </motion.button>
@@ -478,7 +478,7 @@ const MainLocationHeader = ({
               onClick={handleSearchClick}
               whileTap={{ scale: 0.98 }}
               style={{ backgroundColor: searchBarBg }}
-              className="flex-1 rounded-[10px] px-3 h-10 shadow-md flex items-center border border-white/50 transition-all duration-200 focus-within:ring-2 focus-within:ring-emerald-400/60 cursor-pointer">
+              className="flex-1 rounded-[10px] px-3 h-10 shadow-md flex items-center border border-white/50 transition-all duration-200 focus-within:ring-2 focus-within:ring-cyan-400/60 cursor-pointer">
               <SearchIcon sx={{ color: "#000000", fontSize: 18 }} />
               <input
                 type="text"

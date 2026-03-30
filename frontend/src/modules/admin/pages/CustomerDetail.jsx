@@ -196,7 +196,7 @@ const CustomerDetail = () => {
                             <img src={customer.avatar} alt="" className="h-32 w-32 rounded-xl ring-4 ring-slate-50 shadow-lg bg-slate-100" />
                             <div className={cn(
                                 "absolute -bottom-1 -right-1 h-5 w-5 rounded-full ring-4 ring-white shadow-sm",
-                                customer.status === 'active' ? "bg-emerald-500" : "bg-rose-500"
+                                customer.status === 'active' ? "bg-brand-500" : "bg-rose-500"
                             )}></div>
                         </div>
                         <div className="flex-1 text-center md:text-left space-y-6">
@@ -216,7 +216,7 @@ const CustomerDetail = () => {
                                 ].map((stat, i) => (
                                     <div key={i} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col items-center justify-center text-center">
                                         <div className={cn("p-2 rounded-full mb-2",
-                                            stat.color === 'emerald' && 'bg-emerald-100 text-emerald-600',
+                                            stat.color === 'emerald' && 'bg-brand-100 text-brand-600',
                                             stat.color === 'blue' && 'bg-blue-100 text-blue-600',
                                             stat.color === 'indigo' && 'bg-indigo-100 text-indigo-600',
                                             stat.color === 'fuchsia' && 'bg-fuchsia-100 text-fuchsia-600',

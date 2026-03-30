@@ -13,7 +13,7 @@ const banners = [
         badgeColor: "bg-orange-500 text-white",
         title: "Fresh",
         highlight: "Vegetables",
-        highlightColor: "text-green-300",
+        highlightColor: "text-brand-300",
         subtitle: "Hand-picked daily for maximum freshness and taste.",
         cta: "Shop Veggies"
     },

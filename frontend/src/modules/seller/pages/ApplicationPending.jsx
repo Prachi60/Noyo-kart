@@ -86,7 +86,7 @@ const ApplicationPending = () => {
           ) : null}
 
           {!isRejected ? (
-            <div className="mt-6 rounded-2xl border border-emerald-300/20 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-100 flex items-start gap-3">
+            <div className="mt-6 rounded-2xl border border-brand-300/20 bg-brand-400/10 px-4 py-3 text-sm text-brand-100 flex items-start gap-3">
               <CheckCircle2 className="h-5 w-5 mt-0.5 shrink-0" />
               <p className="font-medium">
                 Approval usually takes less than 24 hours. You can return to login and try again later.

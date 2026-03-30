@@ -33,6 +33,14 @@ const getPublicStatusStage = (internalStep) => {
   return 1;
 };
 
+const orderOfReturn = (s) => {
+  if (!s || s === "none") return 1;
+  const lower = s.toLowerCase();
+  if (lower === "refund_completed" || lower === "return_rejected" || lower === "returned") return 4;
+  if (lower === "return_in_transit") return 2;
+  return 1; // return_pickup_assigned or return_approved or return_requested
+};
+
 const PUBLIC_STATUS_STEPS = [
   { id: 1, label: "Confirmed" },
   { id: 2, label: "Out for Delivery" },
@@ -41,6 +49,14 @@ const PUBLIC_STATUS_STEPS = [
 
 const getPersistedRiderStep = (order) => {
   if (!order) return 1;
+
+  // Handle Return Flow Steps
+  if (order.returnStatus && order.returnStatus !== "none") {
+    const rs = order.returnStatus.toLowerCase();
+    if (rs === "refund_completed" || rs === "return_rejected" || rs === "returned") return 4;
+    if (rs === "return_in_transit") return 2;
+    if (rs === "return_pickup_assigned") return 1;
+  }
 
   const workflowStatus = String(order.workflowStatus || "").toUpperCase();
   const legacyStatus = String(order.status || "").toLowerCase();
@@ -163,40 +179,81 @@ const OrderDetails = () => {
     return () => clearInterval(iv);
   }, []);
 
-  const steps = [
-    {
-      id: 1,
-      label: "Navigate to Store",
-      action: "ARRIVED AT STORE",
-      color: "bg-blue-600",
-      bg: "bg-blue-50",
-      text: "text-blue-600",
-    },
-    {
-      id: 2,
-      label: "At Store",
-      action: "PICKED UP ORDER",
-      color: "bg-orange-500",
-      bg: "bg-orange-50",
-      text: "text-orange-600",
-    },
-    {
-      id: 3,
-      label: "Start Delivery",
-      action: "START DELIVERY",
-      color: "bg-green-600",
-      bg: "bg-green-50",
-      text: "text-green-600",
-    },
-    {
-      id: 4,
-      label: "Delivering",
-      action: "DELIVERED",
-      color: "bg-green-700",
-      bg: "bg-green-50",
-      text: "text-green-700",
-    },
-  ];
+  const steps = useMemo(() => {
+    const isReturn = order?.returnStatus && order.returnStatus !== "none";
+
+    if (isReturn) {
+      return [
+        {
+          id: 1,
+          label: "Navigate to Customer",
+          action: "PICKED UP FROM CUSTOMER",
+          color: "bg-blue-600",
+          bg: "bg-blue-50",
+          text: "text-blue-600",
+        },
+        {
+          id: 2,
+          label: "In Transit to Seller",
+          action: "RETURNED TO SELLER",
+          color: "bg-orange-500",
+          bg: "bg-orange-50",
+          text: "text-orange-600",
+        },
+        {
+          id: 3,
+          label: "Returned",
+          action: "COMPLETED",
+          color: "bg-brand-600",
+          bg: "bg-brand-50",
+          text: "text-brand-600",
+        },
+        {
+          id: 4,
+          label: "Finished",
+          action: "DONE",
+          color: "bg-brand-700",
+          bg: "bg-brand-50",
+          text: "text-brand-700",
+        },
+      ];
+    }
+
+    return [
+      {
+        id: 1,
+        label: "Navigate to Store",
+        action: "ARRIVED AT STORE",
+        color: "bg-blue-600",
+        bg: "bg-blue-50",
+        text: "text-blue-600",
+      },
+      {
+        id: 2,
+        label: "At Store",
+        action: "PICKED UP ORDER",
+        color: "bg-orange-500",
+        bg: "bg-orange-50",
+        text: "text-orange-600",
+      },
+      {
+        id: 3,
+        label: "Start Delivery",
+        action: "START DELIVERY",
+        color: "bg-brand-600",
+        bg: "bg-brand-50",
+        text: "text-brand-600",
+      },
+      {
+        id: 4,
+        label: "Delivering",
+        action: "DELIVERED",
+        color: "bg-brand-700",
+        bg: "bg-brand-50",
+        text: "text-brand-700",
+      },
+    ];
+  }, [order?.returnStatus]);
 
   const publicStatusStage = getPublicStatusStage(step);
   const cachedRiderLocation = getCachedDeliveryPartnerLocation(30 * 60 * 1000);
@@ -269,10 +326,19 @@ const OrderDetails = () => {
       // If this is a return pickup flow, drive returnStatus instead of main status
       if (order?.returnStatus && order.returnStatus !== "none") {
         let nextReturnStatus = order.returnStatus;
+        
+        // Return Flow: return_pickup_assigned -> return_in_transit -> returned
         if (order.returnStatus === "return_pickup_assigned") {
-          nextReturnStatus = "return_in_transit";
+           // This step usually means "Arrived at Customer"
+           // We show OTP button instead of direct advance if it's pickup time.
+           // However, if we just want to mark arrived:
+           toast.info("Please request OTP from customer to confirm pickup.");
+           return;
         } else if (order.returnStatus === "return_in_transit") {
           nextReturnStatus = "returned";
+        } else {
+          toast.error("Process already completed");
+          return;
         }
 
         const res = await deliveryApi.updateReturnStatus(order.orderId, {
@@ -280,10 +346,13 @@ const OrderDetails = () => {
         });
         const updated = res.data.result;
         setOrder((prev) => ({ ...(prev || {}), ...updated }));
-        toast.success(`${currentStep.action} Confirmed!`);
+        toast.success("Return status updated successfully!");
 
         if (nextReturnStatus === "returned") {
+          setStep(4);
           navigate("/delivery/dashboard");
+        } else {
+          setStep(orderOfReturn(nextReturnStatus));
         }
       } else {
         const location = await new Promise((resolve, reject) => {
@@ -322,8 +391,9 @@ const OrderDetails = () => {
         window.scrollTo({ top: 0, behavior: "smooth" });
       }
     } catch (error) {
-      console.error("Failed to update return status", error);
-      toast.error("Failed to update status");
+      console.error("Failed to update status", error);
+      const message = error.response?.data?.message || "Failed to update status";
+      toast.error(message);
     }
   };
 
@@ -376,6 +446,9 @@ const OrderDetails = () => {
     console.error("OTP validation error:", error);
   };
 
+  const isReturn = order?.returnStatus && order.returnStatus !== "none";
+  const isReturnPickupStep = isReturn && order.returnStatus === 'return_pickup_assigned';
+
   // Determine current phase for map
   const currentPhase = step <= 2 ? "pickup" : "delivery";
 
@@ -414,7 +487,7 @@ const OrderDetails = () => {
                 ? "bg-blue-100 text-blue-700"
                 : publicStatusStage === 2
                 ? "bg-amber-100 text-amber-700"
-                : "bg-emerald-100 text-emerald-700"
+                : "bg-brand-100 text-brand-700"
             }`}
           >
             {publicStatusStage === 1
@@ -426,8 +499,8 @@ const OrderDetails = () => {
           {(order.payment?.method?.toLowerCase() === "cash" ||
             order.payment?.method?.toLowerCase() === "cod") &&
             step < 4 && (
-              <span className="mt-1 bg-orange-600 text-white text-[10px] font-black px-2 py-0.5 rounded shadow-sm animate-pulse">
-                COLLECT CASH: ₹{order.pricing?.total}
+              <span className={`mt-1 text-white text-[10px] font-black px-2 py-0.5 rounded shadow-sm animate-pulse ${isReturn ? "bg-red-600" : "bg-orange-600"}`}>
+                {isReturn ? "PAY CASH TO CUSTOMER: ₹" : "COLLECT CASH: ₹"}{Math.max(0, (order.pricing?.total || 0) - (order.pricing?.walletAmount || 0))}
               </span>
             )}
         </div>
@@ -590,7 +663,7 @@ const OrderDetails = () => {
                           order.payment?.method?.toLowerCase() === "cash" ||
                           order.payment?.method?.toLowerCase() === "cod"
                             ? "bg-orange-50 text-orange-700 border-orange-200"
-                            : "bg-green-50 text-green-700 border-green-200"
+                            : "bg-brand-50 text-brand-700 border-brand-200"
                         }`}
                       >
                         {order.payment?.method?.toUpperCase() || "PENDING"}
@@ -692,17 +765,24 @@ const OrderDetails = () => {
         </p>
       </motion.div>
 
-      {step === 3 && !showOtpInput && (
+      {(step === 3 || isReturnPickupStep) && !showOtpInput && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
           <Card className="p-6 rounded-3xl shadow-sm border border-slate-100">
             <div className="flex items-center mb-4 text-gray-800">
               <ShieldCheck className="mr-2 text-primary" size={24} />
-              <h3 className="font-bold text-lg">Generate Delivery OTP</h3>
+              <h3 className="font-bold text-lg">{isReturn ? "Verify Return OTP" : "Generate Delivery OTP"}</h3>
             </div>
             <p className="text-gray-500 text-sm mb-4">
-              Slide to generate an OTP for the customer. You must be within 0-120 meters of the delivery location.
+              {isReturn 
+                ? "Slide to request OTP for product collection from customer." 
+                : "Slide to generate an OTP for the customer. You must be within 0-120 meters of the delivery location."}
             </p>
-            <DeliverySlideButton orderId={orderId} onSuccess={handleOtpGenerated} onError={handleOtpGenerationError} />
+            <DeliverySlideButton 
+               orderId={orderId} 
+               onSuccess={handleOtpGenerated} 
+               onError={handleOtpGenerationError} 
+               isReturn={isReturn}
+            />
           </Card>
         </motion.div>
       )}
@@ -712,6 +792,7 @@ const OrderDetails = () => {
           <Card className="p-6 rounded-3xl shadow-sm border border-slate-100">
             <OtpInput
               orderId={orderId}
+              isReturn={isReturn}
               onSuccess={handleOtpValidationSuccess}
               onError={handleOtpValidationError}
               onCancel={() => setShowOtpInput(false)}

@@ -156,11 +156,11 @@ function filterV2OrdersByRadius(v2Orders, deliveryCoords) {
   });
 }
 
-function mergeAvailableOrders(v2Orders, legacyOrders, limit) {
+function mergeAvailableOrders(v2Orders, legacyOrders, returnPickups, limit) {
   const seen = new Set();
   const merged = [];
 
-  for (const order of [...v2Orders, ...legacyOrders]) {
+  for (const order of [...v2Orders, ...legacyOrders, ...returnPickups]) {
     if (seen.has(order.orderId)) continue;
     seen.add(order.orderId);
     merged.push(order);
@@ -221,7 +221,22 @@ export async function fetchAvailableOrdersForDelivery({
     .populate("seller", "shopName address name location")
     .lean();
 
-  const orders = mergeAvailableOrders(v2Orders, legacyOrders, limit);
+  const returnPickupsRaw = await Order.find({
+    returnStatus: "return_pickup_assigned",
+    returnDeliveryBoy: null,
+    seller: { $in: sellerIds },
+    skippedBy: { $nin: [userId] },
+  })
+    .sort({ createdAt: -1, _id: -1 })
+    .limit(limit)
+    .populate("customer", "name phone")
+    .populate("seller", "shopName address name location")
+    .lean();
+
+  // Mark return pickups so frontend can distinguish
+  const returnPickups = returnPickupsRaw.map(rp => ({ ...rp, isReturnPickup: true }));
+
+  const orders = mergeAvailableOrders(v2Orders, legacyOrders, returnPickups, limit);
   return {
     requiresLocation: false,
     orders,

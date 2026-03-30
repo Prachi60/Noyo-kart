@@ -196,7 +196,7 @@ const SupportPage = () => {
                                                 className={cn(
                                                     "py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border",
                                                     ticketData.priority === p
-                                                        ? "bg-[#61dafbaa] text-white border-[#61dafbaa] shadow-lg shadow-green-100"
+                                                        ? "bg-[#61dafbaa] text-white border-[#61dafbaa] shadow-lg shadow-brand-100"
                                                         : "bg-white text-slate-400 border-slate-100 hover:bg-slate-50"
                                                 )}
                                             >
@@ -219,7 +219,7 @@ const SupportPage = () => {
                                     <Button
                                         type="submit"
                                         disabled={ticketLoading}
-                                        className="w-full h-14 bg-[#61dafbaa] hover:bg-[#0b721b] text-white text-lg font-black rounded-2xl shadow-xl shadow-green-100 transition-all active:scale-95"
+                                        className="w-full h-14 bg-[#61dafbaa] hover:bg-[#0b721b] text-white text-lg font-black rounded-2xl shadow-xl shadow-brand-100 transition-all active:scale-95"
                                     >
                                         {ticketLoading ? (
                                             <div className="flex items-center gap-2 text-center w-full justify-center">

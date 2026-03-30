@@ -43,7 +43,7 @@ const HelpModal = ({ isOpen, onClose }) => {
 
                                 <div className="space-y-3 mb-8">
                                     {issues.map((item, idx) => (
-                                        <button key={idx} className="w-full flex items-center justify-between p-4 rounded-2xl border border-slate-100 hover:border-green-200 hover:bg-green-50/50 transition-all group">
+                                        <button key={idx} className="w-full flex items-center justify-between p-4 rounded-2xl border border-slate-100 hover:border-brand-200 hover:bg-brand-50/50 transition-all group">
                                             <div className="flex items-center gap-4">
                                                 <div className="h-10 w-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-500 group-hover:bg-white group-hover:text-[#61dafbaa] transition-colors">
                                                     <item.icon size={20} />
@@ -59,7 +59,7 @@ const HelpModal = ({ isOpen, onClose }) => {
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-3">
-                                    <Link to="/support" className="col-span-2 py-3.5 rounded-xl border-2 border-[#61dafbaa] text-[#61dafbaa] font-bold flex items-center justify-center gap-2 hover:bg-green-50 transition-colors shadow-lg shadow-green-50">
+                                    <Link to="/support" className="col-span-2 py-3.5 rounded-xl border-2 border-[#61dafbaa] text-[#61dafbaa] font-bold flex items-center justify-center gap-2 hover:bg-brand-50 transition-colors shadow-lg shadow-brand-50">
                                         <PlusCircle size={18} /> Raise a Ticket
                                     </Link>
                                     <Link to="/chat" className="py-3.5 rounded-xl bg-slate-900 text-white font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition-colors">

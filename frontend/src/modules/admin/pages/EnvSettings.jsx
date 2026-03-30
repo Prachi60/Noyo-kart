@@ -93,7 +93,7 @@ const EnvSettings = () => {
                     onChange={(e) => handleInputChange(name, e.target.value)}
                     placeholder={placeholder}
                     className={cn(
-                        "w-full pr-12 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all font-mono",
+                        "w-full pr-12 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-brand-500/10 transition-all font-mono",
                         Icon ? "pl-12" : "pl-5"
                     )}
                 />
@@ -152,7 +152,7 @@ const EnvSettings = () => {
                     onClick={() => setActiveTab('frontend')}
                     className={cn(
                         "pb-4 px-4 text-sm font-bold transition-all border-b-2",
-                        activeTab === 'frontend' ? "border-emerald-500 text-emerald-700" : "border-transparent text-slate-400 hover:text-slate-600"
+                        activeTab === 'frontend' ? "border-brand-500 text-brand-700" : "border-transparent text-slate-400 hover:text-slate-600"
                     )}
                 >
                     Frontend Configuration
@@ -161,7 +161,7 @@ const EnvSettings = () => {
                     onClick={() => setActiveTab('backend')}
                     className={cn(
                         "pb-4 px-4 text-sm font-bold transition-all border-b-2",
-                        activeTab === 'backend' ? "border-emerald-500 text-emerald-700" : "border-transparent text-slate-400 hover:text-slate-600"
+                        activeTab === 'backend' ? "border-brand-500 text-brand-700" : "border-transparent text-slate-400 hover:text-slate-600"
                     )}
                 >
                     Backend Configuration
@@ -289,7 +289,7 @@ const EnvSettings = () => {
                                         value={config.FIREBASE_SERVICE_ACCOUNT}
                                         onChange={(e) => handleInputChange('FIREBASE_SERVICE_ACCOUNT', e.target.value)}
                                         placeholder='{"type": "service_account", ...}'
-                                        className="w-full px-5 py-4 bg-slate-900 border-none rounded-2xl text-xs font-mono text-emerald-400 outline-none focus:ring-2 focus:ring-emerald-500/30 transition-all resize-none"
+                                        className="w-full px-5 py-4 bg-slate-900 border-none rounded-2xl text-xs font-mono text-brand-400 outline-none focus:ring-2 focus:ring-brand-500/30 transition-all resize-none"
                                     />
                                     <p className="text-[10px] font-bold text-slate-400 italic">Paste the entire JSON content of your service account key file here.</p>
                                 </div>

@@ -149,7 +149,7 @@ const Earnings = () => {
           <Card className="p-6 h-80">
             <div className="flex justify-between items-center mb-6">
               <h3 className="font-bold text-gray-800 flex items-center">
-                <TrendingUp size={20} className="mr-2 text-green-500" />
+                <TrendingUp size={20} className="mr-2 text-brand-500" />
                 Earnings Trend
               </h3>
               <Button variant="ghost" size="sm" className="h-8 text-xs">
@@ -199,10 +199,10 @@ const Earnings = () => {
         <motion.div variants={itemVariants} className="grid grid-cols-2 gap-4">
           <Card className="p-4">
             <div className="flex items-center justify-between mb-2">
-              <div className="p-2 bg-green-50 text-green-600 rounded-lg">
+              <div className="p-2 bg-brand-50 text-brand-600 rounded-lg">
                 <Wallet size={20} />
               </div>
-              <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded">
+              <span className="text-xs font-bold text-brand-600 bg-brand-50 px-2 py-0.5 rounded">
                 +8%
               </span>
             </div>
@@ -245,7 +245,7 @@ const Earnings = () => {
                   className="p-4 flex justify-between items-center hover:bg-gray-50 transition-colors cursor-pointer">
                   <div className="flex items-center">
                     <div
-                      className={`p-2 rounded-full mr-3 ${txn.status === "Settled" || txn.status === "Completed" ? "bg-green-100 text-green-600" : "bg-yellow-100 text-yellow-600"}`}>
+                      className={`p-2 rounded-full mr-3 ${txn.status === "Settled" || txn.status === "Completed" ? "bg-brand-100 text-brand-600" : "bg-yellow-100 text-yellow-600"}`}>
                       <ArrowUpRight size={16} />
                     </div>
                     <div>
@@ -258,7 +258,7 @@ const Earnings = () => {
                   <div className="text-right">
                     <p className="font-bold text-gray-900">{txn.type.includes('Withdrawal') ? '-' : '+'}₹{txn.amount}</p>
                     <p
-                      className={`text-xs font-bold ${txn.status === "Settled" || txn.status === "Completed" ? "text-green-500" : "text-yellow-500"}`}>
+                      className={`text-xs font-bold ${txn.status === "Settled" || txn.status === "Completed" ? "text-brand-500" : "text-yellow-500"}`}>
                       {txn.status}
                     </p>
                   </div>

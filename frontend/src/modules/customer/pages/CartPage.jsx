@@ -28,7 +28,7 @@ const CartPage = () => {
     return (
         <div className="relative isolate w-full overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(12,131,31,0.14),_transparent_34%),linear-gradient(180deg,_#f8faf9_0%,_#eef6f0_100%)] animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="pointer-events-none absolute inset-0">
-                <div className="absolute -top-16 -right-16 h-52 w-52 rounded-full bg-emerald-300/20 blur-3xl" />
+                <div className="absolute -top-16 -right-16 h-52 w-52 rounded-full bg-brand-300/20 blur-3xl" />
                 <div className="absolute top-24 left-[-5rem] h-56 w-56 rounded-full bg-lime-200/40 blur-3xl" />
                 <div className="absolute bottom-0 right-1/3 h-36 w-36 rounded-full bg-white/60 blur-2xl" />
             </div>
@@ -64,7 +64,7 @@ const CartPage = () => {
                                             <div className="min-w-0 flex-1">
                                                 <div className="flex items-start justify-between gap-3">
                                                     <div className="min-w-0">
-                                                        <span className="inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">
+                                                        <span className="inline-flex rounded-full bg-brand-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-brand-700">
                                                             {item.category}
                                                         </span>
                                                         <h3 className="mt-2 truncate text-lg md:text-xl font-black tracking-tight text-slate-900">
@@ -122,7 +122,7 @@ const CartPage = () => {
                             <div className="flex flex-col gap-3 rounded-[1.5rem] border border-white/80 bg-white/80 p-4 shadow-[0_10px_30px_rgba(15,23,42,0.06)] sm:flex-row sm:items-center sm:justify-between">
                                 <Link
                                     to="/categories"
-                                    className="inline-flex items-center justify-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-black text-emerald-700 transition-colors hover:bg-emerald-100"
+                                    className="inline-flex items-center justify-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-4 py-2.5 text-sm font-black text-brand-700 transition-colors hover:bg-brand-100"
                                 >
                                     Continue Shopping
                                     <ArrowRight size={16} />
@@ -139,7 +139,7 @@ const CartPage = () => {
                         <aside className="lg:sticky lg:top-28 h-fit">
                             <div className="overflow-hidden rounded-[2rem] border border-slate-100 bg-slate-900 text-white shadow-[0_24px_60px_rgba(15,23,42,0.18)]">
                                 <div className="bg-[radial-gradient(circle_at_top_right,_rgba(34,197,94,0.35),_transparent_38%),linear-gradient(180deg,_rgba(255,255,255,0.08),_transparent)] px-6 py-6">
-                                    <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] text-emerald-300">
+                                    <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] text-brand-300">
                                         <ShieldCheck size={13} />
                                         Secure summary
                                     </div>
@@ -159,27 +159,27 @@ const CartPage = () => {
                                         </div>
                                         <div className="flex justify-between text-sm text-white/75">
                                             <span>Delivery Fee</span>
-                                            <span className="font-bold text-emerald-300">FREE</span>
+                                            <span className="font-bold text-brand-300">FREE</span>
                                         </div>
                                         <div className="border-t border-white/10 pt-4 flex items-center justify-between">
                                             <span className="text-base font-bold text-white/85">Total Amount</span>
-                                            <span className="text-3xl font-black tracking-tight text-emerald-300">₹{cartTotal}</span>
+                                            <span className="text-3xl font-black tracking-tight text-brand-300">₹{cartTotal}</span>
                                         </div>
                                     </div>
 
                                     <Link to="/checkout" className="block">
-                                        <Button className="h-14 w-full rounded-full bg-emerald-400 text-slate-950 hover:bg-emerald-300 text-base font-black flex items-center justify-center gap-2 shadow-[0_18px_35px_rgba(16,185,129,0.3)] transition-all">
+                                        <Button className="h-14 w-full rounded-full bg-brand-400 text-slate-950 hover:bg-brand-300 text-base font-black flex items-center justify-center gap-2 shadow-[0_18px_35px_rgba(16,185,129,0.3)] transition-all">
                                             Place Order <ArrowRight size={18} />
                                         </Button>
                                     </Link>
 
                                     <div className="grid grid-cols-2 gap-3 text-xs font-bold uppercase tracking-[0.16em] text-white/55">
                                         <div className="rounded-2xl border border-white/10 bg-white/5 px-3 py-3">
-                                            <Truck size={15} className="mb-2 text-emerald-300" />
+                                            <Truck size={15} className="mb-2 text-brand-300" />
                                             Fast delivery
                                         </div>
                                         <div className="rounded-2xl border border-white/10 bg-white/5 px-3 py-3">
-                                            <ShieldCheck size={15} className="mb-2 text-emerald-300" />
+                                            <ShieldCheck size={15} className="mb-2 text-brand-300" />
                                             Secure payment
                                         </div>
                                     </div>
@@ -191,17 +191,17 @@ const CartPage = () => {
                     <div className="mx-auto max-w-2xl overflow-hidden rounded-[2rem] border border-white/80 bg-white/90 backdrop-blur-xl shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
                         <div className="relative px-6 py-12 md:px-12 md:py-16">
                             <div className="pointer-events-none absolute inset-0">
-                                <div className="absolute -right-8 top-0 h-32 w-32 rounded-full bg-emerald-200/40 blur-3xl" />
+                                <div className="absolute -right-8 top-0 h-32 w-32 rounded-full bg-brand-200/40 blur-3xl" />
                                 <div className="absolute -left-12 bottom-0 h-40 w-40 rounded-full bg-lime-200/50 blur-3xl" />
                             </div>
 
                             <div className="relative text-center">
-                                <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-emerald-700">
+                                <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-brand-700">
                                     <Sparkles size={12} />
                                     Empty cart
                                 </div>
 
-                                <div className="mx-auto mb-8 flex h-48 w-48 items-center justify-center rounded-[2rem] border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white shadow-[0_16px_40px_rgba(16,185,129,0.12)] md:h-56 md:w-56">
+                                <div className="mx-auto mb-8 flex h-48 w-48 items-center justify-center rounded-[2rem] border border-brand-100 bg-gradient-to-br from-brand-50 to-white shadow-[0_16px_40px_rgba(16,185,129,0.12)] md:h-56 md:w-56">
                                     <Lottie
                                         animationData={emptyBoxAnimation}
                                         loop

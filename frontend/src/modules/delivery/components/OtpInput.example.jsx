@@ -108,8 +108,8 @@ const OtpInputExample = () => {
           
           <div className="space-y-4 text-xs">
             <div>
-              <strong className="text-green-700">Success (200):</strong>
-              <pre className="mt-1 bg-green-50 border border-green-200 rounded p-2 overflow-x-auto">
+              <strong className="text-brand-700">Success (200):</strong>
+              <pre className="mt-1 bg-brand-50 border border-brand-200 rounded p-2 overflow-x-auto">
 {`{
   "success": true,
   "message": "Order delivered successfully",

@@ -165,8 +165,8 @@ const CashCollection = () => {
                 <div>
                     <h1 className="ds-h1 flex items-center gap-3">
                         Cash Collection Hub
-                        <div className="p-1.5 bg-emerald-100 rounded-lg">
-                            <CircleDollarSign className="h-5 w-5 text-emerald-600" />
+                        <div className="p-1.5 bg-brand-100 rounded-lg">
+                            <CircleDollarSign className="h-5 w-5 text-brand-600" />
                         </div>
                     </h1>
                     <p className="ds-description mt-1">Manage physical cash collected by delivery partners and track settlements.</p>
@@ -176,7 +176,7 @@ const CashCollection = () => {
                         <Download className="h-4 w-4" />
                         EXPORT LEDGER
                     </button>
-                    <button className="flex items-center gap-2 px-5 py-3 bg-emerald-600 text-white rounded-2xl text-xs font-bold hover:bg-emerald-700 transition-all shadow-lg active:scale-95 shadow-emerald-200">
+                    <button className="flex items-center gap-2 px-5 py-3 bg-brand-600 text-white rounded-2xl text-xs font-bold hover:bg-brand-700 transition-all shadow-lg active:scale-95 shadow-brand-200">
                         <CheckCircle2 className="h-4 w-4" />
                         BULK SETTLE ALL
                     </button>
@@ -188,10 +188,10 @@ const CashCollection = () => {
                 {[
                     { label: 'Total Cash in Hand', value: `₹${stats.totalInHand.toLocaleString()}`, icon: Wallet, color: 'blue', bg: 'bg-blue-50', iconColor: 'text-blue-600' },
                     { label: 'Critical Over-Limit', value: stats.overLimitCount, icon: AlertTriangle, color: 'rose', bg: 'bg-rose-50', iconColor: 'text-rose-600', sub: 'Action required' },
-                    { label: 'Collected Today', value: `₹${stats.todaySettled.toLocaleString()}`, icon: ArrowDownLeft, color: 'emerald', bg: 'bg-emerald-50', iconColor: 'text-emerald-600' },
+                    { label: 'Collected Today', value: `₹${stats.todaySettled.toLocaleString()}`, icon: ArrowDownLeft, color: 'emerald', bg: 'bg-brand-50', iconColor: 'text-brand-600' },
                     { label: 'Avg. Rider Load', value: `₹${stats.avgBalance.toFixed(0)}`, icon: Percent, color: 'amber', bg: 'bg-amber-50', iconColor: 'text-amber-600' },
                 ].map((stat, i) => (
-                    <Card key={i} className="p-6 border-none shadow-sm ring-1 ring-slate-100 bg-white group hover:ring-emerald-200 transition-all">
+                    <Card key={i} className="p-6 border-none shadow-sm ring-1 ring-slate-100 bg-white group hover:ring-brand-200 transition-all">
                         <div className="flex items-center justify-between mb-4">
                             <div className={cn("p-3 rounded-2xl", stat.bg)}>
                                 <stat.icon className={cn("h-6 w-6", stat.iconColor)} />
@@ -231,13 +231,13 @@ const CashCollection = () => {
 
                 <div className="flex items-center gap-3">
                     <div className="relative group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-brand-500 transition-colors" />
                         <input
                             type="text"
                             placeholder="Find Rider or ID..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-11 pr-4 py-2.5 bg-white ring-1 ring-slate-200 rounded-2xl text-xs font-semibold outline-none focus:ring-2 focus:ring-emerald-500/10 w-64 transition-all"
+                            className="pl-11 pr-4 py-2.5 bg-white ring-1 ring-slate-200 rounded-2xl text-xs font-semibold outline-none focus:ring-2 focus:ring-brand-500/10 w-64 transition-all"
                         />
                     </div>
                 </div>
@@ -266,7 +266,7 @@ const CashCollection = () => {
                                                     <img src={rider.avatar} alt="" className="h-12 w-12 rounded-2xl ring-2 ring-white shadow-md bg-slate-100" />
                                                     <div className={cn(
                                                         "absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-white",
-                                                        rider.status === 'safe' ? "bg-emerald-500" : rider.status === 'warning' ? "bg-amber-500" : "bg-rose-500"
+                                                        rider.status === 'safe' ? "bg-brand-500" : rider.status === 'warning' ? "bg-amber-500" : "bg-rose-500"
                                                     )} />
                                                 </div>
                                                 <div>
@@ -289,7 +289,7 @@ const CashCollection = () => {
                                                         animate={{ width: `${Math.min((rider.currentCash / rider.limit) * 100, 100)}%` }}
                                                         className={cn(
                                                             "h-full rounded-full",
-                                                            rider.status === 'safe' ? "bg-emerald-500" : rider.status === 'warning' ? "bg-amber-500" : "bg-rose-500"
+                                                            rider.status === 'safe' ? "bg-brand-500" : rider.status === 'warning' ? "bg-amber-500" : "bg-rose-500"
                                                         )}
                                                     />
                                                 </div>
@@ -317,7 +317,7 @@ const CashCollection = () => {
                                             <div className="flex items-center justify-end gap-2">
                                                 <button
                                                     onClick={() => handleSettlement(rider)}
-                                                    className="px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl text-[10px] font-black hover:bg-emerald-600 hover:text-white transition-all shadow-sm active:scale-95 uppercase tracking-widest"
+                                                    className="px-4 py-2 bg-brand-50 text-brand-600 rounded-xl text-[10px] font-black hover:bg-brand-600 hover:text-white transition-all shadow-sm active:scale-95 uppercase tracking-widest"
                                                 >
                                                     Settle
                                                 </button>
@@ -352,7 +352,7 @@ const CashCollection = () => {
                                     <tr key={log.id} className="group hover:bg-slate-50/40 transition-all">
                                         <td className="px-6 py-5 pl-8 text-[10px] font-black text-slate-400 uppercase tracking-tighter">{log.id}</td>
                                         <td className="px-6 py-5 text-sm font-bold text-slate-900">{log.rider}</td>
-                                        <td className="px-6 py-5 text-center text-sm font-black text-emerald-600">₹{log.amount.toLocaleString()}</td>
+                                        <td className="px-6 py-5 text-center text-sm font-black text-brand-600">₹{log.amount.toLocaleString()}</td>
                                         <td className="px-6 py-5">
                                             <Badge variant="secondary" className="text-[9px] font-black px-2 py-0.5 uppercase">
                                                 {log.method}
@@ -412,7 +412,7 @@ const CashCollection = () => {
                                 <h4 className="text-3xl font-black italic">₹{selectedRider.currentCash.toLocaleString()}</h4>
                                 <div className="mt-4 flex items-center gap-2">
                                     <div className="h-1.5 flex-1 bg-white/10 rounded-full overflow-hidden">
-                                        <div className="h-full bg-emerald-400" style={{ width: `${Math.min((selectedRider.currentCash / selectedRider.limit) * 100, 100)}%` }} />
+                                        <div className="h-full bg-brand-400" style={{ width: `${Math.min((selectedRider.currentCash / selectedRider.limit) * 100, 100)}%` }} />
                                     </div>
                                     <span className="text-[10px] font-bold opacity-60">{Math.min(Math.round((selectedRider.currentCash / selectedRider.limit) * 100), 100)}%</span>
                                 </div>
@@ -427,20 +427,20 @@ const CashCollection = () => {
 
                         <div className="space-y-4">
                             <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
-                                <FileText className="h-4 w-4 text-emerald-600" />
+                                <FileText className="h-4 w-4 text-brand-600" />
                                 Collection Ledger
                             </h4>
                             <div className="space-y-3 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
                                 {detailsLoading ? (
                                     <div className="py-8 text-center">
-                                        <RotateCw className="h-6 w-6 animate-spin mx-auto text-emerald-500 mb-2" />
+                                        <RotateCw className="h-6 w-6 animate-spin mx-auto text-brand-500 mb-2" />
                                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Fetching Ledger...</p>
                                     </div>
                                 ) : (Array.isArray(riderDetails) ? riderDetails : []).length > 0 ? (
                                     (Array.isArray(riderDetails) ? riderDetails : []).map((item, i) => (
-                                        <div key={i} className="flex items-center justify-between p-4 bg-white ring-1 ring-slate-100 rounded-2xl hover:ring-emerald-200 transition-all group">
+                                        <div key={i} className="flex items-center justify-between p-4 bg-white ring-1 ring-slate-100 rounded-2xl hover:ring-brand-200 transition-all group">
                                             <div className="flex items-center gap-3">
-                                                <div className="h-2 w-2 rounded-full bg-emerald-500 group-hover:scale-125 transition-transform" />
+                                                <div className="h-2 w-2 rounded-full bg-brand-500 group-hover:scale-125 transition-transform" />
                                                 <div>
                                                     <p className="text-xs font-black text-slate-900">{item.reference || item.id}</p>
                                                     <p className="text-[9px] font-bold text-slate-400 uppercase">
@@ -463,7 +463,7 @@ const CashCollection = () => {
                         <div className="pt-2 flex gap-3">
                             <button
                                 onClick={() => { setSelectedRider(null); handleSettlement(selectedRider); }}
-                                className="flex-1 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-xl shadow-emerald-100 transition-all active:scale-[0.98]"
+                                className="flex-1 py-4 bg-brand-600 hover:bg-brand-700 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-xl shadow-brand-100 transition-all active:scale-[0.98]"
                             >
                                 Trigger Settlement
                             </button>
@@ -485,7 +485,7 @@ const CashCollection = () => {
                 {settlementData.rider && (
                     <div className="ds-section-spacing py-4">
                         <div className="text-center space-y-4">
-                            <div className="h-20 w-20 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center mx-auto shadow-inner border border-emerald-100">
+                            <div className="h-20 w-20 bg-brand-50 text-brand-600 rounded-xl flex items-center justify-center mx-auto shadow-inner border border-brand-100">
                                 <CircleDollarSign className="h-10 w-10" />
                             </div>
                             <div>

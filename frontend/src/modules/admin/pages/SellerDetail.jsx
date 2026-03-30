@@ -118,7 +118,7 @@ const SellerDetail = () => {
                     <Card key={i} className="p-6 border-none shadow-xl ring-1 ring-slate-100 bg-white group hover:ring-primary/20 transition-all">
                         <div className="flex items-center justify-between mb-4">
                             <div className={cn("p-2.5 rounded-2xl",
-                                stat.color === 'emerald' && "bg-emerald-50 text-emerald-600",
+                                stat.color === 'emerald' && "bg-brand-50 text-brand-600",
                                 stat.color === 'blue' && "bg-blue-50 text-blue-600",
                                 stat.color === 'indigo' && "bg-indigo-50 text-indigo-600",
                                 stat.color === 'amber' && "bg-amber-50 text-amber-600",
@@ -242,7 +242,7 @@ const SellerDetail = () => {
                                         <div key={i} className="flex items-center justify-between p-5 bg-slate-50 rounded-2xl border border-slate-100 group hover:bg-white hover:shadow-md transition-all">
                                             <div className="flex items-center gap-4">
                                                 <div className={cn("p-2 rounded-xl flex items-center justify-center",
-                                                    txn.type === 'credit' ? "bg-emerald-100 text-emerald-600" : "bg-rose-100 text-rose-600"
+                                                    txn.type === 'credit' ? "bg-brand-100 text-brand-600" : "bg-rose-100 text-rose-600"
                                                 )}>
                                                     {txn.type === 'credit' ? <TrendingUp className="h-4 w-4" /> : <Banknote className="h-4 w-4" />}
                                                 </div>
@@ -252,7 +252,7 @@ const SellerDetail = () => {
                                                 </div>
                                             </div>
                                             <div className="text-right">
-                                                <p className={cn("text-sm font-black", txn.type === 'credit' ? "text-emerald-600" : "text-rose-600")}>
+                                                <p className={cn("text-sm font-black", txn.type === 'credit' ? "text-brand-600" : "text-rose-600")}>
                                                     {txn.type === 'credit' ? '+' : '-'} ₹{txn.amount.toLocaleString()}
                                                 </p>
                                             </div>
@@ -349,13 +349,13 @@ const SellerDetail = () => {
 
                                         <div>
                                             <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Bank Verification</h5>
-                                            <div className="p-6 bg-emerald-50/50 rounded-xl border border-emerald-100 space-y-4">
+                                            <div className="p-6 bg-brand-50/50 rounded-xl border border-brand-100 space-y-4">
                                                 <div className="flex items-center justify-between">
                                                     <p className="text-xs font-bold text-slate-600">Account Verified</p>
-                                                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                                    <CheckCircle2 className="h-4 w-4 text-brand-500" />
                                                 </div>
                                                 <div>
-                                                    <p className="text-[9px] font-black text-emerald-700/50 uppercase tracking-widest mb-1">Settlement Account</p>
+                                                    <p className="text-[9px] font-black text-brand-700/50 uppercase tracking-widest mb-1">Settlement Account</p>
                                                     <p className="text-sm font-black text-slate-900">{seller.bankInfo.bankName}</p>
                                                     <p className="text-xs font-bold text-slate-500 font-mono mt-0.5">{seller.bankInfo.accountNo}</p>
                                                 </div>
@@ -369,7 +369,7 @@ const SellerDetail = () => {
                                             <div className="p-6 bg-slate-900 rounded-xl text-white">
                                                 <div className="flex items-center justify-between mb-6">
                                                     <div className="flex items-center gap-2">
-                                                        <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                                                        <div className="h-2 w-2 rounded-full bg-brand-500 animate-pulse"></div>
                                                         <span className="text-[10px] font-black uppercase tracking-widest">LIVE NOW</span>
                                                     </div>
                                                     <button className="text-[10px] font-black text-rose-400 uppercase hover:underline">Force Close</button>
@@ -381,7 +381,7 @@ const SellerDetail = () => {
                                                     </div>
                                                     <div className="flex items-center justify-between py-2">
                                                         <span className="text-xs font-bold">Delivery Partner</span>
-                                                        <span className="text-xs font-black uppercase tracking-widest text-emerald-400">Integrated</span>
+                                                        <span className="text-xs font-black uppercase tracking-widest text-brand-400">Integrated</span>
                                                     </div>
                                                 </div>
                                             </div>

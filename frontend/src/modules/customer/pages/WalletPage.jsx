@@ -100,7 +100,7 @@ const WalletPage = () => {
                             {transactions.map((tx) => (
                                 <div key={tx._id} className="px-4 py-3.5 flex items-center justify-between hover:bg-slate-50 transition-colors">
                                     <div className="flex items-center gap-3">
-                                        <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${tx.type === 'credit' ? 'bg-green-50 text-green-600' : 'bg-slate-100 text-slate-700'}`}>
+                                        <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${tx.type === 'credit' ? 'bg-brand-50 text-brand-600' : 'bg-slate-100 text-slate-700'}`}>
                                             {tx.type === 'credit' ? <ArrowDownLeft size={19} /> : <ArrowUpRight size={19} />}
                                         </div>
                                         <div>
@@ -111,7 +111,7 @@ const WalletPage = () => {
                                             )}
                                         </div>
                                     </div>
-                                    <div className={`text-sm font-semibold ${tx.type === 'credit' ? 'text-green-600' : 'text-slate-900'}`}>
+                                    <div className={`text-sm font-semibold ${tx.type === 'credit' ? 'text-brand-600' : 'text-slate-900'}`}>
                                         {tx.type === 'credit' ? '+' : '-'}₹{(tx.amount || 0).toLocaleString('en-IN')}
                                     </div>
                                 </div>

@@ -68,7 +68,7 @@ const Navigation = () => {
           <div className="w-px h-8 bg-gray-500"></div>
           <div className="flex flex-col items-center">
             <span className="text-xs font-medium text-gray-300">ETA</span>
-            <span className="font-bold text-lg text-green-400">4 min</span>
+            <span className="font-bold text-lg text-brand-400">4 min</span>
           </div>
         </div>
 
@@ -103,7 +103,7 @@ const Navigation = () => {
               </p>
             </div>
           </div>
-          <button className="bg-green-100 text-green-700 p-3 rounded-full hover:bg-green-200 transition-colors">
+          <button className="bg-brand-100 text-brand-700 p-3 rounded-full hover:bg-brand-200 transition-colors">
             <Phone size={24} />
           </button>
         </div>

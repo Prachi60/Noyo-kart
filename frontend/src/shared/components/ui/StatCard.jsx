@@ -31,7 +31,7 @@ const StatCard = ({
                     {trend && (
                         <div className={cn(
                             "ds-stat-card-trend",
-                            trendDirection === 'up' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'
+                            trendDirection === 'up' ? 'text-brand-600 bg-brand-50' : 'text-red-600 bg-red-50'
                         )}>
                             {trendDirection === 'up' ? (
                                 <TrendingUp className="ds-icon-sm mr-0.5" />

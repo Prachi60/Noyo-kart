@@ -44,7 +44,7 @@ const safeNumber = (value) => {
 
 const statClass = {
   blue: "bg-blue-50 text-blue-600",
-  emerald: "bg-emerald-50 text-emerald-600",
+  emerald: "bg-brand-50 text-brand-600",
   amber: "bg-amber-50 text-amber-600",
   rose: "bg-rose-50 text-rose-600",
 };
@@ -409,13 +409,13 @@ const ActiveSellers = () => {
                           <span className="text-xs font-bold text-slate-900">
                             {(seller.totalOrders || 0).toLocaleString("en-IN")} Orders
                           </span>
-                          <span className="text-[10px] font-bold text-emerald-600">
+                          <span className="text-[10px] font-bold text-brand-600">
                             {currency(seller.totalRevenue)}
                           </span>
                         </div>
                         <div className="w-32 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-emerald-500 rounded-full"
+                            className="h-full bg-brand-500 rounded-full"
                             style={{
                               width: `${Math.min(100, seller.fulfillmentRate || 0)}%`,
                             }}
@@ -605,7 +605,7 @@ const ActiveSellers = () => {
                       <div className="p-4 bg-white rounded-2xl ring-1 ring-slate-100">
                         <div className="flex items-center justify-between text-xs font-bold text-slate-600">
                           <span>Verification</span>
-                          <span className="text-emerald-600">Verified</span>
+                          <span className="text-brand-600">Verified</span>
                         </div>
                         <div className="flex items-center justify-between text-xs font-bold text-slate-600 mt-3">
                           <span>Joined</span>
@@ -662,8 +662,8 @@ const ActiveSellers = () => {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-100">
-                      <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">
+                    <div className="p-4 rounded-2xl bg-brand-50 border border-brand-100">
+                      <p className="text-[10px] font-black text-brand-600 uppercase tracking-widest mb-1">
                         Performance
                       </p>
                       <p className="text-sm font-semibold text-slate-700 leading-relaxed">

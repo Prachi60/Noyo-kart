@@ -84,13 +84,13 @@ const DeliveryConfirmation = () => {
 
   if (isCompleted) {
     return (
-      <div className="min-h-screen bg-green-50 flex flex-col items-center justify-center p-6 text-center">
+      <div className="min-h-screen bg-brand-50 flex flex-col items-center justify-center p-6 text-center">
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: "spring", stiffness: 260, damping: 20 }}
           className="bg-white rounded-full p-6 shadow-xl mb-6">
-          <CheckCircle className="text-green-500 w-24 h-24" strokeWidth={1.5} />
+          <CheckCircle className="text-brand-500 w-24 h-24" strokeWidth={1.5} />
         </motion.div>
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
@@ -135,19 +135,19 @@ const DeliveryConfirmation = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}>
           <Card
-            className={`p-6 border-l-4 ${isPrepaid ? "border-l-green-500 bg-green-50/30" : "border-l-orange-500 bg-orange-50/30"}`}>
+            className={`p-6 border-l-4 ${isPrepaid ? "border-l-brand-500 bg-brand-50/30" : "border-l-orange-500 bg-orange-50/30"}`}>
             <div className="flex justify-between items-start mb-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
                   {isPrepaid ? "Payment Status" : "Amount to Collect"}
                 </p>
                 <h2
-                  className={`text-4xl font-extrabold ${isPrepaid ? "text-green-600" : "text-orange-600"}`}>
+                  className={`text-4xl font-extrabold ${isPrepaid ? "text-brand-600" : "text-orange-600"}`}>
                   {isPrepaid ? "PAID" : `₹${orderAmount}`}
                 </h2>
               </div>
               <div
-                className={`p-3 rounded-full ${isPrepaid ? "bg-green-100 text-green-600" : "bg-orange-100 text-orange-600"}`}>
+                className={`p-3 rounded-full ${isPrepaid ? "bg-brand-100 text-brand-600" : "bg-orange-100 text-orange-600"}`}>
                 {isPrepaid ? (
                   <CheckCircle size={32} />
                 ) : (
@@ -179,7 +179,7 @@ const DeliveryConfirmation = () => {
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
-                    className="mt-3 p-2 bg-green-50 border border-green-100 rounded-lg text-sm text-green-700 font-medium flex items-center">
+                    className="mt-3 p-2 bg-brand-50 border border-brand-100 rounded-lg text-sm text-brand-700 font-medium flex items-center">
                     <CheckCircle size={16} className="mr-2" />
                     Return Change:{" "}
                     <span className="font-bold ml-1">

@@ -15,6 +15,8 @@ import {
   approveReturnRequest,
   rejectReturnRequest,
   assignReturnDelivery,
+  acceptReturnPickup,
+  rejectReturnPickup,
   updateReturnStatus,
 } from "../controller/orderController.js";
 import {
@@ -31,6 +33,8 @@ import {
   advanceDeliveryRiderUi,
   requestDeliveryOtp,
   verifyDeliveryOtp,
+  requestReturnPickupOtp,
+  verifyReturnPickupOtp,
   getOrderRoute,
 } from "../controller/orderWorkflowController.js";
 // Assuming there's a middleware to verify customer token
@@ -158,6 +162,18 @@ router.put(
   skipOrder,
 );
 router.put(
+  "/returns/:orderId/accept-pickup",
+  verifyToken,
+  allowRoles("admin", "delivery"),
+  acceptReturnPickup,
+);
+router.put(
+  "/returns/:orderId/reject-pickup",
+  verifyToken,
+  allowRoles("admin", "delivery"),
+  rejectReturnPickup,
+);
+router.put(
   "/return-status/:orderId",
   verifyToken,
   allowRoles("admin", "delivery"),
@@ -194,12 +210,37 @@ router.post(
   allowRoles("delivery", "admin"),
   verifyDeliveryOtp,
 );
+router.post(
+  "/workflow/:orderId/return-otp/request",
+  verifyToken,
+  allowRoles("delivery", "admin"),
+  requestReturnPickupOtp,
+);
+router.post(
+  "/workflow/:orderId/return-otp/verify",
+  verifyToken,
+  allowRoles("delivery", "admin"),
+  verifyReturnPickupOtp,
+);
 router.get(
   "/workflow/:orderId/route",
   verifyToken,
   allowRoles("customer", "user", "delivery", "seller", "admin"),
   requireApprovedSeller,
   getOrderRoute,
+);
+
+router.put(
+  "/returns/:orderId/accept-pickup",
+  verifyToken,
+  allowRoles("delivery", "admin"),
+  acceptReturnPickup
+);
+router.put(
+  "/returns/:orderId/reject-pickup",
+  verifyToken,
+  allowRoles("delivery", "admin"),
+  rejectReturnPickup
 );
 
 export default router;

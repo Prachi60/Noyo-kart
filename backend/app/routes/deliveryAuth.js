@@ -48,7 +48,7 @@ router.post("/location", verifyToken, updateDeliveryLocation);
 router.post(
   "/orders/:orderId/generate-otp",
   verifyToken,
-  allowRoles("delivery"),
+  allowRoles("delivery", "admin"),
   generateDeliveryOtp
 );
 
@@ -56,7 +56,7 @@ router.post(
 router.post(
   "/orders/:orderId/validate-otp",
   verifyToken,
-  allowRoles("delivery"),
+  allowRoles("delivery", "admin"),
   validateDeliveryOtp
 );
 

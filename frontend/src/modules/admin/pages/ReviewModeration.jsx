@@ -175,7 +175,7 @@ const ReviewModeration = () => {
                                 {r.status !== 'approved' && (
                                     <button
                                         onClick={() => handleApprove(r.id)}
-                                        className="flex-1 w-full flex items-center justify-center gap-2 py-3 bg-emerald-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-200 hover:bg-emerald-600 transition-all active:scale-95"
+                                        className="flex-1 w-full flex items-center justify-center gap-2 py-3 bg-brand-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-brand-200 hover:bg-brand-600 transition-all active:scale-95"
                                     >
                                         <HiOutlineShieldCheck className="h-4 w-4" />
                                         APPROVE

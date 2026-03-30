@@ -85,6 +85,7 @@ const DeliveryLayout = () => {
       value: total,
       earnings: Math.round(total * 0.1),
       expiresAt: payload.deliverySearchExpiresAt || null,
+      isReturnPickup: payload.type === "RETURN_PICKUP",
     });
     const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
     audio.play().catch(() => {});
@@ -117,6 +118,7 @@ const DeliveryLayout = () => {
       value: total,
       earnings: Math.round(total * 0.1),
       expiresAt: newOrder.deliverySearchExpiresAt || null,
+      isReturnPickup: newOrder.isReturnPickup || false,
     });
     const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
     audio.play().catch(() => {});
@@ -263,6 +265,7 @@ const DeliveryLayout = () => {
             orderId: oid,
             preview: n.data.preview,
             deliverySearchExpiresAt: n.data.deliverySearchExpiresAt,
+            type: n.data.type || (n.data.preview?.type), 
           });
           if (fromStored) return;
           const r2 = await deliveryApi.getAvailableOrders();
@@ -286,7 +289,11 @@ const DeliveryLayout = () => {
     if (!current || acceptInFlightRef.current) return;
     try {
       console.log("Delivery Alert - Skipping order:", current.id);
-      await deliveryApi.skipOrder(current.id);
+      if (current.isReturnPickup) {
+        await deliveryApi.rejectReturnPickup(current.id);
+      } else {
+        await deliveryApi.skipOrder(current.id);
+      }
       shownOrderIdsRef.current = new Set(shownOrderIdsRef.current).add(current.id);
       markIncomingOrderHandled(current.id);
       setActiveOrder(null);
@@ -342,7 +349,11 @@ const DeliveryLayout = () => {
         typeof crypto !== "undefined" && crypto.randomUUID
           ? crypto.randomUUID()
           : `${Date.now()}`;
-      await deliveryApi.acceptOrder(activeOrder.id, idem);
+      if (activeOrder.isReturnPickup) {
+        await deliveryApi.acceptReturnPickup(activeOrder.id);
+      } else {
+        await deliveryApi.acceptOrder(activeOrder.id, idem);
+      }
       toast.success("Order accepted!");
       const orderId = activeOrder.id;
       shownOrderIdsRef.current = new Set(shownOrderIdsRef.current).add(orderId);
@@ -400,7 +411,7 @@ const DeliveryLayout = () => {
                       Accept or reject
                     </p>
                     <div className="flex items-center gap-2 mb-6">
-                      <span className="text-2xl font-black text-green-600">₹{activeOrder.earnings}</span>
+                      <span className="text-2xl font-black text-brand-600">₹{activeOrder.earnings}</span>
                       <span className="text-xs font-bold text-slate-400 uppercase tracking-wider font-outfit">
                         Earnings
                       </span>
@@ -408,8 +419,8 @@ const DeliveryLayout = () => {
 
                     <div className="w-full space-y-4 mb-6">
                       <div className="flex items-start gap-3">
-                        <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center mt-1">
-                          <div className="w-2 h-2 rounded-full bg-green-600" />
+                        <div className="w-5 h-5 rounded-full bg-brand-100 flex items-center justify-center mt-1">
+                          <div className="w-2 h-2 rounded-full bg-brand-600" />
                         </div>
                         <div>
                           <p className="text-[10px] font-bold text-slate-400 uppercase">Pickup</p>

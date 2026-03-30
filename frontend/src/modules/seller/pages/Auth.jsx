@@ -153,9 +153,8 @@ const Auth = () => {
       const digitsOnly = value.replace(/[^0-9]/g, "").slice(0, 6);
       setFormData({ ...formData, [name]: digitsOnly });
     } else if (name === "password") {
-      // Password: only digits and alphabets, max 6 characters
-      const cleaned = value.replace(/[^a-zA-Z0-9]/g, "").slice(0, 6);
-      setFormData({ ...formData, [name]: cleaned });
+      // Password: allow any characters, min length 6
+      setFormData({ ...formData, [name]: value });
     } else {
       setFormData({ ...formData, [name]: value });
     }
@@ -287,11 +286,11 @@ const Auth = () => {
           return;
         }
       }
-      // Password: exactly 6 characters, digits/alphabets only
+      // Password: min 6 characters
       const pwd = (formData.password || "").trim();
-      if (!/^[a-zA-Z0-9]{6}$/.test(pwd)) {
+      if (pwd.length < 6) {
         toast.error(
-          "Password must be exactly 6 characters (digits or letters only).",
+          "Password must be at least 6 characters.",
         );
         return;
       }
@@ -584,7 +583,7 @@ const Auth = () => {
                           }
                           className={`absolute right-3 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-wider transition-all ${
                             verifications.email.status === "verified"
-                              ? "bg-emerald-100 text-emerald-700 cursor-default"
+                              ? "bg-brand-100 text-brand-700 cursor-default"
                               : "bg-slate-900 text-white hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed"
                           }`}>
                           {verifications.email.isSending ? (
@@ -625,7 +624,7 @@ const Auth = () => {
                       </div>
                     )}
                     {!isLogin && verifications.email.status === "verified" && (
-                      <div className="flex items-center gap-2 text-[11px] font-bold text-emerald-600">
+                      <div className="flex items-center gap-2 text-[11px] font-bold text-brand-600">
                         <CheckCircle className="h-4 w-4" />
                         <span>Email verified successfully.</span>
                       </div>
@@ -656,7 +655,7 @@ const Auth = () => {
                             }
                             className={`absolute right-3 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-wider transition-all ${
                               verifications.phone.status === "verified"
-                                ? "bg-emerald-100 text-emerald-700 cursor-default"
+                                ? "bg-brand-100 text-brand-700 cursor-default"
                                 : "bg-slate-900 text-white hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed"
                             }`}>
                             {verifications.phone.isSending ? (
@@ -696,7 +695,7 @@ const Auth = () => {
                           </div>
                         )}
                         {verifications.phone.status === "verified" && (
-                          <div className="flex items-center gap-2 text-[11px] font-bold text-emerald-600">
+                          <div className="flex items-center gap-2 text-[11px] font-bold text-brand-600">
                             <CheckCircle className="h-4 w-4" />
                             <span>Phone number verified successfully.</span>
                           </div>
@@ -713,9 +712,8 @@ const Auth = () => {
                         name="password"
                         required
                         minLength={6}
-                        maxLength={6}
                         autoComplete="current-password"
-                        placeholder="6 digit / letter PIN"
+                        placeholder="Enter your password"
                         className="w-full pl-12 pr-6 py-4 bg-slate-50 border-2 border-transparent rounded-lg text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-200 transition-all placeholder:text-slate-300"
                         value={formData.password}
                         onChange={handleChange}
@@ -736,12 +734,12 @@ const Auth = () => {
                         onClick={() => setIsMapOpen(true)}
                         className={`w-full flex items-center justify-between p-4 rounded-lg border-2 border-dashed transition-all cursor-pointer ${
                           formData.lat
-                            ? "border-green-200 bg-green-50/50"
+                            ? "border-brand-200 bg-brand-50/50"
                             : "border-slate-200 bg-slate-50 hover:border-slate-300"
                         }`}>
                         <div className="flex items-center gap-3">
                           <div
-                            className={`p-2 rounded-md ${formData.lat ? "bg-green-100 text-green-600" : "bg-white text-slate-600 shadow-sm"}`}>
+                            className={`p-2 rounded-md ${formData.lat ? "bg-brand-100 text-brand-600" : "bg-white text-slate-600 shadow-sm"}`}>
                             {formData.lat ? (
                               <CheckCircle className="w-4 h-4" />
                             ) : (
@@ -750,7 +748,7 @@ const Auth = () => {
                           </div>
                           <div className="text-left">
                             <p
-                              className={`text-xs font-bold ${formData.lat ? "text-green-700" : "text-slate-600"}`}>
+                              className={`text-xs font-bold ${formData.lat ? "text-brand-700" : "text-slate-600"}`}>
                               {formData.lat
                                 ? "Location Selected"
                                 : "Pin Shop on Map"}
@@ -763,7 +761,7 @@ const Auth = () => {
                           </div>
                         </div>
                         {formData.lat && (
-                          <span className="text-[10px] font-black text-green-600 bg-green-100 px-2 py-0.5 rounded-full uppercase tracking-tighter">
+                          <span className="text-[10px] font-black text-brand-600 bg-brand-100 px-2 py-0.5 rounded-full uppercase tracking-tighter">
                             Verified
                           </span>
                         )}
@@ -867,12 +865,12 @@ const Auth = () => {
                               htmlFor={doc.id}
                               className={`flex items-center justify-between p-3.5 rounded-lg border-2 border-dashed transition-all cursor-pointer ${
                                 documents[doc.id]
-                                  ? "border-green-200 bg-green-50/50"
+                                  ? "border-brand-200 bg-brand-50/50"
                                   : "border-slate-200 bg-slate-50 hover:border-slate-300"
                               }`}>
                               <div className="flex items-center gap-3">
                                 <div
-                                  className={`p-2 rounded-md ${documents[doc.id] ? "bg-green-100 text-green-600" : "bg-white text-slate-600 shadow-sm"}`}>
+                                  className={`p-2 rounded-md ${documents[doc.id] ? "bg-brand-100 text-brand-600" : "bg-white text-slate-600 shadow-sm"}`}>
                                   {documents[doc.id] ? (
                                     <CheckCircle className="w-4 h-4" />
                                   ) : (
@@ -881,7 +879,7 @@ const Auth = () => {
                                 </div>
                                 <div className="text-left">
                                   <p
-                                    className={`text-xs font-bold ${documents[doc.id] ? "text-green-700" : "text-slate-600"}`}>
+                                    className={`text-xs font-bold ${documents[doc.id] ? "text-brand-700" : "text-slate-600"}`}>
                                     {doc.label}
                                   </p>
                                   <p className="text-xs text-slate-600 font-medium truncate max-w-[150px]">

@@ -71,6 +71,8 @@ export async function get(key) {
   
   try {
     const redis = getRedisClient();
+    if (!redis) return null;
+    
     const data = await redis.get(key);
     
     if (!data) {
@@ -105,6 +107,8 @@ export async function set(key, value, ttlSeconds) {
   
   try {
     const redis = getRedisClient();
+    if (!redis) return;
+    
     const serialized = JSON.stringify(value);
     
     await redis.setex(key, ttlSeconds, serialized);
@@ -130,6 +134,8 @@ export async function del(key) {
   
   try {
     const redis = getRedisClient();
+    if (!redis) return;
+    
     await redis.del(key);
     logger.debug(`[Cache] Deleted: ${key}`);
     incrementCounter("cache_delete_total", labelsFromKey(key));
@@ -154,6 +160,8 @@ export async function delPattern(pattern) {
   
   try {
     const redis = getRedisClient();
+    if (!redis) return 0;
+    
     let cursor = "0";
     let deletedCount = 0;
     
@@ -227,6 +235,8 @@ export async function invalidate(key) {
   
   try {
     const redis = getRedisClient();
+    if (!redis) return;
+    
     const patterns = [key];
     if (
       CACHE_KEY_VERSION &&
@@ -274,6 +284,7 @@ export async function subscribeToInvalidations(callback) {
   
   try {
     const redis = getRedisClient();
+    if (!redis) return;
     
     // Create a separate Redis client for pub/sub
     const subscriber = redis.duplicate();

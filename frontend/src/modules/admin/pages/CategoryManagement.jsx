@@ -295,7 +295,7 @@ const CategoryManagement = () => {
                                     <div className={cn(
                                         "h-8 w-8 rounded-lg flex items-center justify-center shadow-sm transition-transform duration-300 group-hover:scale-105",
                                         level === 0 ? "bg-indigo-50 text-indigo-600 ring-2 ring-indigo-50" :
-                                            level === 1 ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
+                                            level === 1 ? "bg-brand-50 text-brand-600" : "bg-amber-50 text-amber-600"
                                     )}>
                                         {level === 0 ? <FolderOpen className="h-4 w-4" /> :
                                             level === 1 ? <Folder className="h-4 w-4" /> :
@@ -344,7 +344,7 @@ const CategoryManagement = () => {
 
                         <div className={cn(
                             "absolute right-0 top-0 bottom-0 w-1",
-                            item.status === 'active' ? "bg-emerald-500" : "bg-gray-300"
+                            item.status === 'active' ? "bg-brand-500" : "bg-gray-300"
                         )} />
                     </div>
                     <AnimatePresence>
@@ -438,7 +438,7 @@ const CategoryManagement = () => {
                                     }}
                                     className={cn(
                                         "flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap",
-                                        filterStatus === 'active' ? "bg-emerald-500 text-white shadow-md shadow-emerald-100" :
+                                        filterStatus === 'active' ? "bg-brand-500 text-white shadow-md shadow-brand-100" :
                                             filterStatus === 'inactive' ? "bg-amber-500 text-white shadow-md shadow-amber-100" :
                                                 "bg-white ring-1 ring-slate-200 text-slate-600 hover:bg-slate-50"
                                     )}
@@ -596,7 +596,7 @@ const CategoryManagement = () => {
                             <div className="space-y-4">
                                 {[
                                     { step: '1', title: 'Headers', desc: 'Main navigation groups (e.g., Grocery).', color: 'bg-indigo-500' },
-                                    { step: '2', title: 'Categories', desc: 'Departmental folders (e.g., Dairy).', color: 'bg-emerald-500' },
+                                    { step: '2', title: 'Categories', desc: 'Departmental folders (e.g., Dairy).', color: 'bg-brand-500' },
                                     { step: '3', title: 'Subcategories', desc: 'Specific item groups (e.g., Milk).', color: 'bg-amber-500' }
                                 ].map((item, i) => (
                                     <div key={i} className="flex gap-4 group">
@@ -747,7 +747,7 @@ const CategoryManagement = () => {
                                             <button
                                                 onClick={() => setFormData({ ...formData, status: 'active' })}
                                                 className={cn("px-4 py-1.5 rounded-lg text-[10px] font-black transition-all flex items-center space-x-1.5 tracking-widest",
-                                                    formData.status === 'active' ? "bg-white text-emerald-600 shadow-sm" : "text-slate-400")}
+                                                    formData.status === 'active' ? "bg-white text-brand-600 shadow-sm" : "text-slate-400")}
                                             >
                                                 <Eye className="h-3.5 w-3.5" />
                                                 <span>LIVE</span>

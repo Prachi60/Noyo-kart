@@ -50,8 +50,16 @@ export const deliveryApi = {
     axiosInstance.put("/notifications/mark-all-read"),
   requestWithdrawal: (data) =>
     axiosInstance.post("/delivery/request-withdrawal", data),
-  updateOrderStatus: (orderId, data) =>
+  updateStatus: (orderId, data) =>
     axiosInstance.put(`/orders/status/${orderId}`, data),
   updateReturnStatus: (orderId, data) =>
     axiosInstance.put(`/orders/return-status/${orderId}`, data),
+  acceptReturnPickup: (orderId) =>
+    axiosInstance.put(`/orders/returns/${orderId}/accept-pickup`),
+  rejectReturnPickup: (orderId) =>
+    axiosInstance.put(`/orders/returns/${orderId}/reject-pickup`),
+  requestReturnOtp: (orderId, body) =>
+    axiosInstance.post(`/orders/workflow/${orderId}/return-otp/request`, body),
+  verifyReturnOtp: (orderId, body) =>
+    axiosInstance.post(`/orders/workflow/${orderId}/return-otp/verify`, body),
 };

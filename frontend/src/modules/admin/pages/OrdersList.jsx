@@ -140,7 +140,7 @@ const OrdersList = () => {
             case 'confirmed': return 'bg-blue-100 text-blue-600 border-blue-200';
             case 'packed': return 'bg-indigo-100 text-indigo-600 border-indigo-200';
             case 'out_for_delivery': return 'bg-purple-100 text-purple-600 border-purple-200';
-            case 'delivered': return 'bg-emerald-100 text-emerald-600 border-emerald-200';
+            case 'delivered': return 'bg-brand-100 text-brand-600 border-brand-200';
             case 'cancelled': return 'bg-rose-100 text-rose-600 border-rose-200';
             case 'returned': return 'bg-slate-100 text-slate-600 border-slate-200';
             default: return 'bg-gray-100 text-gray-600 border-gray-200';
@@ -188,7 +188,7 @@ const OrdersList = () => {
                     </button>
                     <div className="h-10 w-px bg-slate-200 mx-1 hidden lg:block" />
                     <button className="flex items-center gap-2 px-5 py-3 bg-white ring-1 ring-slate-200 text-slate-700 rounded-2xl text-xs font-bold hover:bg-slate-50 transition-all shadow-sm">
-                        <Calendar className="h-4 w-4 text-emerald-500" />
+                        <Calendar className="h-4 w-4 text-brand-500" />
                         {dateRange}
                     </button>
                 </div>
@@ -203,7 +203,7 @@ const OrdersList = () => {
                                 <stat.icon className={cn("h-5 w-5", `text-${stat.color}-600`)} />
                             </div>
                             {stat.trend && (
-                                <Badge variant="success" className="bg-emerald-50 text-emerald-600 border-none font-bold text-[10px]">
+                                <Badge variant="success" className="bg-brand-50 text-brand-600 border-none font-bold text-[10px]">
                                     {stat.trend}
                                 </Badge>
                             )}
@@ -288,7 +288,7 @@ const OrdersList = () => {
                                     </td>
                                     <td className="px-4 py-5">
                                         <div className="flex items-center gap-2">
-                                            <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                                            <div className="h-2 w-2 rounded-full bg-brand-500" />
                                             <span className="text-xs font-black text-slate-700">{order.seller}</span>
                                         </div>
                                     </td>

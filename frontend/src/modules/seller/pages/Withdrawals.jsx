@@ -162,7 +162,7 @@ const Withdrawals = () => {
                             <div className="relative z-10">
                                 <div className={cn(
                                     "h-10 w-10 rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110",
-                                    stat.color === 'emerald' ? 'bg-emerald-50 text-emerald-600' :
+                                    stat.color === 'emerald' ? 'bg-brand-50 text-brand-600' :
                                         stat.color === 'amber' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'
                                 )}>
                                     <stat.icon className="h-5 w-5" />
@@ -282,7 +282,7 @@ const Withdrawals = () => {
                     <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 flex items-center justify-between">
                         <div>
                             <p className="text-xs font-black text-slate-600 uppercase tracking-widest mb-1">Available to Withdraw</p>
-                            <h4 className="text-2xl font-black text-emerald-600">₹{balances.available.toLocaleString()}</h4>
+                            <h4 className="text-2xl font-black text-brand-600">₹{balances.available.toLocaleString()}</h4>
                         </div>
                         <div className="h-12 w-12 bg-white rounded-xl flex items-center justify-center shadow-sm">
                             <Info className="h-6 w-6 text-slate-300" />

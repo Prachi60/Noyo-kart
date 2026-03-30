@@ -195,7 +195,7 @@ const CategoryHierarchy = () => {
             </div>
             <div className="w-px h-4 bg-gray-300"></div>
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <span className="w-2 h-2 rounded-full bg-brand-500"></span>
               <span>
                 Subcategories: <b>{stats.subs}</b>
               </span>
@@ -319,7 +319,7 @@ const CategoryHierarchy = () => {
             title="Subcategories"
             icon={Tag}
             count={activeSubs.length}
-            color="border-l-4 border-l-emerald-500"
+            color="border-l-4 border-l-brand-500"
           />
 
           {!selectedLevel2 ? (

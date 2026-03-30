@@ -48,7 +48,7 @@ const NotificationPopup = ({ notifications, onMarkAsRead, onMarkAllAsRead, onClo
                                 <div className="flex gap-4">
                                     <div className={cn(
                                         "h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110",
-                                        notif.type === 'order' ? "bg-emerald-50 text-emerald-600" :
+                                        notif.type === 'order' ? "bg-brand-50 text-brand-600" :
                                             notif.type === 'payment' ? "bg-amber-50 text-amber-600" :
                                                 "bg-blue-50 text-blue-600"
                                     )}>

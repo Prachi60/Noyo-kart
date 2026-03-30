@@ -13,121 +13,29 @@ import * as logger from "./logger.js";
  * Each entry specifies the collection name and its required indexes
  */
 const INDEX_DEFINITIONS = {
+  // Only define indexes here that are NOT already in the model schemas
+  // or that need specific centralized management.
+  
   products: [
-    // Listing pages with status filter
-    { keys: { status: 1, categoryId: 1, createdAt: -1 }, options: { name: "status_category_created" } },
-    { keys: { status: 1, sellerId: 1, createdAt: -1 }, options: { name: "status_seller_created" } },
-    { keys: { status: 1, isFeatured: 1, createdAt: -1 }, options: { name: "status_featured_created" } },
-    { keys: { status: 1, createdAt: -1, _id: -1 }, options: { name: "status_created_tiebreak" } },
-    
-    // Text search
-    { 
-      keys: { name: "text", tags: "text" }, 
-      options: { 
-        name: "text_search",
-        weights: { name: 10, tags: 5 },
-        default_language: "english"
-      } 
-    },
-    
-    // Seller product management
-    { keys: { sellerId: 1, status: 1, stock: 1 }, options: { name: "seller_status_stock" } },
-    { keys: { sellerId: 1, createdAt: -1, _id: -1 }, options: { name: "seller_created_tiebreak" } },
+    // These are managed here to ensure background: true and specific naming
+    { keys: { status: 1, categoryId: 1, createdAt: -1 }, options: { name: "idx_status_category_created", background: true } },
+    { keys: { status: 1, sellerId: 1, createdAt: -1 }, options: { name: "idx_status_seller_created", background: true } },
   ],
   
   orders: [
-    // Customer order history
-    { keys: { customer: 1, createdAt: -1, status: 1 }, options: { name: "customer_created_status" } },
-    { keys: { customer: 1, createdAt: -1, _id: -1 }, options: { name: "customer_created_tiebreak" } },
-    
-    // Seller order management
-    { keys: { seller: 1, status: 1, createdAt: -1 }, options: { name: "seller_status_created" } },
-    { keys: { seller: 1, workflowStatus: 1, createdAt: -1 }, options: { name: "seller_workflow_created" } },
-    { keys: { seller: 1, createdAt: -1, _id: -1 }, options: { name: "seller_created_tiebreak" } },
-    
-    // Delivery partner orders
-    { keys: { deliveryBoy: 1, workflowStatus: 1, createdAt: -1 }, options: { name: "delivery_workflow_created" } },
-    
-    // Admin reports
-    { keys: { createdAt: -1, status: 1, paymentMode: 1 }, options: { name: "created_status_payment" } },
-    { keys: { status: 1, "settlementStatus.overall": 1, createdAt: -1 }, options: { name: "status_settlement_created" } },
-    
-    // Multi-seller checkout
-    { keys: { checkoutGroupId: 1, createdAt: -1 }, options: { name: "checkout_group_created" } },
-    { keys: { checkoutGroupId: 1, checkoutGroupIndex: 1 }, options: { name: "checkout_group_index" } },
-    
-    // TTL index for idempotency key expiry
-    { 
-      keys: { "placement.idempotencyKeyExpiry": 1 }, 
-      options: { 
-        name: "idempotency_expiry_ttl",
-        expireAfterSeconds: 0,
-        partialFilterExpression: { "placement.idempotencyKeyExpiry": { $type: "date" } }
-      } 
-    },
+    // These are already in Order.js, keeping only if we want explicit background creation
+    { keys: { customer: 1, createdAt: -1, status: 1 }, options: { name: "idx_customer_created_status", background: true } },
+    { keys: { seller: 1, status: 1, createdAt: -1 }, options: { name: "idx_seller_status_created", background: true } },
+    { keys: { seller: 1, workflowStatus: 1, createdAt: -1 }, options: { name: "idx_seller_workflow_created", background: true } },
   ],
   
   transactions: [
-    // User wallet history
-    { keys: { userId: 1, createdAt: -1, type: 1 }, options: { name: "user_created_type" } },
-    { keys: { userId: 1, status: 1, createdAt: -1 }, options: { name: "user_status_created" } },
+    { keys: { userId: 1, createdAt: -1, type: 1 }, options: { name: "idx_user_created_type", background: true } },
+    { keys: { userId: 1, status: 1, createdAt: -1 }, options: { name: "idx_user_status_created", background: true } },
   ],
   
   notifications: [
-    // User notifications
-    { keys: { recipient: 1, recipientModel: 1, isRead: 1, createdAt: -1 }, options: { name: "recipient_model_read_created" } },
-    { keys: { recipient: 1, createdAt: -1 }, options: { name: "recipient_created" } },
-    { keys: { recipient: 1, createdAt: -1, _id: -1 }, options: { name: "recipient_created_tiebreak" } },
-    { keys: { userId: 1, role: 1, isRead: 1, createdAt: -1 }, options: { name: "user_role_read_created" } },
-    { keys: { role: 1, status: 1, createdAt: -1 }, options: { name: "role_status_created" } },
-    { keys: { dedupeKey: 1 }, options: { name: "dedupe_key_idx" } },
-  ],
-
-  pushtokens: [
-    { keys: { token: 1 }, options: { name: "token_unique", unique: true } },
-    { keys: { userId: 1, role: 1, isActive: 1, lastUsedAt: -1 }, options: { name: "user_role_active_lastused" } },
-    { keys: { userId: 1, role: 1, token: 1 }, options: { name: "user_role_token_unique", unique: true } },
-  ],
-
-  notificationpreferences: [
-    { keys: { userId: 1, role: 1 }, options: { name: "user_role_unique", unique: true } },
-  ],
-
-  checkoutgroups: [
-    { keys: { checkoutGroupId: 1 }, options: { name: "checkout_group_unique", unique: true } },
-    { keys: { customer: 1, createdAt: -1 }, options: { name: "checkout_customer_created" } },
-    { keys: { paymentStatus: 1, createdAt: -1 }, options: { name: "checkout_payment_created" } },
-    {
-      keys: { "placement.idempotencyKeyExpiry": 1 },
-      options: {
-        name: "checkout_idempotency_expiry_ttl",
-        expireAfterSeconds: 0,
-        partialFilterExpression: { "placement.idempotencyKeyExpiry": { $type: "date" } },
-      },
-    },
-  ],
-
-  mediametadatas: [
-    { keys: { status: 1, expiresAt: 1 }, options: { name: "media_status_expires" } },
-    {
-      keys: { expiresAt: 1 },
-      options: {
-        name: "media_upload_intent_ttl",
-        expireAfterSeconds: 0,
-        partialFilterExpression: { status: "pending", expiresAt: { $type: "date" } },
-      },
-    },
-  ],
-  
-  otps: [
-    // TTL index for automatic expiration
-    { 
-      keys: { createdAt: 1 }, 
-      options: { 
-        name: "otp_expiry_ttl",
-        expireAfterSeconds: 600 // 10 minutes
-      } 
-    },
+    { keys: { recipient: 1, createdAt: -1 }, options: { name: "idx_recipient_created", background: true } },
   ],
 };
 
@@ -177,6 +85,13 @@ export async function createAllIndexes() {
           results.created++;
           
         } catch (error) {
+          // Check for index already exists with different name (code 85)
+          if (error.code === 85 || error.codeName === "IndexOptionsConflict") {
+            logger.info(`[DatabaseIndexManager] Equivalent index already exists on ${collectionName} (code 85)`);
+            results.existing++;
+            continue;
+          }
+          
           logger.error(`[DatabaseIndexManager] Failed to create index on ${collectionName}:`, error);
           results.failed++;
           results.errors.push({

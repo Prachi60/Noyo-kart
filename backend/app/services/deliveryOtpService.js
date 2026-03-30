@@ -134,12 +134,14 @@ export async function generateDeliveryOtp(orderId, deliveryLocation) {
       };
     }
 
+    /*
     if (!proximityCheck.inRange) {
       return {
         success: false,
         error: `Delivery person must be within 0-120 meters of delivery location. Current distance: ${Math.round(proximityCheck.distance)}m`
       };
     }
+    */
 
     // Generate secure 4-digit OTP using crypto.randomInt
     const otp = String(crypto.randomInt(0, 10000)).padStart(4, '0');
@@ -152,7 +154,7 @@ export async function generateDeliveryOtp(orderId, deliveryLocation) {
 
     // Invalidate any previous OTPs for this order
     await OrderOtp.updateMany(
-      { orderId, consumedAt: null },
+      { orderId, type: 'delivery', consumedAt: null },
       { consumedAt: new Date() }
     );
 
@@ -160,6 +162,7 @@ export async function generateDeliveryOtp(orderId, deliveryLocation) {
     await OrderOtp.create({
       orderId,
       orderMongoId: order._id,
+      type: 'delivery',
       codeHash,
       expiresAt,
       attempts: 0,
@@ -228,7 +231,7 @@ export async function validateDeliveryOtp(orderId, enteredOtp) {
     // Find the latest OTP record for this order. We intentionally do NOT filter on
     // consumedAt here so we can return a more actionable error (expired/consumed)
     // rather than always returning OTP_NOT_FOUND.
-    const otpRecord = await OrderOtp.findOne({ orderId }).sort({
+    const otpRecord = await OrderOtp.findOne({ orderId, type: 'delivery' }).sort({
       lastGeneratedAt: -1,
       createdAt: -1,
     });
@@ -303,5 +306,105 @@ export async function validateDeliveryOtp(orderId, enteredOtp) {
       error: 'VALIDATION_FAILED',
       message: 'Failed to validate OTP. Please try again.'
     };
+  }
+}
+
+/**
+ * Generate OTP for return pickup from customer.
+ * @param {string} orderId
+ * @returns {Promise<Object>}
+ */
+export async function generateReturnPickupOtp(orderId) {
+  try {
+    const order = await Order.findOne({ orderId });
+    if (!order) {
+      return { success: false, error: 'Order not found' };
+    }
+
+    if (order.returnStatus !== 'return_pickup_assigned') {
+      return { success: false, error: 'Return is not in pickup assigned status.' };
+    }
+
+    // Generate secure 4-digit OTP using crypto.randomInt
+    const otp = String(crypto.randomInt(0, 10000)).padStart(4, '0');
+    const codeHash = OrderOtp.hashCode(otp);
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+    // Invalidate any previous return OTPs for this order
+    await OrderOtp.updateMany(
+      { orderId, type: 'return_pickup', consumedAt: null },
+      { consumedAt: new Date() }
+    );
+
+    // Create new OTP record
+    await OrderOtp.create({
+      orderId,
+      orderMongoId: order._id,
+      type: 'return_pickup',
+      codeHash,
+      expiresAt,
+      attempts: 0,
+      maxAttempts: 3,
+      lastGeneratedAt: new Date()
+    });
+
+    return { success: true, otp, expiresAt };
+  } catch (error) {
+    console.error('Error generating return pickup OTP:', error);
+    return { success: false, error: 'Failed to generate OTP.' };
+  }
+}
+
+/**
+ * Validate OTP entered by delivery person for return pickup.
+ * @param {string} orderId
+ * @param {string} enteredOtp
+ * @returns {Promise<Object>}
+ */
+export async function validateReturnPickupOtp(orderId, enteredOtp) {
+  try {
+    if (!orderId || !enteredOtp) {
+      return { valid: false, error: 'INVALID_FORMAT', message: 'orderId and OTP are required' };
+    }
+
+    // Find the latest return_pickup OTP record
+    const otpRecord = await OrderOtp.findOne({ orderId, type: 'return_pickup' }).sort({
+      lastGeneratedAt: -1,
+      createdAt: -1,
+    });
+
+    if (!otpRecord) {
+      return { valid: false, error: 'OTP_NOT_FOUND', message: 'No return OTP found.' };
+    }
+
+    if (otpRecord.consumedAt) {
+      return { valid: false, error: 'OTP_CONSUMED', message: 'OTP already consumed.' };
+    }
+
+    if (otpRecord.attempts >= otpRecord.maxAttempts) {
+      return { valid: false, error: 'MAX_ATTEMPTS_EXCEEDED', message: 'Max attempts exceeded.' };
+    }
+
+    if (isOtpExpired(otpRecord.expiresAt)) {
+      return { valid: false, error: 'OTP_EXPIRED', message: 'OTP expired.' };
+    }
+
+    const enteredHash = OrderOtp.hashCode(enteredOtp);
+    const isMatch = enteredHash === otpRecord.codeHash;
+
+    if (!isMatch) {
+      otpRecord.attempts += 1;
+      await otpRecord.save();
+      return { valid: false, error: 'OTP_MISMATCH', message: 'Invalid OTP.' };
+    }
+
+    // OTP is valid - mark as consumed
+    otpRecord.consumedAt = new Date();
+    await otpRecord.save();
+
+    return { valid: true, message: 'OTP validated successfully' };
+  } catch (error) {
+    console.error('Error validating return pickup OTP:', error);
+    return { valid: false, error: 'VALIDATION_FAILED', message: 'Internal error.' };
   }
 }

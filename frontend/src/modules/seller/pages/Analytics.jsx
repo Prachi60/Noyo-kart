@@ -107,8 +107,8 @@ const Analytics = () => {
       value: statsData?.overview?.totalSales || "₹0",
       trend: statsData?.overview?.salesTrend || "0%",
       icon: HiOutlineArrowTrendingUp,
-      color: "text-emerald-600",
-      bg: "bg-emerald-50",
+      color: "text-brand-600",
+      bg: "bg-brand-50",
     },
     {
       label: "Total Orders",
@@ -231,7 +231,7 @@ const Analytics = () => {
               Advanced Analytics
               <Badge
                 variant="success"
-                className="text-[9px] px-1.5 py-0 font-bold tracking-wider uppercase bg-emerald-100 text-emerald-700">
+                className="text-[9px] px-1.5 py-0 font-bold tracking-wider uppercase bg-brand-100 text-brand-700">
                 Real-time Insights
               </Badge>
             </h1>
@@ -299,7 +299,7 @@ const Analytics = () => {
                     className={cn(
                       "flex items-center mt-3 text-xs sm:text-sm font-black px-2 py-0.5 rounded-full w-fit",
                       stat.trend.startsWith("+")
-                        ? "text-emerald-600 bg-emerald-50"
+                        ? "text-brand-600 bg-brand-50"
                         : "text-rose-600 bg-rose-50",
                     )}>
                     {stat.trend.startsWith("+") ? (
@@ -545,7 +545,7 @@ const Analytics = () => {
                       className={cn(
                         "flex items-center justify-end text-[10px] font-black mt-0.5",
                         product.trend > 0
-                          ? "text-emerald-600"
+                          ? "text-brand-600"
                           : "text-rose-600",
                       )}>
                       {product.trend > 0 ? (
@@ -647,7 +647,7 @@ const Analytics = () => {
                 </p>
               </div>
               <div className="text-center">
-                <div className="h-10 w-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center mx-auto mb-2">
+                <div className="h-10 w-10 bg-brand-50 text-brand-600 rounded-xl flex items-center justify-center mx-auto mb-2">
                   <HiOutlineClock className="h-5 w-5" />
                 </div>
                 <p className="text-[10px] font-black text-slate-900 tracking-tight">
@@ -695,11 +695,11 @@ const Analytics = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 bg-emerald-50 rounded-2xl">
-                <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">
+              <div className="p-4 bg-brand-50 rounded-2xl">
+                <p className="text-[10px] font-black text-brand-700 uppercase tracking-widest">
                   Revenue
                 </p>
-                <p className="text-xl font-black text-emerald-900">
+                <p className="text-xl font-black text-brand-900">
                   {selectedProduct.revenue}
                 </p>
               </div>

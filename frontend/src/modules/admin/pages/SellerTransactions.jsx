@@ -181,7 +181,7 @@ const SellerTransactions = () => {
             {/* Live Stats Overview */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
-                    { label: 'Total Sales', value: `₹${stats.totalGross.toLocaleString()}`, icon: ShoppingBag, bg: 'bg-emerald-50', color: 'text-emerald-600' },
+                    { label: 'Total Sales', value: `₹${stats.totalGross.toLocaleString()}`, icon: ShoppingBag, bg: 'bg-brand-50', color: 'text-brand-600' },
                     { label: 'Our Share', value: `₹${stats.totalCommission.toLocaleString()}`, icon: Percent, bg: 'bg-orange-50', color: 'text-orange-600' },
                     { label: 'Total Paid Out', value: `₹${stats.totalPayouts.toLocaleString()}`, icon: Banknote, bg: 'bg-blue-50', color: 'text-blue-600' },
                     { label: 'Pending Total', value: `₹${stats.pendingSettlements.toLocaleString()}`, icon: Clock, bg: 'bg-amber-50', color: 'text-amber-600' },
@@ -282,7 +282,7 @@ const SellerTransactions = () => {
                                         <div className="flex items-center gap-3">
                                             <div className={cn(
                                                 "h-10 w-10 rounded-xl flex items-center justify-center shadow-sm",
-                                                txn.type === 'sale' ? "bg-blue-50 text-blue-600" : txn.type === 'payout' ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
+                                                txn.type === 'sale' ? "bg-blue-50 text-blue-600" : txn.type === 'payout' ? "bg-brand-50 text-brand-600" : "bg-rose-50 text-rose-600"
                                             )}>
                                                 {txn.type === 'sale' ? <ShoppingCart className="h-5 w-5" /> : txn.type === 'payout' ? <ArrowUpRight className="h-5 w-5" /> : <Undo2 className="h-5 w-5" />}
                                             </div>
@@ -316,7 +316,7 @@ const SellerTransactions = () => {
                                         {txn.type === 'sale' ? (
                                             <div className="flex flex-col items-center">
                                                 <span className="text-[9px] font-bold text-rose-500">(-₹{txn.commissionAmount})</span>
-                                                <span className="text-xs font-black text-emerald-600 pt-0.5">₹{txn.netPayable.toLocaleString()}</span>
+                                                <span className="text-xs font-black text-brand-600 pt-0.5">₹{txn.netPayable.toLocaleString()}</span>
                                             </div>
                                         ) : (
                                             <span className="text-slate-300 font-bold text-[10px]">---</span>
@@ -379,7 +379,7 @@ const SellerTransactions = () => {
                         <div className="flex flex-col items-center text-center p-6 bg-slate-50 rounded-xl border border-slate-100">
                             <div className={cn(
                                 "h-16 w-16 rounded-2xl flex items-center justify-center shadow-lg mb-4 text-white",
-                                selectedTxn.type === 'sale' ? "bg-orange-500" : selectedTxn.type === 'payout' ? "bg-emerald-500" : "bg-rose-500"
+                                selectedTxn.type === 'sale' ? "bg-orange-500" : selectedTxn.type === 'payout' ? "bg-brand-500" : "bg-rose-500"
                             )}>
                                 {selectedTxn.type === 'sale' ? <ShoppingCart className="h-8 w-8" /> : selectedTxn.type === 'payout' ? <ArrowUpRight className="h-8 w-8" /> : <Undo2 className="h-8 w-8" />}
                             </div>
@@ -438,7 +438,7 @@ const SellerTransactions = () => {
                                         </div>
                                         <div className="pt-4 border-t border-white/10 flex justify-between items-center">
                                             <span className="text-xs font-black uppercase tracking-widest">Merchant Net Payable</span>
-                                            <span className="text-lg font-black text-emerald-400">₹{selectedTxn.netPayable}</span>
+                                            <span className="text-lg font-black text-brand-400">₹{selectedTxn.netPayable}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -447,19 +447,19 @@ const SellerTransactions = () => {
                             {selectedTxn.type === 'payout' && (
                                 <div className="space-y-4">
                                     <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest px-4">Transfer Intel</h4>
-                                    <div className="bg-emerald-50 ring-1 ring-emerald-100 rounded-[24px] p-6 space-y-4">
+                                    <div className="bg-brand-50 ring-1 ring-brand-100 rounded-[24px] p-6 space-y-4">
                                         <div className="flex items-center gap-3">
-                                            <Info className="h-5 w-5 text-emerald-600" />
-                                            <p className="text-xs font-bold text-emerald-800 uppercase tracking-widest">Successful Disbursement</p>
+                                            <Info className="h-5 w-5 text-brand-600" />
+                                            <p className="text-xs font-bold text-brand-800 uppercase tracking-widest">Successful Disbursement</p>
                                         </div>
                                         <div className="space-y-2">
                                             <div className="flex justify-between">
-                                                <span className="text-[10px] font-bold text-emerald-600/60 uppercase">Reference Identifier</span>
-                                                <span className="text-xs font-mono font-black text-emerald-900 line-clamp-1">{selectedTxn.referenceId}</span>
+                                                <span className="text-[10px] font-bold text-brand-600/60 uppercase">Reference Identifier</span>
+                                                <span className="text-xs font-mono font-black text-brand-900 line-clamp-1">{selectedTxn.referenceId}</span>
                                             </div>
                                             <div className="flex justify-between">
-                                                <span className="text-[10px] font-bold text-emerald-600/60 uppercase">Settlement Target</span>
-                                                <span className="text-xs font-black text-emerald-900">{selectedTxn.bankDetails}</span>
+                                                <span className="text-[10px] font-bold text-brand-600/60 uppercase">Settlement Target</span>
+                                                <span className="text-xs font-black text-brand-900">{selectedTxn.bankDetails}</span>
                                             </div>
                                         </div>
                                     </div>

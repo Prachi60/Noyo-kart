@@ -223,7 +223,7 @@ const SupportTickets = () => {
                                     onClick={() => handleResolve(selectedTicket.id)}
                                     className={cn(
                                         "p-2.5 ring-1 ring-slate-200 rounded-xl transition-all",
-                                        selectedTicket.status === 'closed' ? "bg-emerald-50 text-emerald-500 ring-emerald-100" : "bg-white text-slate-400 hover:text-emerald-500"
+                                        selectedTicket.status === 'closed' ? "bg-brand-50 text-brand-500 ring-brand-100" : "bg-white text-slate-400 hover:text-brand-500"
                                     )}
                                     title="Mark as Resolved"
                                 >

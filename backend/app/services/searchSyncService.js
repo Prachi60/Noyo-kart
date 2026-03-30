@@ -32,14 +32,18 @@ export function getSearchIndexQueue() {
     return searchIndexQueue;
   }
   
-  const redis = getRedisClient();
+  const client = getRedisClient();
+  if (!client) {
+    logger.warn("[SearchSync] Redis client not available, search sync queue initialization skipped");
+    return null;
+  }
   
   searchIndexQueue = new Bull("search-index", {
     redis: {
-      host: redis.options.host,
-      port: redis.options.port,
-      password: redis.options.password,
-      db: redis.options.db || 0,
+      host: client.options.host,
+      port: client.options.port,
+      password: client.options.password,
+      db: client.options.db || 0,
     },
     defaultJobOptions: {
       attempts: SEARCH_INDEX_RETRY_ATTEMPTS,

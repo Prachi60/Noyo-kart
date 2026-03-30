@@ -242,11 +242,11 @@ const LiveTrackingMap = memo(({
 
   if (norm === "seller_pending") {
     return (
-      <div className="relative w-full min-h-[260px] bg-gradient-to-br from-[#f0faf4] to-[#e8f5e9] overflow-hidden rounded-b-[2rem] flex flex-col items-center justify-center gap-3 px-6 py-10 border-b border-emerald-100">
+      <div className="relative w-full min-h-[260px] bg-gradient-to-br from-[#f0faf4] to-[#e8f5e9] overflow-hidden rounded-b-[2rem] flex flex-col items-center justify-center gap-3 px-6 py-10 border-b border-brand-100">
         <motion.div
           animate={{ scale: [1, 1.05, 1] }}
           transition={{ duration: 2, repeat: Infinity }}
-          className="h-16 w-16 bg-[#61dafbaa] rounded-full flex items-center justify-center shadow-lg shadow-green-200">
+          className="h-16 w-16 bg-[#61dafbaa] rounded-full flex items-center justify-center shadow-lg shadow-brand-200">
           <Clock size={30} className="text-white" />
         </motion.div>
         <h3 className="text-lg font-black text-gray-800 text-center">
@@ -284,7 +284,7 @@ const LiveTrackingMap = memo(({
         <motion.div
           animate={{ scale: [1, 1.1, 1] }}
           transition={{ duration: 1.5, repeat: Infinity }}
-          className="relative z-10 h-16 w-16 bg-[#61dafbaa] rounded-full flex items-center justify-center shadow-xl shadow-green-200">
+          className="relative z-10 h-16 w-16 bg-[#61dafbaa] rounded-full flex items-center justify-center shadow-xl shadow-brand-200">
           <Search size={28} className="text-white" />
         </motion.div>
 
@@ -302,8 +302,8 @@ const LiveTrackingMap = memo(({
         <motion.div
           animate={{ y: [0, -4, 0] }}
           transition={{ duration: 2, repeat: Infinity }}
-          className="relative z-10 bg-white px-4 py-2 rounded-full shadow-md border border-green-100 flex items-center gap-2">
-          <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
+          className="relative z-10 bg-white px-4 py-2 rounded-full shadow-md border border-brand-100 flex items-center gap-2">
+          <div className="h-2 w-2 bg-brand-500 rounded-full animate-pulse" />
           <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">
             {status === "confirmed"
               ? "Order Confirmed · Assigning Rider"
@@ -338,7 +338,7 @@ const LiveTrackingMap = memo(({
   if (!isLoaded) {
     return (
       <div className="relative w-full h-[350px] bg-slate-50 rounded-b-[2rem] flex items-center justify-center">
-        <Loader2 className="animate-spin text-emerald-600" size={28} />
+        <Loader2 className="animate-spin text-brand-600" size={28} />
       </div>
     );
   }
@@ -416,7 +416,7 @@ const LiveTrackingMap = memo(({
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           className="bg-white/90 backdrop-blur-md rounded-2xl p-3 shadow-lg border border-white/50 flex items-center gap-3">
-          <div className="h-10 w-10 bg-green-50 rounded-xl flex items-center justify-center text-[#61dafbaa]">
+          <div className="h-10 w-10 bg-brand-50 rounded-xl flex items-center justify-center text-[#61dafbaa]">
             <Clock size={20} strokeWidth={2.5} />
           </div>
           <div>
@@ -470,7 +470,7 @@ const LiveTrackingMap = memo(({
                 </p>
               </div>
               <div className="flex items-center gap-1.5">
-                <button className="h-8 w-8 rounded-full bg-green-50 flex items-center justify-center text-[#61dafbaa] hover:bg-green-100 transition-colors">
+                <button className="h-8 w-8 rounded-full bg-brand-50 flex items-center justify-center text-[#61dafbaa] hover:bg-brand-100 transition-colors">
                   <Phone size={14} />
                 </button>
                 <button className="h-8 w-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 hover:bg-blue-100 transition-colors">

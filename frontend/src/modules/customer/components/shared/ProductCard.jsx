@@ -120,10 +120,10 @@ const ProductCard = React.memo(
         className={cn(
           "flex-shrink-0 w-full rounded-2xl overflow-hidden flex flex-col h-full shadow-sm cursor-pointer transition-all duration-300",
           compact
-            ? "bg-white border-[1.5px] border-emerald-50 shadow-[0_8px_20px_-8px_rgba(0,0,0,0.08)]"
+            ? "bg-white border-[1.5px] border-cyan-50 shadow-[0_8px_20px_-8px_rgba(0,0,0,0.08)]"
             : neutralBg
               ? "bg-white border border-slate-100 shadow-[0_8px_20px_-8px_rgba(0,0,0,0.08)]"
-              : "bg-[#ecfeff] border border-green-100",
+              : "bg-[#ecfeff] border border-cyan-100",
           className,
         )}
         onClick={handleProductClick}>
@@ -204,12 +204,12 @@ const ProductCard = React.memo(
           <div className="flex items-center gap-1.5 mb-1">
             <div
               className={cn(
-                "border-2 border-green-500 rounded-full flex items-center justify-center",
+                "border-2 border-[#61dafbaa] rounded-full flex items-center justify-center",
                 compact ? "h-2.5 w-2.5" : "h-3.5 w-3.5",
               )}>
               <div
                 className={cn(
-                  "bg-green-500 rounded-full",
+                  "bg-[#61dafbaa] rounded-full",
                   compact ? "h-0.5 w-0.5" : "h-1 w-1",
                 )}
               />
@@ -235,7 +235,7 @@ const ProductCard = React.memo(
 
           {/* Delivery Time & Unit info */}
           <div className="flex items-center gap-1.5 text-gray-500 mt-1 mb-2">
-            <Clock size={compact ? 10 : 11} className="text-emerald-500/80" />
+            <Clock size={compact ? 10 : 11} className="text-[#61dafbaa]/80" />
             <span
               className={cn(
                 "font-semibold",

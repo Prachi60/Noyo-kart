@@ -100,7 +100,7 @@ const VehicleInfo = () => {
                       Renew
                     </Button>
                   ) : (
-                    <div className="flex items-center text-green-600 bg-green-50 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider">
+                    <div className="flex items-center text-brand-600 bg-brand-50 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider">
                       <ShieldCheck size={12} className="mr-1" /> Verified
                     </div>
                   )}

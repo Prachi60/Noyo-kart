@@ -5,9 +5,9 @@
 
 :root {
   /* Brand colors: overridden at runtime by SettingsContext from API (settings.primaryColor, settings.secondaryColor) */
-  --primary: oklch(0.55 0.23 260);
+  --primary: oklch(0.82 0.12 215); /* #61dafb cyan/sea-foam */
   --primary-color: var(--primary);
-  --primary-dark: #0369a1;
+  --primary-dark: #008eb7;
   --radius: 0.5rem;
   --background: oklch(0.99 0.005 260);
   --foreground: oklch(0.15 0.02 260);
@@ -88,13 +88,14 @@ body {
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+  
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
+  --color-primary: #61dafb;
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
@@ -106,19 +107,40 @@ body {
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Semantic Color Overrides to force theme consistency */
+  --color-brand-50: #ecfeff;
+  --color-brand-100: #cffafe;
+  --color-brand-200: #a5f3fc;
+  --color-brand-300: #67e8f9;
+  --color-brand-400: #22d3ee;
+  --color-brand-500: #61dafb;
+  --color-brand-600: #0ea5e9;
+  --color-brand-700: #0284c7;
+  --color-brand-800: #0369a1;
+  --color-brand-900: #075985;
+
+  --color-emerald-50: #ecfeff;
+  --color-emerald-100: #cffafe;
+  --color-emerald-200: #a5f3fc;
+  --color-emerald-300: #67e8f9;
+  --color-emerald-400: #22d3ee;
+  --color-emerald-500: #61dafb;
+  --color-emerald-600: #0ea5e9;
+  --color-emerald-700: #0284c7;
+  --color-emerald-800: #0369a1;
+  --color-emerald-900: #075985;
+
+  --color-green-50: #ecfeff;
+  --color-green-100: #cffafe;
+  --color-green-200: #a5f3fc;
+  --color-green-300: #67e8f9;
+  --color-green-400: #22d3ee;
+  --color-green-500: #61dafb;
+  --color-green-600: #0ea5e9;
+  --color-green-700: #0284c7;
+  --color-green-800: #0369a1;
+  --color-green-900: #075985;
 }
 
 .dark {
@@ -343,4 +365,37 @@ body {
 
 .compact-card-content {
   padding: 1rem;
+}
+
+/* Sonner Toast Theme Overrides */
+[data-sonner-toast] {
+  border-radius: 12px !important;
+  font-family: inherit !important;
+}
+
+[data-sonner-toast][data-type="success"] {
+  background-color: #f0fdfa !important; /* light cyan */
+  border-color: #61dafbaa !important;
+  color: #0ea5e9 !important;
+}
+
+[data-sonner-toast][data-type="success"] [data-icon] {
+  color: #61dafbaa !important;
+}
+
+[data-sonner-toast] [data-close-button] {
+  background: white !important;
+  border-color: #e2e8f0 !important;
+  color: #94a3b8 !important;
+}
+
+/* Fix for the screenshot's 'added to cart' UI if it uses primary color */
+.bg-success {
+    background-color: #f0fdfa !important;
+}
+.text-success {
+    color: #61dafbaa !important;
+}
+.border-success {
+    border-color: #61dafbaa !important;
 }

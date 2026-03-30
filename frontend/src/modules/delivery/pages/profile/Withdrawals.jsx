@@ -197,7 +197,7 @@ const Withdrawals = () => {
                                     <div className="flex items-center">
                                         <div className={cn(
                                             "p-3 rounded-full mr-4",
-                                            item.status === 'Settled' ? "bg-green-50 text-green-600" :
+                                            item.status === 'Settled' ? "bg-brand-50 text-brand-600" :
                                                 item.status === 'Failed' ? "bg-red-50 text-red-600" :
                                                     "bg-amber-50 text-amber-600"
                                         )}>
@@ -233,7 +233,7 @@ const Withdrawals = () => {
 const Badge = ({ children, variant = "default" }) => {
     const variants = {
         default: "bg-gray-100 text-gray-600",
-        success: "bg-green-50 text-green-600",
+        success: "bg-brand-50 text-brand-600",
         warning: "bg-amber-50 text-amber-600",
         destructive: "bg-red-50 text-red-600",
     };

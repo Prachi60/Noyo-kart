@@ -93,8 +93,8 @@ const AdminDashboard = () => {
             label: 'Revenue',
             value: `₹${overview.totalRevenue?.toLocaleString() || '0'}`,
             icon: BarChart3,
-            color: 'text-emerald-600',
-            bg: 'bg-emerald-50',
+            color: 'text-brand-600',
+            bg: 'bg-brand-50',
             trend: '+8.2%',
             description: 'Net earnings'
         },
@@ -310,7 +310,7 @@ const AdminDashboard = () => {
                                     </div>
                                     <div className="text-right">
                                         <p className="text-sm font-bold text-gray-900">{product.rev}</p>
-                                        <p className="text-[10px] text-emerald-600 font-bold">{product.trend}</p>
+                                        <p className="text-[10px] text-brand-600 font-bold">{product.trend}</p>
                                     </div>
                                 </div>
                             )) : (

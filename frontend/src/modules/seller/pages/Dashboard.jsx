@@ -97,8 +97,8 @@ const Dashboard = () => {
       change: "+12.5%",
       changeType: "increase",
       icon: DollarSign,
-      iconBg: "bg-emerald-50",
-      iconColor: "text-emerald-600",
+      iconBg: "bg-brand-50",
+      iconColor: "text-brand-600",
       description: "vs last month",
     },
     {
@@ -257,7 +257,7 @@ const Dashboard = () => {
                   <span
                     className={cn(
                       "text-xs font-semibold flex items-center gap-1",
-                      stat.changeType === "increase" ? "text-emerald-600" : "text-red-600"
+                      stat.changeType === "increase" ? "text-brand-600" : "text-red-600"
                     )}
                   >
                     <TrendingUp className={cn("h-3 w-3", stat.changeType === "decrease" && "rotate-180")} />
@@ -287,17 +287,17 @@ const Dashboard = () => {
                 "p-6 rounded-xl text-left transition-all duration-200 shadow-sm hover:shadow-md border-2",
                 isPrimary && "bg-primary border-primary text-white hover:bg-primary/90 hover:border-primary/90",
                 action.variant === "outline" && "bg-white border-slate-200 text-slate-900 hover:border-primary hover:bg-primary/5",
-                isEmerald && "bg-white border-slate-200 text-slate-900 hover:border-emerald-500 hover:bg-emerald-50"
+                isEmerald && "bg-white border-slate-200 text-slate-900 hover:border-brand-500 hover:bg-brand-50"
               )}
             >
               <div className="flex items-start gap-4">
                 <div className={cn(
                   "p-2 rounded-lg",
-                  isPrimary ? "bg-white/20" : isEmerald ? "bg-emerald-50" : "bg-slate-100"
+                  isPrimary ? "bg-white/20" : isEmerald ? "bg-brand-50" : "bg-slate-100"
                 )}>
                   <action.icon className={cn(
                     "h-5 w-5",
-                    isPrimary ? "text-white" : isEmerald ? "text-emerald-600" : "text-slate-700"
+                    isPrimary ? "text-white" : isEmerald ? "text-brand-600" : "text-slate-700"
                   )} />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -548,7 +548,7 @@ const Dashboard = () => {
                     </div>
                     <div>
                       <h4 className="text-xs font-black text-slate-600 uppercase tracking-widest mb-2 flex items-center gap-2">
-                        <HiOutlinePhone className="h-3 w-3 text-emerald-500" />{" "}
+                        <HiOutlinePhone className="h-3 w-3 text-brand-500" />{" "}
                         Contact Info
                       </h4>
                       <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 shadow-sm">
@@ -579,7 +579,7 @@ const Dashboard = () => {
                           <span className="font-bold text-slate-600">
                             Delivery Fee
                           </span>
-                          <span className="font-black text-emerald-600">
+                          <span className="font-black text-brand-600">
                             ₹10.00
                           </span>
                         </div>
@@ -599,7 +599,7 @@ const Dashboard = () => {
                         Payment Status
                       </h4>
                       <div className="flex items-center gap-2">
-                        <HiOutlineBanknotes className="h-5 w-5 text-emerald-400" />
+                        <HiOutlineBanknotes className="h-5 w-5 text-brand-400" />
                         <span className="text-xs font-bold tracking-tight">
                           {selectedOrder.payment}
                         </span>
@@ -678,7 +678,7 @@ const Dashboard = () => {
                                 ? "bg-purple-100 text-purple-700 focus:ring-purple-200"
                                 : getStatusColor(selectedOrder.status) ===
                                     "success"
-                                  ? "bg-emerald-100 text-emerald-700 focus:ring-emerald-200"
+                                  ? "bg-brand-100 text-brand-700 focus:ring-brand-200"
                                   : getStatusColor(selectedOrder.status) ===
                                       "error"
                                     ? "bg-rose-100 text-rose-700 focus:ring-rose-200"

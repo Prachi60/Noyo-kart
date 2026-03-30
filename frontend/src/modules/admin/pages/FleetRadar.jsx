@@ -101,7 +101,7 @@ const FleetRadar = () => {
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                 Avg Deliv. Time
               </p>
-              <h4 className="text-xl font-black text-emerald-600">14.2m</h4>
+              <h4 className="text-xl font-black text-brand-600">14.2m</h4>
             </div>
             <div className="text-center">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
@@ -271,7 +271,7 @@ const FleetRadar = () => {
                                 "h-3.5 w-3.5",
                                 selectedRider.battery < 20
                                   ? "text-rose-500 animate-pulse"
-                                  : "text-emerald-500",
+                                  : "text-brand-500",
                               )}
                             />
                             <span className="text-xs font-black">

@@ -65,8 +65,8 @@ import {
 } from "@/shared/constants/offerSectionOptions";
 
 const DEFAULT_CATEGORY_THEME = {
-  gradient: "linear-gradient(to bottom, #25D366, #4ADE80)",
-  shadow: "shadow-green-500/20",
+  gradient: "linear-gradient(to bottom, #61dafbaa, #38bdf8)",
+  shadow: "shadow-cyan-500/20",
   accent: "text-[#1A1A1A]",
 };
 
@@ -1178,7 +1178,7 @@ const Home = () => {
                   className="w-[140px] md:w-[140px] shrink-0 snap-start">
                   <ProductCard
                     product={product}
-                    className="bg-white shadow-[0_8px_20px_-8px_rgba(0,0,0,0.1)] md:shadow-[0_15px_30px_rgba(0,0,0,0.05)] border-green-50/50 md:border-slate-100 transition-all"
+                    className="bg-white shadow-[0_8px_20px_-8px_rgba(0,0,0,0.1)] md:shadow-[0_15px_30px_rgba(0,0,0,0.05)] border-brand-50/50 md:border-slate-100 transition-all"
                     compact={true}
                   />
                 </div>
@@ -1284,7 +1284,7 @@ const Home = () => {
                       {/* Top-left pill with items count */}
                       {sectionProducts.length > 0 && (
                         <div className="absolute top-1 left-1 px-2 py-0.5 rounded-full bg-black/70 text-[9px] font-bold text-white/90 tracking-wide flex items-center gap-1">
-                          <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                          <span className="inline-block w-1.5 h-1.5 rounded-full bg-brand-400" />
                           {sectionProducts.length} items
                         </div>
                       )}

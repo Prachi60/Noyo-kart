@@ -62,14 +62,14 @@ const Profile = () => {
       icon: CreditCard,
       label: "Bank Account",
       sub: "HDFC Bank **** 8921",
-      color: "text-green-600 bg-green-50",
+      color: "text-brand-600 bg-brand-50",
       path: "/delivery/profile/bank-account",
     },
     {
       icon: IndianRupee,
       label: "Money Request",
       sub: "Withdraw your earnings",
-      color: "text-emerald-600 bg-emerald-50",
+      color: "text-brand-600 bg-brand-50",
       path: "/delivery/profile/withdrawals",
     },
     {
@@ -139,7 +139,7 @@ const Profile = () => {
                 className="w-full h-full rounded-full object-cover bg-gray-100"
               />
             </div>
-            <div className="absolute bottom-0 right-0 w-6 h-6 bg-green-500 border-2 border-white rounded-full"></div>
+            <div className="absolute bottom-0 right-0 w-6 h-6 bg-brand-500 border-2 border-white rounded-full"></div>
           </div>
           <div className="text-white">
             <h2 className="font-bold text-xl">Rahul Kumar</h2>
@@ -150,7 +150,7 @@ const Profile = () => {
               <span className="bg-white/20 px-2 py-0.5 rounded text-xs font-medium backdrop-blur-sm">
                 ID: 882190
               </span>
-              <span className="bg-green-500 text-white px-2 py-0.5 rounded text-xs font-bold shadow-sm">
+              <span className="bg-brand-500 text-white px-2 py-0.5 rounded text-xs font-bold shadow-sm">
                 VERIFIED
               </span>
             </div>

@@ -153,7 +153,7 @@ const PendingSellers = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {[
                     { label: 'Total Applications', val: stats.total, icon: HiOutlineDocumentText, color: 'text-blue-600', bg: 'bg-blue-50' },
-                    { label: 'Received Today', val: stats.today, icon: HiOutlineCalendarDays, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                    { label: 'Received Today', val: stats.today, icon: HiOutlineCalendarDays, color: 'text-brand-600', bg: 'bg-brand-50' },
                     { label: 'Missing Info', val: stats.urgent, icon: HiOutlineXCircle, color: 'text-rose-600', bg: 'bg-rose-50' }
                 ].map((stat, i) => (
                     <Card key={i} className="border-none shadow-sm ring-1 ring-slate-100 p-5">
@@ -373,7 +373,7 @@ const PendingSellers = () => {
                                                                 <div className="min-w-0">
                                                                     <p className="text-xs font-bold text-slate-700">{doc.label}</p>
                                                                     <p className={`text-[9px] font-bold uppercase tracking-tighter truncate ${
-                                                                        doc.isViewable ? 'text-emerald-500' : 'text-amber-500'
+                                                                        doc.isViewable ? 'text-brand-500' : 'text-amber-500'
                                                                     }`}>
                                                                         {doc.isViewable
                                                                             ? doc.fileType === 'pdf'

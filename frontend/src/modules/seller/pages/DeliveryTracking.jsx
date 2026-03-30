@@ -143,8 +143,8 @@ const DeliveryTracking = () => {
         label: "Completed Today",
         value: deliveries.filter((d) => d.status === "Delivered").length,
         icon: HiOutlineCheckCircle,
-        color: "text-emerald-600",
-        bg: "bg-emerald-50",
+        color: "text-brand-600",
+        bg: "bg-brand-50",
       },
     ],
     [deliveries],
@@ -290,7 +290,7 @@ const DeliveryTracking = () => {
                                   className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-700"
                                 />
                               </div>
-                              <div className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 h-5 w-5 sm:h-6 sm:w-6 bg-emerald-500 rounded-md border-2 border-white flex items-center justify-center text-white text-[9px] sm:text-[10px] font-black shadow-sm">
+                              <div className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 h-5 w-5 sm:h-6 sm:w-6 bg-brand-500 rounded-md border-2 border-white flex items-center justify-center text-white text-[9px] sm:text-[10px] font-black shadow-sm">
                                 {dlv.deliveryBoy.rating}
                               </div>
                             </div>

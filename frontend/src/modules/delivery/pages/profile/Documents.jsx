@@ -54,7 +54,7 @@ const Documents = () => {
     switch (status) {
       case "Verified":
         return (
-          <span className="flex items-center text-green-600 bg-green-50 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider">
+          <span className="flex items-center text-brand-600 bg-brand-50 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider">
             <FileCheck size={12} className="mr-1" /> Verified
           </span>
         );

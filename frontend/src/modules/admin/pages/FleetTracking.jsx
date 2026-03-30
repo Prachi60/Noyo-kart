@@ -148,7 +148,7 @@ const FleetTrackingTable = () => {
                         {item.seller.name}
                       </span>
                       <HiOutlineArrowRight className="text-slate-300" />
-                      <span className="text-xs font-semibold bg-emerald-50 text-emerald-700 px-2 py-1 rounded border border-emerald-100">
+                      <span className="text-xs font-semibold bg-brand-50 text-brand-700 px-2 py-1 rounded border border-brand-100">
                         {item.customer.name}
                       </span>
                     </div>

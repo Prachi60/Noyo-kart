@@ -178,8 +178,8 @@ const Orders = () => {
             label: 'Delivered',
             value: safeOrders.filter(o => o.status.toLowerCase() === 'delivered').length,
             icon: HiOutlineCheck,
-            color: 'text-emerald-600',
-            bg: 'bg-emerald-50'
+            color: 'text-brand-600',
+            bg: 'bg-brand-50'
         }
     ], [safeOrders]);
 
@@ -473,7 +473,7 @@ const Orders = () => {
                                                         className={cn(
                                                             "w-full min-w-[100px] text-[10px] pl-2 pr-6 py-1.5 rounded-lg font-black uppercase cursor-pointer appearance-none border outline-none",
                                                             order.status === 'pending' ? "bg-amber-100 text-amber-700" :
-                                                                order.status === 'delivered' ? "bg-emerald-100 text-emerald-700" :
+                                                                order.status === 'delivered' ? "bg-brand-100 text-brand-700" :
                                                                     order.status === 'cancelled' ? "bg-rose-100 text-rose-700" : "bg-slate-100 text-slate-700"
                                                         )}
                                                     >
@@ -562,7 +562,7 @@ const Orders = () => {
                                                                         order.status === 'confirmed' ? "bg-blue-100 text-blue-700 focus:ring-blue-200" :
                                                                             order.status === 'packed' ? "bg-indigo-100 text-indigo-700 focus:ring-indigo-200" :
                                                                                 order.status === 'out_for_delivery' ? "bg-purple-100 text-purple-700 focus:ring-purple-200" :
-                                                                                    order.status === 'delivered' ? "bg-emerald-100 text-emerald-700 focus:ring-emerald-200" :
+                                                                                    order.status === 'delivered' ? "bg-brand-100 text-brand-700 focus:ring-brand-200" :
                                                                                         order.status === 'cancelled' ? "bg-rose-100 text-rose-700 focus:ring-rose-200" :
                                                                                             "bg-slate-100 text-slate-700 focus:ring-slate-200"
                                                                 )}
@@ -592,7 +592,7 @@ const Orders = () => {
                                                                             e.stopPropagation();
                                                                             handleStatusUpdate(order.id, 'Processing');
                                                                         }}
-                                                                        className="p-1.5 hover:bg-emerald-50 hover:text-emerald-600 rounded-lg transition-all text-slate-600 shadow-sm ring-1 ring-slate-100"
+                                                                        className="p-1.5 hover:bg-brand-50 hover:text-brand-600 rounded-lg transition-all text-slate-600 shadow-sm ring-1 ring-slate-100"
                                                                     >
                                                                         <HiOutlineCheck className="h-4 w-4" />
                                                                     </button>
@@ -696,9 +696,9 @@ const Orders = () => {
                                                 <p className="text-[10px] sm:text-xs font-bold text-indigo-400 uppercase tracking-widest mb-1">Total Revenue</p>
                                                 <p className="text-base sm:text-xl font-black text-indigo-700 truncate">₹{safeOrders.reduce((acc, o) => acc + o.total, 0).toLocaleString()}</p>
                                             </div>
-                                            <div className="p-3 sm:p-4 rounded-2xl bg-emerald-50 border border-emerald-100">
-                                                <p className="text-[10px] sm:text-xs font-bold text-emerald-400 uppercase tracking-widest mb-1">Avg. Order Value</p>
-                                                <p className="text-base sm:text-xl font-black text-emerald-700">₹{safeOrders.length ? (safeOrders.reduce((acc, o) => acc + o.total, 0) / safeOrders.length).toFixed(0) : '0'}</p>
+                                            <div className="p-3 sm:p-4 rounded-2xl bg-brand-50 border border-brand-100">
+                                                <p className="text-[10px] sm:text-xs font-bold text-brand-400 uppercase tracking-widest mb-1">Avg. Order Value</p>
+                                                <p className="text-base sm:text-xl font-black text-brand-700">₹{safeOrders.length ? (safeOrders.reduce((acc, o) => acc + o.total, 0) / safeOrders.length).toFixed(0) : '0'}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -798,7 +798,7 @@ const Orders = () => {
                                                 </div>
                                                 <div>
                                                     <h4 className="text-xs font-black text-slate-600 uppercase tracking-widest mb-2 flex items-center gap-2">
-                                                        <HiOutlinePhone className="h-3 w-3 text-emerald-500" /> Contact Info
+                                                        <HiOutlinePhone className="h-3 w-3 text-brand-500" /> Contact Info
                                                     </h4>
                                                     <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 shadow-sm">
                                                         <p className="text-xs font-bold text-slate-800">{selectedOrder.customer.name}</p>
@@ -816,7 +816,7 @@ const Orders = () => {
                                                         </div>
                                                         <div className="flex justify-between text-xs">
                                                             <span className="font-bold text-slate-600">Delivery Fee</span>
-                                                            <span className="font-black text-emerald-600">₹10.00</span>
+                                                            <span className="font-black text-brand-600">₹10.00</span>
                                                         </div>
                                                         <div className="h-px bg-primary/10 my-2" />
                                                         <div className="flex justify-between text-sm">
@@ -828,7 +828,7 @@ const Orders = () => {
                                                 <div className="bg-slate-900 p-3 sm:p-4 rounded-3xl text-white shadow-xl shadow-slate-900/10">
                                                     <h4 className="text-xs font-black text-slate-600 uppercase tracking-widest mb-2">Payment Status</h4>
                                                     <div className="flex items-center gap-2">
-                                                        <HiOutlineBanknotes className="h-5 w-5 text-emerald-400" />
+                                                        <HiOutlineBanknotes className="h-5 w-5 text-brand-400" />
                                                         <span className="text-xs font-bold tracking-tight">{selectedOrder.payment}</span>
                                                     </div>
                                                 </div>
@@ -870,7 +870,7 @@ const Orders = () => {
                                                             getStatusColor(selectedOrder.status) === 'info' ? "bg-blue-100 text-blue-700 focus:ring-blue-200" :
                                                                 getStatusColor(selectedOrder.status) === 'primary' ? "bg-indigo-100 text-indigo-700 focus:ring-indigo-200" :
                                                                     getStatusColor(selectedOrder.status) === 'secondary' ? "bg-purple-100 text-purple-700 focus:ring-purple-200" :
-                                                                        getStatusColor(selectedOrder.status) === 'success' ? "bg-emerald-100 text-emerald-700 focus:ring-emerald-200" :
+                                                                        getStatusColor(selectedOrder.status) === 'success' ? "bg-brand-100 text-brand-700 focus:ring-brand-200" :
                                                                             getStatusColor(selectedOrder.status) === 'error' ? "bg-rose-100 text-rose-700 focus:ring-rose-200" :
                                                                                 "bg-slate-100 text-slate-700 focus:ring-slate-200"
                                                     )}

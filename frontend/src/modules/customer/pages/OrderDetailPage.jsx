@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import InvoiceModal from "../components/order/InvoiceModal";
 import HelpModal from "../components/order/HelpModal";
@@ -130,9 +130,10 @@ const OrderDetailPage = () => {
   const [trail, setTrail] = useState([]);
   const [routePolyline, setRoutePolyline] = useState(null);
   const [handoffOtp, setHandoffOtp] = useState(null);
-  const [clockTick, setClockTick] = useState(Date.now());
-  const routeRequestRef = useRef({ phase: null, startedAt: 0 });
   const routeOriginRef = useRef(null);
+  const [returnCountdown, setReturnCountdown] = useState(null);
+
+  const navigate = useNavigate();
 
   // Scroll to top on load
   useEffect(() => {
@@ -140,6 +141,13 @@ const OrderDetailPage = () => {
   }, []);
 
   useEffect(() => {
+    const isInvalid = !orderId || orderId === "undefined" || orderId === "null";
+    if (isInvalid) {
+      console.warn(`[OrderDetailPage] Invalid orderId from URL: ${orderId}. Redirecting...`);
+      navigate("/orders", { replace: true });
+      return;
+    }
+
     const fetchOrderDetails = async () => {
       try {
         const response = await customerApi.getOrderDetails(orderId);
@@ -230,6 +238,33 @@ const OrderDetailPage = () => {
     const iv = setInterval(() => setClockTick(Date.now()), 30000);
     return () => clearInterval(iv);
   }, []);
+
+  useEffect(() => {
+    if (!order) {
+      setReturnCountdown(null);
+      return;
+    }
+
+    const calculateCountdown = () => {
+      const placedAt = new Date(order.createdAt).getTime();
+      const now = Date.now();
+      const windowMs = (parseInt(import.meta.env.VITE_RETURN_WINDOW_MINUTES || "2", 10)) * 60 * 1000;
+      const remaining = Math.max(0, (placedAt + windowMs) - now);
+
+      if (remaining <= 0) {
+        setReturnCountdown(0);
+        return;
+      }
+
+      const mins = Math.floor(remaining / 60000);
+      const secs = Math.floor((remaining % 60000) / 1000);
+      setReturnCountdown(`${mins}:${secs.toString().padStart(2, "0")}`);
+    };
+
+    calculateCountdown();
+    const iv = setInterval(calculateCountdown, 1000);
+    return () => clearInterval(iv);
+  }, [order]);
 
   const handleOpenInMaps = () => {
     const loc = order?.address?.location;
@@ -397,14 +432,14 @@ const OrderDetailPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-50 to-white">
-        <Loader2 className="animate-spin text-emerald-600" size={32} />
+        <Loader2 className="animate-spin text-brand-600" size={32} />
       </div>
     );
   }
 
   const canRequestReturn = () => {
     if (!order) return false;
-    if (getLegacyStatusFromOrder(order) !== "delivered") return false;
+    if (order.status === "cancelled") return false;
     if (
       returnDetails &&
       returnDetails.returnStatus &&
@@ -413,7 +448,12 @@ const OrderDetailPage = () => {
     ) {
       return false;
     }
-    return true;
+    
+    // Check 2-minute window
+    const placedAt = new Date(order.createdAt).getTime();
+    const now = Date.now();
+    const windowMs = (parseInt(import.meta.env.VITE_RETURN_WINDOW_MINUTES || "2", 10)) * 60 * 1000;
+    return (now - placedAt) <= windowMs;
   };
 
   const toggleItemSelection = (index) => {
@@ -478,7 +518,7 @@ const OrderDetailPage = () => {
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-slate-50 to-white">
         <Package size={64} className="text-slate-300 mb-4" />
         <h3 className="text-lg font-bold text-slate-800">Order not found</h3>
-        <Link to="/orders" className="text-emerald-600 font-bold mt-4 hover:text-emerald-700">
+        <Link to="/orders" className="text-brand-600 font-bold mt-4 hover:text-brand-700">
           Back to my orders
         </Link>
       </div>
@@ -540,7 +580,7 @@ const OrderDetailPage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-3xl p-5 shadow-lg text-white"
+            className="bg-gradient-to-br from-brand-500 to-brand-600 rounded-3xl p-5 shadow-lg text-white"
           >
             <div className="flex items-center gap-4">
               <div className="relative">
@@ -551,7 +591,7 @@ const OrderDetailPage = () => {
                     className="h-full w-full object-cover"
                   />
                 </div>
-                <div className="absolute -bottom-1 -right-1 bg-white text-emerald-600 text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-md">
+                <div className="absolute -bottom-1 -right-1 bg-white text-brand-600 text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-md">
                   4.8 ★
                 </div>
               </div>
@@ -626,8 +666,8 @@ const OrderDetailPage = () => {
               {order.address?.location &&
                 typeof order.address.location.lat === "number" &&
                 typeof order.address.location.lng === "number" && (
-                  <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg">
-                    <CheckCircle size={14} className="text-emerald-600" />
+                  <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-brand-700 bg-brand-50 px-2 py-1 rounded-lg">
+                    <CheckCircle size={14} className="text-brand-600" />
                     Precise location confirmed
                   </p>
                 )}
@@ -697,7 +737,7 @@ const OrderDetailPage = () => {
               <span>Delivery Fee</span>
               <span
                 className={
-                  order.pricing.deliveryFee === 0 ? "text-emerald-600 font-bold" : "font-semibold"
+                  order.pricing.deliveryFee === 0 ? "text-brand-600 font-bold" : "font-semibold"
                 }>
                 {order.pricing.deliveryFee === 0
                   ? "FREE"
@@ -714,7 +754,7 @@ const OrderDetailPage = () => {
               <span className="text-base font-bold text-slate-900">
                 Total Amount
               </span>
-              <span className="text-xl font-black text-emerald-600">
+              <span className="text-xl font-black text-brand-600">
                 ₹{order.pricing.total}
               </span>
             </div>
@@ -767,42 +807,83 @@ const OrderDetailPage = () => {
             transition={{ delay: 0.4 }}
             className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100"
           >
-            <h3 className="text-base font-bold text-slate-800 mb-3">
-              Return & Refund
-            </h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-base font-bold text-slate-800">
+                Return & Refund
+              </h3>
+              {canRequestReturn() && returnCountdown !== 0 && (
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-700 rounded-full text-xs font-bold ring-1 ring-amber-200">
+                  <Clock size={12} />
+                  Ends in {returnCountdown}
+                </div>
+              )}
+            </div>
+
             {returnDetails &&
             returnDetails.returnStatus &&
             returnDetails.returnStatus !== "none" ? (
-              <div className="space-y-2 text-sm">
-                <p className="font-semibold text-slate-700">
-                  Status:{" "}
-                  <span className="uppercase text-xs font-black px-2.5 py-1 rounded-lg bg-slate-100 text-slate-800">
+              <div className="space-y-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-500 font-medium">Status:</span>
+                  <span className="uppercase text-[10px] font-black px-2.5 py-1 rounded-lg bg-slate-900 text-white tracking-wider">
                     {returnDetails.returnStatus.replace(/_/g, " ")}
                   </span>
-                </p>
+                </div>
+
+                {/* Return OTP Display for Customer if pickup is assigned */}
+                {returnDetails.returnStatus === "return_pickup_assigned" && (
+                   <div className="bg-brand-50 rounded-2xl p-4 border border-brand-100">
+                      <div className="flex items-center gap-3 mb-2">
+                         <div className="h-8 w-8 rounded-full bg-brand-100 flex items-center justify-center">
+                            <Truck size={16} className="text-brand-600" />
+                         </div>
+                         <p className="text-sm font-bold text-brand-900">Return Pickup Assigned</p>
+                      </div>
+                      <p className="text-xs text-brand-700 mb-3 ml-11">
+                        A delivery partner is coming to collect your return. Please share this OTP when they arrive:
+                      </p>
+                      <div className="ml-11 flex items-center gap-2">
+                        {handoffOtp ? (
+                          <div className="flex gap-2">
+                            {handoffOtp.split('').map((digit, i) => (
+                              <div key={i} className="h-10 w-8 bg-white border-2 border-brand-200 rounded-lg flex items-center justify-center text-lg font-black text-brand-700 shadow-sm">
+                                {digit}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs font-bold text-slate-400 italic">Waiting for rider to request OTP...</p>
+                        )}
+                      </div>
+                   </div>
+                )}
+
                 {returnDetails.returnStatus === "return_rejected" && (
-                  <p className="text-sm text-rose-600 font-medium bg-rose-50 p-3 rounded-xl">
+                  <p className="text-sm text-rose-600 font-medium bg-rose-50 p-3 rounded-xl border border-rose-100">
                     Return request rejected:{" "}
                     {returnDetails.returnRejectedReason || "No reason provided"}
                   </p>
                 )}
                 {returnDetails.returnRefundAmount > 0 &&
                   returnDetails.returnStatus === "refund_completed" && (
-                    <p className="text-sm text-emerald-700 font-semibold bg-emerald-50 p-3 rounded-xl">
-                      ₹{returnDetails.returnRefundAmount} has been added to your
-                      wallet for future purchases.
-                    </p>
+                    <div className="bg-brand-50 p-4 rounded-2xl border border-brand-100">
+                      <p className="text-xs font-bold text-brand-800 uppercase tracking-wider mb-1">Refund Successful</p>
+                      <p className="text-sm text-brand-700 font-medium">
+                        ₹{returnDetails.returnRefundAmount} has been credited to your {order.paymentMethod === 'cod' ? 'hand (Cash)' : 'wallet'}.
+                      </p>
+                    </div>
                   )}
               </div>
             ) : (
-              <p className="text-sm text-slate-500">
-                No return requested for this order.
+              <p className="text-sm text-slate-500 mb-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                You can request a return within the first {import.meta.env.VITE_RETURN_WINDOW_MINUTES || 2} minutes of placing your order.
               </p>
             )}
+            
             {canRequestReturn() && (
               <button
                 onClick={() => setShowReturnModal(true)}
-                className="mt-4 w-full py-3 rounded-2xl bg-slate-900 text-white text-sm font-bold shadow-md hover:bg-slate-800 transition-all active:scale-[0.98]">
+                className="w-full py-4 rounded-2xl bg-slate-900 text-white text-sm font-bold shadow-lg shadow-slate-900/10 hover:bg-slate-800 transition-all active:scale-[0.98]">
                 Request Return
               </button>
             )}

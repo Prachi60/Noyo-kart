@@ -151,8 +151,8 @@ const AdminWallet = () => {
             description: 'Available in business wallet',
             icon: Building2,
             color: 'emerald',
-            bg: 'bg-emerald-50',
-            iconColor: 'text-emerald-500'
+            bg: 'bg-brand-50',
+            iconColor: 'text-brand-500'
         },
         {
             label: 'System Float (COD)',
@@ -288,7 +288,7 @@ const AdminWallet = () => {
                                     </div>
                                     <div className="flex items-center gap-1.5">
                                         <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest leading-none">Live</span>
-                                        <div className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)] animate-pulse" />
+                                        <div className="h-2 w-2 rounded-full bg-brand-400 shadow-[0_0_8px_rgba(52,211,153,0.5)] animate-pulse" />
                                     </div>
                                 </div>
 
@@ -400,7 +400,7 @@ const AdminWallet = () => {
                                                             <div className="flex items-center justify-end gap-2">
                                                                 <button
                                                                     onClick={() => handleUpdateStatus(req._id, 'COMPLETED')}
-                                                                    className="px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-[10px] font-black uppercase hover:bg-emerald-600 transition-all"
+                                                                    className="px-3 py-1.5 bg-brand-500 text-white rounded-lg text-[10px] font-black uppercase hover:bg-brand-600 transition-all"
                                                                 >
                                                                     Approve
                                                                 </button>
@@ -435,7 +435,7 @@ const AdminWallet = () => {
                                                         <div className="flex items-center gap-3">
                                                             <div className={cn(
                                                                 "h-10 w-10 rounded-xl flex items-center justify-center shadow-sm",
-                                                                txn.amount > 0 ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
+                                                                txn.amount > 0 ? "bg-brand-50 text-brand-600" : "bg-rose-50 text-rose-600"
                                                             )}>
                                                                 {txn.amount > 0 ? <ArrowDownCircle className="h-5 w-5" /> : <ArrowUpCircle className="h-5 w-5" />}
                                                             </div>
@@ -448,7 +448,7 @@ const AdminWallet = () => {
                                                     <td className="px-6 py-5">
                                                         <div className="flex flex-col gap-1">
                                                             <div className="flex items-center gap-1.5">
-                                                                <ArrowDownLeft className="h-3 w-3 text-emerald-500" />
+                                                                <ArrowDownLeft className="h-3 w-3 text-brand-500" />
                                                                 <span className="text-[11px] font-bold text-slate-600">{txn.recipient}</span>
                                                             </div>
                                                             <div className="flex items-center gap-1.5 opacity-50">
@@ -460,7 +460,7 @@ const AdminWallet = () => {
                                                     <td className="px-6 py-5 text-center">
                                                         <p className={cn(
                                                             "text-sm font-black",
-                                                            txn.amount > 0 ? "text-emerald-600" : "text-rose-600"
+                                                            txn.amount > 0 ? "text-brand-600" : "text-rose-600"
                                                         )}>
                                                             {txn.amount > 0 ? '+' : ''}₹{Math.abs(txn.amount).toLocaleString()}
                                                         </p>
@@ -518,7 +518,7 @@ const AdminWallet = () => {
                     {/* Settlement Overview */}
                     <div className="space-y-4">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                            <div className="p-2 bg-brand-50 text-brand-600 rounded-lg">
                                 <PieChart className="h-5 w-5" />
                             </div>
                             <h2 className="ds-h2">Settlements</h2>
@@ -548,7 +548,7 @@ const AdminWallet = () => {
                                 <button
                                     onClick={handleProcessPayouts}
                                     disabled={isProcessing}
-                                    className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-900 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all shadow-lg active:scale-[0.98] flex items-center justify-center gap-2 group disabled:opacity-50"
+                                    className="w-full py-4 bg-brand-500 hover:bg-brand-400 text-slate-900 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all shadow-lg active:scale-[0.98] flex items-center justify-center gap-2 group disabled:opacity-50"
                                 >
                                     {isProcessing ? <RotateCw className="h-4 w-4 animate-spin" /> : <Wallet className="h-4 w-4 group-hover:rotate-12 transition-transform" />}
                                     {isProcessing ? 'SETTLING...' : 'Bulk Settlement'}
@@ -605,7 +605,7 @@ const AdminWallet = () => {
                         <div className="text-center pb-6 border-b border-slate-100">
                             <div className={cn(
                                 "h-16 w-16 rounded-2xl flex items-center justify-center mx-auto mb-4",
-                                selectedTransaction.amount > 0 ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
+                                selectedTransaction.amount > 0 ? "bg-brand-50 text-brand-600" : "bg-rose-50 text-rose-600"
                             )}>
                                 {selectedTransaction.amount > 0 ? <ArrowDownCircle className="h-8 w-8" /> : <ArrowUpCircle className="h-8 w-8" />}
                             </div>

@@ -18,7 +18,7 @@ import { deliveryApi } from "../services/deliveryApi";
  * @param {Function} props.onError - Callback when validation fails
  * @param {Function} props.onCancel - Optional callback for cancel action
  */
-const OtpInput = ({ orderId, onSuccess, onError, onCancel }) => {
+const OtpInput = ({ orderId, isReturn = false, onSuccess, onError, onCancel }) => {
   const [otp, setOtp] = useState(["", "", "", ""]);
   const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -111,7 +111,9 @@ const OtpInput = ({ orderId, onSuccess, onError, onCancel }) => {
 
     setIsGenerating(true);
     try {
-      const response = await deliveryApi.generateDeliveryOtp(orderId);
+      const response = isReturn
+        ? await deliveryApi.requestReturnOtp(orderId, {})
+        : await deliveryApi.generateDeliveryOtp(orderId);
       toast.success(response.data?.message || "OTP generated and sent to customer");
       setError(null);
       setLastErrorCode(null);
@@ -147,13 +149,13 @@ const OtpInput = ({ orderId, onSuccess, onError, onCancel }) => {
     setLastErrorCode(null);
 
     try {
-      // Call validate-otp endpoint
-      const response = await deliveryApi.validateDeliveryOtp(orderId, {
-        otp: otpString,
-      });
+      // Call appropriate validation endpoint
+      const response = isReturn 
+        ? await deliveryApi.verifyReturnOtp(orderId, { otp: otpString })
+        : await deliveryApi.validateDeliveryOtp(orderId, { otp: otpString });
 
-      // Success - navigate to success screen
-      toast.success(response.data?.message || "Order delivered successfully!");
+      // Success
+      toast.success(response.data?.message || (isReturn ? "Return pickup verified!" : "Order delivered successfully!"));
       
       if (onSuccess) {
         onSuccess(response.data);
@@ -216,7 +218,7 @@ const OtpInput = ({ orderId, onSuccess, onError, onCancel }) => {
       {/* Header */}
       <div className="text-center">
         <h3 className="text-lg font-bold text-gray-900 mb-1">
-          Enter Delivery OTP
+          {isReturn ? "Enter Return OTP" : "Enter Delivery OTP"}
         </h3>
         <p className="text-sm text-gray-600">
           Ask the customer for the 4-digit code
@@ -242,7 +244,7 @@ const OtpInput = ({ orderId, onSuccess, onError, onCancel }) => {
               error
                 ? "border-red-300 bg-red-50 text-red-900 focus:border-red-500 focus:ring-red-500"
                 : digit
-                ? "border-green-500 bg-green-50 text-green-900 focus:border-green-600 focus:ring-green-500"
+                ? "border-brand-500 bg-brand-50 text-brand-900 focus:border-brand-600 focus:ring-brand-500"
                 : "border-gray-300 bg-white text-gray-900 focus:border-blue-500 focus:ring-blue-500"
             } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
             aria-label={`Digit ${index + 1}`}
@@ -293,7 +295,7 @@ const OtpInput = ({ orderId, onSuccess, onError, onCancel }) => {
         className={`w-full h-12 rounded-xl font-bold text-white transition-all duration-200 flex items-center justify-center gap-2 ${
           !isComplete || isLoading || isGenerating
             ? "bg-gray-300 cursor-not-allowed"
-            : "bg-green-600 hover:bg-green-700 active:scale-95 shadow-md hover:shadow-lg"
+            : "bg-brand-600 hover:bg-brand-700 active:scale-95 shadow-md hover:shadow-lg"
         }`}
       >
         {isLoading ? (
@@ -304,7 +306,7 @@ const OtpInput = ({ orderId, onSuccess, onError, onCancel }) => {
         ) : (
           <>
             <CheckCircle className="w-5 h-5" />
-            <span>Confirm Delivery</span>
+            <span>{isReturn ? "Confirm Pickup" : "Confirm Delivery"}</span>
           </>
         )}
       </button>
