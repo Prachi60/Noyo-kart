@@ -125,7 +125,14 @@ const ProductDetailSheet = () => {
         return text;
     };
 
-    const cartItem = selectedProduct ? cart.find(item => item.id === selectedProduct.id) : null;
+    const variantKey = String(selectedVariant?.sku || selectedVariant?.name || "").trim();
+    const cartItem = selectedProduct
+        ? cart.find(
+            (item) =>
+                `${item.id || item._id}::${String(item.variantSku || "").trim()}` ===
+                `${selectedProduct.id}::${variantKey || ""}`,
+        )
+        : null;
     const quantity = cartItem ? cartItem.quantity : 0;
     const isWishlisted = selectedProduct ? isInWishlist(selectedProduct.id) : false;
 
@@ -176,17 +183,21 @@ const ProductDetailSheet = () => {
     };
 
     const handleAddToCart = () => {
-        addToCart(selectedProduct);
+        addToCart({
+            ...selectedProduct,
+            variantSku: String(selectedVariant?.sku || selectedVariant?.name || "").trim(),
+        });
         showToast(`${selectedProduct.name} added to cart`, 'success');
     };
 
-    const handleIncrement = () => updateQuantity(selectedProduct.id, 1);
+    const handleIncrement = () =>
+        updateQuantity(selectedProduct.id, 1, String(selectedVariant?.sku || selectedVariant?.name || "").trim());
 
     const handleDecrement = () => {
         if (quantity === 1) {
-            removeFromCart(selectedProduct.id);
+            removeFromCart(selectedProduct.id, String(selectedVariant?.sku || selectedVariant?.name || "").trim());
         } else {
-            updateQuantity(selectedProduct.id, -1);
+            updateQuantity(selectedProduct.id, -1, String(selectedVariant?.sku || selectedVariant?.name || "").trim());
         }
     };
 
@@ -504,7 +515,12 @@ const ProductDetailSheet = () => {
                                                         <span className="text-[12px] font-[700] uppercase tracking-wider">View Cart</span>
                                                     </div>
                                                     <div className="flex items-center justify-center gap-1.5 bg-white/10 px-2 py-1 rounded-lg">
-                                                        <span className="text-[13px] font-[800] tracking-tight">₹{cart.reduce((total, item) => total + (item.price * item.quantity), 0)}</span>
+                                                        <span className="text-[13px] font-[800] tracking-tight">₹{cart.reduce((total, item) => {
+                                                            const mrp = Number(item.price || 0);
+                                                            const sale = Number(item.salePrice || 0);
+                                                            const unit = sale > 0 && sale < mrp ? sale : mrp;
+                                                            return total + (unit * Number(item.quantity || 0));
+                                                        }, 0)}</span>
                                                         <ChevronRight size={14} strokeWidth={2.5} />
                                                     </div>
                                                 </Link>
@@ -1022,21 +1038,14 @@ const ProductDetailSheet = () => {
                                             onClick={closeProduct}
                                             className="w-full bg-gradient-to-r from-[#61dafbaa] to-[#33c9f2] text-white h-[64px] rounded-2xl flex items-center justify-between px-5 shadow-xl shadow-cyan-200/50 hover:shadow-cyan-300 transition-all active:scale-[0.98] border border-white/20 relative overflow-hidden group"
                                         >
-                                            <div className="flex items-center gap-4 relative z-10">
-                                                <div className="bg-white/20 p-2 rounded-xl backdrop-blur-md shadow-inner group-hover:scale-110 transition-transform">
-                                                    <ShoppingBag size={20} className="text-white" strokeWidth={3} />
-                                                </div>
-                                                <div className="flex flex-col items-start">
-                                                    <span className="text-[14px] font-black uppercase tracking-widest leading-none mb-0.5">View Cart</span>
-                                                    <span className="text-[11px] font-bold text-cyan-50 opacity-90 uppercase tracking-wider">{cartCount} {cartCount === 1 ? 'item' : 'items'} added</span>
-                                                </div>
+                                            <div className="flex flex-col items-start leading-none">
+                                                <span className="text-[13px] font-[1000] uppercase tracking-wide">View cart</span>
+                                                <span className="text-[11px] font-bold opacity-90 mt-1">{cartCount} {cartCount === 1 ? 'item' : 'items'} in cart</span>
                                             </div>
-                                            <div className="flex items-center gap-2 relative z-10">
-                                                <span className="text-lg font-black tracking-tight">₹{cart.reduce((total, item) => total + (item.price * item.quantity), 0)}</span>
-                                                <ChevronRight size={20} strokeWidth={3} className="text-white/80 group-hover:translate-x-1 transition-transform" />
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[16px] font-[1000] tracking-tight">₹{cart.reduce((total, item) => total + (item.price * item.quantity), 0)}</span>
+                                                <ChevronRight size={18} strokeWidth={4} />
                                             </div>
-                                            {/* Reflection Overlay */}
-                                            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
                                         </Link>
                                     </motion.div>
                                 )}

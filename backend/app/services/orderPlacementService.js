@@ -57,6 +57,7 @@ function mapOrderItemsForPersistence(hydratedItems = []) {
     name: item.productName,
     quantity: item.quantity,
     price: item.price,
+    variantSlot: String(item.variantSku || item.variantSlot || "").trim() || undefined,
     image: item.image || "",
   }));
 }
@@ -133,6 +134,7 @@ async function resolveOrderItemsInput({
 
   orderItemsInput = cart.items.map((item) => ({
     product: item.productId,
+    variantSku: String(item.variantSku || "").trim(),
     quantity: item.quantity,
   }));
   return {
@@ -162,22 +164,23 @@ async function consumeCartItems({
     return;
   }
 
-  const requestedQtyByProduct = new Map();
+  const requestedQtyByLineKey = new Map();
   for (const item of orderItemsInput || []) {
     const productId = String(item.product || item.productId || "");
     if (!productId) continue;
+    const variantSku = String(item.variantSku || item.variantSlot || "").trim();
     const quantity = Math.max(Number(item.quantity || 0), 0);
     if (!quantity) continue;
-    requestedQtyByProduct.set(
-      productId,
-      (requestedQtyByProduct.get(productId) || 0) + quantity,
-    );
+    const key = `${productId}::${variantSku || ""}`;
+    requestedQtyByLineKey.set(key, (requestedQtyByLineKey.get(key) || 0) + quantity);
   }
 
   const remaining = [];
   for (const cartItem of cart.items) {
     const productId = String(cartItem.productId);
-    const requested = requestedQtyByProduct.get(productId) || 0;
+    const variantSku = String(cartItem.variantSku || "").trim();
+    const key = `${productId}::${variantSku || ""}`;
+    const requested = requestedQtyByLineKey.get(key) || 0;
     if (requested <= 0) {
       remaining.push(cartItem);
       continue;
@@ -186,10 +189,11 @@ async function consumeCartItems({
     if (quantityLeft > 0) {
       remaining.push({
         productId: cartItem.productId,
+        variantSku,
         quantity: quantityLeft,
       });
     }
-    requestedQtyByProduct.delete(productId);
+    requestedQtyByLineKey.delete(key);
   }
 
   cart.items = remaining;

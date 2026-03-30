@@ -20,8 +20,8 @@ const CartPage = () => {
     const { showToast } = useToast();
     const itemCount = cart.reduce((count, item) => count + item.quantity, 0);
 
-    const handleRemove = (id, name) => {
-        removeFromCart(id);
+    const handleRemove = (id, name, variantSku = "") => {
+        removeFromCart(id, variantSku);
         showToast(`${name} removed from cart`, 'info');
     };
 
@@ -49,7 +49,7 @@ const CartPage = () => {
                             <div className="space-y-3">
                                 {cart.map((item) => (
                                     <article
-                                        key={item.id}
+                                        key={`${item.id}::${String(item.variantSku || "").trim()}`}
                                         className="group overflow-hidden rounded-[1.5rem] border border-white/80 bg-white/85 backdrop-blur-sm shadow-[0_12px_35px_rgba(15,23,42,0.08)] transition-transform duration-300 hover:-translate-y-0.5"
                                     >
                                         <div className="flex gap-4 p-4 md:p-5">
@@ -76,7 +76,7 @@ const CartPage = () => {
                                                     </div>
 
                                                     <button
-                                                        onClick={() => handleRemove(item.id, item.name)}
+                                                        onClick={() => handleRemove(item.id, item.name, item.variantSku)}
                                                         className="rounded-full border border-slate-200 bg-white p-2 text-slate-400 transition-colors hover:border-rose-200 hover:text-rose-500"
                                                         aria-label={`Remove ${item.name}`}
                                                     >
@@ -96,7 +96,7 @@ const CartPage = () => {
 
                                                     <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-2 py-1 shadow-sm">
                                                         <button
-                                                            onClick={() => updateQuantity(item.id, -1)}
+                                                            onClick={() => updateQuantity(item.id, -1, item.variantSku)}
                                                             className="flex h-9 w-9 items-center justify-center rounded-full text-slate-600 transition-all hover:bg-white hover:text-slate-900 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-30"
                                                             disabled={item.quantity <= 1}
                                                         >
@@ -106,7 +106,7 @@ const CartPage = () => {
                                                             {item.quantity}
                                                         </span>
                                                         <button
-                                                            onClick={() => updateQuantity(item.id, 1)}
+                                                            onClick={() => updateQuantity(item.id, 1, item.variantSku)}
                                                             className="flex h-9 w-9 items-center justify-center rounded-full text-slate-600 transition-all hover:bg-white hover:text-slate-900 hover:shadow-md"
                                                         >
                                                             <Plus size={15} strokeWidth={3} />

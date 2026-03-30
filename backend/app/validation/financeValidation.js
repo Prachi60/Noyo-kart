@@ -10,6 +10,10 @@ const orderItemSchema = Joi.object({
   productId: Joi.string().optional(),
   id: Joi.string().optional(),
   name: Joi.string().allow("", null),
+  // Variant identifier (preferred: SKU). When present, backend will price the selected variant.
+  variantSku: Joi.string().allow("", null).optional(),
+  // Legacy/alternate field name used by some clients/services.
+  variantSlot: Joi.string().allow("", null).optional(),
   quantity: Joi.number().integer().min(1).required(),
   price: Joi.number().min(0).optional(),
   image: Joi.string().allow("", null),

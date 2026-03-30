@@ -300,7 +300,7 @@ export async function hydrateOrderItems(
     .filter(Boolean);
 
   const productQuery = Product.find({ _id: { $in: productIds } })
-    .select("_id name salePrice price mainImage headerId sellerId status")
+    .select("_id name salePrice price mainImage headerId sellerId status variants")
     .lean();
   if (session) productQuery.session(session);
   const products = await productQuery;
@@ -317,8 +317,27 @@ export async function hydrateOrderItems(
       throw new Error(`Product is not available for purchase: ${product.name}`);
     }
 
+    const rawVariantSku = String(item.variantSku || item.variantSlot || "").trim();
+    let resolvedVariant = null;
+    if (rawVariantSku) {
+      const variants = Array.isArray(product.variants) ? product.variants : [];
+      resolvedVariant =
+        variants.find((v) => String(v?.sku || "").trim() === rawVariantSku) ||
+        variants.find((v) => String(v?.name || "").trim() === rawVariantSku) ||
+        null;
+      if (!resolvedVariant) {
+        const err = new Error(`Invalid variant for product: ${product.name}`);
+        err.statusCode = 400;
+        throw err;
+      }
+    }
+
     const quantity = normalizeLineQuantity(item.quantity);
-    const serverUnitPrice = normalizeLinePrice(product.salePrice || product.price);
+    const serverUnitPrice = normalizeLinePrice(
+      resolvedVariant
+        ? resolvedVariant.salePrice || resolvedVariant.price || product.salePrice || product.price
+        : product.salePrice || product.price,
+    );
     const inferredUnitPrice = enforceServerPricing
       ? serverUnitPrice
       : normalizeLinePrice(item.price) || serverUnitPrice;
@@ -331,6 +350,8 @@ export async function hydrateOrderItems(
       image: item.image || product.mainImage,
       headerCategoryId: String(product.headerId),
       sellerId: String(product.sellerId),
+      variantSku: rawVariantSku || "",
+      variantName: resolvedVariant ? String(resolvedVariant?.name || "").trim() : "",
     };
   });
 }

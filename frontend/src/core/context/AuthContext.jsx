@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import axiosInstance from '@core/api/axios';
 import { getWithDedupe } from '@core/api/dedupe';
 
@@ -10,6 +10,8 @@ const ROLE_STORAGE_KEYS = {
     admin: 'auth_admin',
     delivery: 'auth_delivery'
 };
+
+const LEGACY_TOKEN_KEY = 'token';
 
 export const AuthProvider = ({ children }) => {
     // Current role based on URL
@@ -87,7 +89,7 @@ export const AuthProvider = ({ children }) => {
                     setUser(response.data.result);
                 } catch (error) {
                     console.error('Failed to fetch profile:', error);
-                    // If 401, axios interceptor will handle it
+                    // Preserve stored tokens on request failures; only manual logout clears auth storage.
                     setUser(null);
                 } finally {
                     setIsLoading(false);
@@ -117,6 +119,8 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = async () => {
+        const storageKey = ROLE_STORAGE_KEYS[currentRole];
+
         try {
             const { removeStoredFcmToken } = await import('@core/firebase/pushClient');
             await removeStoredFcmToken({ role: currentRole });
@@ -124,25 +128,22 @@ export const AuthProvider = ({ children }) => {
             console.warn('Failed to remove push token during logout:', error);
         }
 
-        // Clear all role-specific tokens from localStorage
-        Object.values(ROLE_STORAGE_KEYS).forEach(key => {
-            localStorage.removeItem(key);
-        });
+        if (storageKey) {
+            localStorage.removeItem(storageKey);
+        }
 
-        // Also clear common 'token' key if implemented
-        localStorage.removeItem('token');
-        Object.keys(ROLE_STORAGE_KEYS).forEach((role) => {
-            sessionStorage.removeItem(`push:registered:${role}`);
-            localStorage.removeItem(`push:fcm-token:${role}`);
-        });
+        // Remove the legacy shared token only when it belongs to the current role session.
+        if (token && localStorage.getItem(LEGACY_TOKEN_KEY) === token) {
+            localStorage.removeItem(LEGACY_TOKEN_KEY);
+        }
 
-        // Reset auth state for all roles to null
-        setAuthData({
-            customer: null,
-            seller: null,
-            admin: null,
-            delivery: null,
-        });
+        sessionStorage.removeItem(`push:registered:${currentRole}`);
+        localStorage.removeItem(`push:fcm-token:${currentRole}`);
+
+        setAuthData((prev) => ({
+            ...prev,
+            [currentRole]: null,
+        }));
 
         // Clear the current user profile from memory
         setUser(null);
