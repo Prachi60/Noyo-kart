@@ -249,7 +249,8 @@ export async function waitForRedis(maxRetries = 10, baseDelay = 1000) {
       if (isLastAttempt) {
         const errorMessage = `Failed to connect to Redis after ${maxRetries} attempts: ${error.message}`;
         if (isProduction) {
-          throw new Error(errorMessage + " - Redis is required in production mode");
+          console.warn(`[Redis] ⚠️ CRITICAL: ${errorMessage} - Continuing without Redis in production.`);
+          return;
         } else {
           console.warn(`[Redis] ${errorMessage} - Continuing without Redis`);
           return;
