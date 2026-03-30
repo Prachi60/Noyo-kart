@@ -142,7 +142,7 @@ const CategoryProductsPage = () => {
 
             <div className="flex flex-1 relative items-start">
                 {/* Sidebar */}
-                <aside className="w-[80px] border-r border-gray-50 flex flex-col bg-white overflow-y-auto hide-scrollbar sticky top-[60px] h-[calc(100vh-60px)] pb-32">
+                <aside className="w-[70px] border-r border-gray-50 flex flex-col bg-white overflow-y-auto hide-scrollbar sticky top-[60px] h-[calc(100vh-60px)] pb-32 flex-shrink-0">
                     {subCategories.map((cat) => (
                         <button
                             key={cat.id}
@@ -171,8 +171,8 @@ const CategoryProductsPage = () => {
                 </aside>
 
                 {/* Content */}
-                <main className="flex-1 p-3 pb-24 bg-white space-y-4">
-                    <div className="grid grid-cols-2 gap-x-2 gap-y-4">
+                <main className="flex-1 p-2 pb-24 bg-white space-y-4 overflow-x-hidden">
+                    <div className="grid grid-cols-2 gap-x-2 gap-y-3">
                         {filteredProducts.map((product) => (
                             <ProductCard key={product.id} product={product} compact={true} />
                         ))}

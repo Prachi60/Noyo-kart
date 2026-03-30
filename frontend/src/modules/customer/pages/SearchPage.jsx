@@ -24,6 +24,8 @@ const SearchPage = () => {
     const [results, setResults] = useState([]);
     const [allProducts, setAllProducts] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [isListening, setIsListening] = useState(false);
+    const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
 
     // Manage Recent Searches with LocalStorage
     const [pastSearches, setPastSearches] = useState(() => {
@@ -38,6 +40,67 @@ const SearchPage = () => {
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
+
+    // Debounce Logic
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedQuery(query);
+        }, 400); 
+        return () => clearTimeout(timer);
+    }, [query]);
+
+    // Voice Search Logic (Enhanced)
+    const handleVoiceSearch = () => {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            alert('Voice search is not supported in your browser. Please try Chrome.');
+            return;
+        }
+
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'en-IN'; 
+        recognition.continuous = false;
+        recognition.interimResults = true;
+
+        recognition.onstart = () => {
+            setIsListening(true);
+            setQuery(''); // Clear previous search if starting fresh
+        };
+        
+        recognition.onend = () => setIsListening(false);
+        
+        recognition.onresult = (event) => {
+            let transcript = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                transcript += event.results[i][0].transcript;
+            }
+
+            if (transcript) {
+                setQuery(transcript);
+                // Save to history only if it's the final result
+                if (event.results[event.results.length - 1].isFinal) {
+                    saveSearch(transcript);
+                }
+            }
+        };
+
+        recognition.onerror = (event) => {
+            console.error('Speech recognition error:', event.error);
+            setIsListening(false);
+            if (event.error === 'not-allowed') {
+                alert('Microphone access denied. Please enable it in your browser settings.');
+            } else {
+                console.warn('Voice recognition stopped due to error:', event.error);
+            }
+        };
+
+        try {
+            recognition.start();
+        } catch (e) {
+            console.error('Recognition start error:', e);
+            setIsListening(false);
+        }
+    };
 
     // Fetch products
     useEffect(() => {
@@ -111,12 +174,12 @@ const SearchPage = () => {
 
     // Real-time filtering logic
     const filteredResults = useMemo(() => {
-        if (!query.trim()) return [];
+        if (!debouncedQuery.trim()) return [];
         return allProducts.filter(p =>
-            p.name.toLowerCase().includes(query.toLowerCase()) ||
-            p.categoryId?.name?.toLowerCase().includes(query.toLowerCase())
+            p.name.toLowerCase().includes(debouncedQuery.toLowerCase()) ||
+            p.categoryId?.name?.toLowerCase().includes(debouncedQuery.toLowerCase())
         );
-    }, [query, allProducts]);
+    }, [debouncedQuery, allProducts]);
 
     useEffect(() => {
         setResults(filteredResults);
@@ -138,50 +201,64 @@ const SearchPage = () => {
         <div className="min-h-screen bg-white font-outfit">
             {/* Header / Search Input */}
             <div className={cn(
-                "sticky top-0 z-50 bg-white shadow-sm",
+                "sticky top-0 z-50 bg-linear-to-r from-[#61dafbaa] to-[#38bdf8] shadow-[0_4px_20px_rgba(0,0,0,0.12)] relative overflow-hidden",
                 isProductDetailOpen && "hidden md:block"
             )}>
-                <div className="px-4 pt-4 pb-2 flex items-center justify-between">
-                    <h1 className="text-2xl font-black tracking-tight" style={{ color: settings?.primaryColor || 'var(--primary)' }}>{appName}</h1>
-                    <button className="p-2 hover:bg-slate-50 rounded-full" style={{ color: settings?.primaryColor || 'var(--primary)' }}>
-                        <Mic size={24} />
-                    </button>
-                </div>
+                {/* Decorative background elements */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full -ml-12 -mb-12 blur-xl pointer-events-none" />
 
-                <div className="relative px-4 pb-5 flex items-center md:justify-center gap-3">
-                    <button
-                        onClick={() => navigate(-1)}
-                        className="p-2 -ml-2 hover:bg-slate-50 rounded-full transition-colors flex-shrink-0 md:absolute md:left-4 z-10"
-                    >
-                        <ArrowLeft size={24} className="text-slate-800" />
-                    </button>
+                <div className="px-4 pt-5 pb-6 flex items-center md:justify-center gap-3 relative z-10">
+                        <button
+                            onClick={() => navigate(-1)}
+                            className="flex items-center justify-center w-12 h-12 bg-white/20 hover:bg-white/30 rounded-full text-white backdrop-blur-md border border-white/10 transition-all flex-shrink-0 shadow-sm active:scale-90"
+                        >
+                            <ArrowLeft size={22} strokeWidth={2.5} />
+                        </button>
 
-                    <div className="flex-1 relative md:flex-none md:w-[500px] lg:w-[600px]">
-                        <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                            <Search size={20} className="text-slate-400" />
+                        <div className="flex-1 relative md:flex-none md:w-[500px] lg:w-[600px]">
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10">
+                                <Search size={18} strokeWidth={3} className="text-slate-400" />
+                            </div>
+                            <input
+                                autoFocus
+                                type="text"
+                                placeholder='Search items, categories...'
+                                value={query}
+                                onKeyDown={handleKeyDown}
+                                onChange={(e) => setQuery(e.target.value)}
+                                className="w-full h-12 bg-white rounded-2xl pl-11 pr-14 shadow-xl shadow-black/10 border-none outline-none text-slate-800 font-bold placeholder:text-slate-400 placeholder:font-medium focus:ring-4 focus:ring-white/20 transition-all"
+                            />
+                            
+                            {/* Integrated Actions inside Search Input */}
+                            <div className="absolute right-2 top-1/2 -translate-y-1/2 z-20 flex items-center gap-1">
+                                {query && (
+                                    <button
+                                        onClick={handleClear}
+                                        className="p-1.5 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors"
+                                    >
+                                        <X size={12} strokeWidth={3} className="text-slate-600" />
+                                    </button>
+                                )}
+                                <div className="w-[1px] h-6 bg-slate-100 mx-1" />
+                                <button 
+                                    onClick={handleVoiceSearch}
+                                    className={cn(
+                                        "p-2 transition-all rounded-full relative",
+                                        isListening ? "text-red-500 bg-red-50 scale-110" : "text-slate-400 hover:text-[#61dafbaa] hover:bg-slate-50"
+                                    )}
+                                >
+                                    <Mic size={20} strokeWidth={2.5} className={cn(isListening && "animate-pulse")} />
+                                    {isListening && (
+                                        <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-ping" />
+                                    )}
+                                </button>
+                            </div>
                         </div>
-                        <input
-                            autoFocus
-                            type="text"
-                            placeholder='Search "eggs"'
-                            value={query}
-                            onKeyDown={handleKeyDown}
-                            onChange={(e) => setQuery(e.target.value)}
-                            className="w-full h-12 bg-slate-50 rounded-2xl pl-11 pr-10 border border-slate-100 outline-none text-slate-800 font-bold placeholder:text-slate-400 placeholder:font-medium focus:ring-2 focus:ring-[var(--primary)]/10"
-                        />
-                        {query && (
-                            <button
-                                onClick={handleClear}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 bg-slate-200 rounded-full"
-                            >
-                                <X size={14} className="text-slate-600" />
-                            </button>
-                        )}
                     </div>
                 </div>
-            </div>
 
-            <div className="p-5 space-y-10 pb-24">
+                <div className="p-5 space-y-10 pb-24">
                 {/* Search Results List */}
                 {query ? (
                     <section>
@@ -193,9 +270,9 @@ const SearchPage = () => {
                         </div>
 
                         {results.length > 0 ? (
-                            <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-2 md:gap-x-3 gap-y-5 md:gap-y-7">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3 md:gap-x-4 gap-y-6 md:gap-y-10">
                                 {results.map((product) => (
-                                    <div key={product.id} onClick={() => saveSearch(query)}>
+                                    <div key={product.id} onClick={() => saveSearch(query)} className="flex justify-center">
                                         <ProductCard product={product} compact={isMobile} />
                                     </div>
                                 ))}
@@ -243,8 +320,12 @@ const SearchPage = () => {
                         <section>
                             <div className="flex justify-between items-center mb-5">
                                 <h2 className="text-xl font-black text-slate-800 tracking-tight">Lowest Price Ever!</h2>
-                                <button className="flex items-center gap-1 text-sm font-bold" style={{ color: settings?.primaryColor || 'var(--primary)' }}>
-                                    See All <ChevronRight size={16} />
+                                <button 
+                                    className="flex items-center gap-1 md:gap-1.5 px-3 py-1 md:px-4 md:py-1.5 bg-slate-50 hover:bg-slate-100 rounded-full text-xs md:text-sm font-black transition-all" 
+                                    style={{ color: settings?.primaryColor || 'var(--primary)' }}
+                                    onClick={() => navigate('/category/all')}
+                                >
+                                    See All <ChevronRight size={14} strokeWidth={3} />
                                 </button>
                             </div>
                             <div className="flex gap-3 md:gap-4 overflow-x-auto no-scrollbar -mx-5 px-5 pb-4 snap-x">

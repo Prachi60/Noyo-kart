@@ -128,23 +128,23 @@ const ProductCard = React.memo(
         )}
         onClick={handleProductClick}>
         {/* Top Image Section */}
-        <div className={cn("relative pb-0", compact ? "p-2" : "p-2.5")}>
+        <div className={cn("relative pb-0", compact ? "p-1.5" : "p-2.5")}>
           {/* Badge (Custom or Discount) */}
           {(badge ||
             product.discount ||
             product.originalPrice > product.price) && (
-            <div
-              className={cn(
-                "absolute z-10 bg-[#61dafbaa] text-white font-[900] rounded-md shadow-sm uppercase tracking-wider flex items-center justify-center",
-                compact
-                  ? "top-2 left-2 px-1.5 py-0.5 text-[7px]"
-                  : "top-3 left-3 px-2 py-1 text-[9px]",
-              )}>
-              {badge ||
-                product.discount ||
-                `${Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF`}
-            </div>
-          )}
+              <div
+                className={cn(
+                  "absolute z-10 bg-[#61dafbaa] text-white font-[900] rounded-md shadow-sm uppercase tracking-wider flex items-center justify-center",
+                  compact
+                    ? "top-2 left-2 px-1.5 py-0.5 text-[7px]"
+                    : "top-3 left-3 px-2 py-1 text-[9px]",
+                )}>
+                {badge ||
+                  product.discount ||
+                  `${Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF`}
+              </div>
+            )}
 
           <button
             onClick={toggleWishlist}
@@ -199,7 +199,7 @@ const ProductCard = React.memo(
         <div
           className={cn(
             "flex flex-col flex-1",
-            compact ? "p-3 pt-2 gap-0" : "bg-white/40 p-3 pt-4 gap-0.5",
+            compact ? "p-2 pt-1 gap-0" : "bg-white/40 p-3 pt-4 gap-0.5",
           )}>
           <div className="flex items-center gap-1.5 mb-1">
             <div
@@ -227,7 +227,7 @@ const ProductCard = React.memo(
             <h4
               className={cn(
                 "font-[600] text-[#1A1A1A] leading-tight line-clamp-2",
-                compact ? "text-[12px]" : "text-[13px]",
+                compact ? "text-[11px]" : "text-[13px]",
               )}>
               {product.name}
             </h4>
@@ -251,14 +251,15 @@ const ProductCard = React.memo(
               <span
                 className={cn(
                   "font-[1000] text-[#1A1A1A]",
-                  compact ? "text-[13px]" : "text-sm",
+                  compact ? "text-[11.5px]" : "text-sm",
                 )}>
                 ₹{product.price}
               </span>
               {product.originalPrice > product.price && (
                 <span
                   className={cn(
-                    "font-medium text-gray-400 line-through text-[10px] leading-none",
+                    "font-medium text-gray-400 line-through leading-none",
+                    compact ? "text-[9px]" : "text-[10px]",
                   )}>
                   ₹{product.originalPrice}
                 </span>
@@ -271,24 +272,24 @@ const ProductCard = React.memo(
                 <div
                   className={cn(
                     "flex items-center bg-white border-[1.5px] border-[#61dafbaa] rounded-lg p-0.5 justify-between",
-                    compact ? "min-w-[80px]" : "min-w-[90px] md:min-w-[100px]",
+                    compact ? "min-w-[64px]" : "min-w-[90px] md:min-w-[100px]",
                   )}>
                   <button
                     onClick={handleDecrement}
-                    className="p-1 px-1.5 text-[#61dafbaa] active:scale-90 transition-transform">
-                    <Minus size={compact ? 12 : 14} strokeWidth={3.5} />
+                    className="p-1 px-1 text-[#61dafbaa] active:scale-90 transition-transform">
+                    <Minus size={compact ? 11 : 14} strokeWidth={3.5} />
                   </button>
                   <span
                     className={cn(
                       "font-black text-[#61dafbaa]",
-                      compact ? "text-[12px]" : "text-[13px] md:text-sm",
+                      compact ? "text-[11px]" : "text-[13px] md:text-sm",
                     )}>
                     {quantity}
                   </span>
                   <button
                     onClick={handleIncrement}
-                    className="p-1 px-1.5 text-[#61dafbaa] active:scale-90 transition-transform">
-                    <Plus size={compact ? 12 : 14} strokeWidth={3.5} />
+                    className="p-1 px-1 text-[#61dafbaa] active:scale-90 transition-transform">
+                    <Plus size={compact ? 11 : 14} strokeWidth={3.5} />
                   </button>
                 </div>
               ) : (
@@ -298,7 +299,7 @@ const ProductCard = React.memo(
                   className={cn(
                     "bg-white border-[1.5px] border-[#61dafbaa] text-[#61dafbaa] rounded-lg font-black shadow-sm hover:bg-[#61dafbaa]/5 mb-0 transition-all uppercase tracking-wide leading-none",
                     compact
-                      ? "px-5 py-1.5 text-[12px]"
+                      ? "px-3 py-1.5 text-[11px]"
                       : "px-7 py-2 text-[13px] md:text-sm md:px-8 md:py-2.5",
                   )}>
                   ADD

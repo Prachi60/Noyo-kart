@@ -18,7 +18,7 @@ export function isRedisEnabled() {
   const d = process.env.REDIS_DISABLED;
   const e = process.env.REDIS_ENABLED;
   const isProduction = process.env.NODE_ENV === "production";
-  
+
   // Default: disable Redis in Jest to avoid open handles + noisy retries.
   // Opt-in by setting REDIS_ENABLED=true.
   if (process.env.NODE_ENV === "test" && !(e === "true" || e === "1")) return false;
@@ -40,13 +40,13 @@ export function isRedisEnabled() {
     }
     return false;
   }
-  
+
   // In production, verify Redis configuration is present
   if (isProduction) {
     const hasConfig = !!(
-      process.env.REDIS_URL || 
-      process.env.REDIS_HOST || 
-      e === "true" || 
+      process.env.REDIS_URL ||
+      process.env.REDIS_HOST ||
+      e === "true" ||
       e === "1"
     );
     if (!hasConfig) {
@@ -56,7 +56,7 @@ export function isRedisEnabled() {
       );
     }
   }
-  
+
   return true;
 }
 
@@ -67,16 +67,16 @@ export function isRedisEnabled() {
 function attachRedisErrorHandler(client) {
   if (!client || client.__qcRedisErrorHandler) return;
   client.__qcRedisErrorHandler = true;
-  
+
   client.on("connect", () => {
     console.log("[Redis] Connected successfully");
     _connectionAttempts = 0;
   });
-  
+
   client.on("ready", () => {
     console.log("[Redis] Ready to accept commands");
   });
-  
+
   client.on("error", (err) => {
     const now = Date.now();
     const interval = REDIS_ERROR_LOG_INTERVAL_MS();
@@ -89,11 +89,11 @@ function attachRedisErrorHandler(client) {
       console.warn(message);
     }
   });
-  
+
   client.on("close", () => {
     console.log("[Redis] Connection closed");
   });
-  
+
   client.on("reconnecting", (delay) => {
     _connectionAttempts++;
     console.log(`[Redis] Reconnecting (attempt ${_connectionAttempts}, delay: ${delay}ms)`);
@@ -198,7 +198,7 @@ export function getRedisOptionsForBull() {
 export async function validateRedisConnection() {
   const client = getRedisClient();
   if (!client) return false;
-  
+
   try {
     const result = await client.ping();
     return result === "PONG";
@@ -220,22 +220,22 @@ export async function waitForRedis(maxRetries = 10, baseDelay = 1000) {
     console.log("[Redis] Redis is disabled, skipping connection wait");
     return;
   }
-  
+
   const client = getRedisClient();
   if (!client) {
     throw new Error("Redis client is not initialized");
   }
-  
+
   const isProduction = process.env.NODE_ENV === "production";
   const maxDelay = 30000; // 30 seconds max delay
-  
+
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       // Try to connect if not already connected
       if (client.status !== "ready" && client.status !== "connect") {
         await client.connect();
       }
-      
+
       // Validate connection with PING
       const isValid = await validateRedisConnection();
       if (isValid) {
@@ -245,7 +245,7 @@ export async function waitForRedis(maxRetries = 10, baseDelay = 1000) {
     } catch (error) {
       const delay = Math.min(baseDelay * Math.pow(2, attempt - 1), maxDelay);
       const isLastAttempt = attempt === maxRetries;
-      
+
       if (isLastAttempt) {
         const errorMessage = `Failed to connect to Redis after ${maxRetries} attempts: ${error.message}`;
         if (isProduction) {
@@ -255,12 +255,12 @@ export async function waitForRedis(maxRetries = 10, baseDelay = 1000) {
           return;
         }
       }
-      
+
       console.log(
         `[Redis] Connection attempt ${attempt}/${maxRetries} failed: ${error.message}. ` +
         `Retrying in ${delay}ms...`
       );
-      
+
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
