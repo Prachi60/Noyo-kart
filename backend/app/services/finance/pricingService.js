@@ -43,11 +43,20 @@ function resolveCommissionConfig(category) {
   }
 
   const type = category.adminCommissionType || COMMISSION_TYPE.PERCENTAGE;
-  const value = Number(
-    category.adminCommissionValue ??
-      category.adminCommission ??
-      0,
-  );
+
+  // Backward-compat: admin UI still writes legacy `adminCommission` while newer
+  // pricing reads `adminCommissionValue`. Because `adminCommissionValue` has a
+  // schema default of 0 and updates can bypass save hooks, we treat a zero
+  // `adminCommissionValue` as "unset" when legacy is non-zero.
+  const legacyAdminCommission = Number(category.adminCommission ?? 0);
+  const primaryAdminCommission = Number(category.adminCommissionValue);
+  const resolvedRaw =
+    category.adminCommissionValue == null ||
+    (!Number.isFinite(primaryAdminCommission) ||
+      (primaryAdminCommission === 0 && legacyAdminCommission > 0))
+      ? legacyAdminCommission
+      : primaryAdminCommission;
+  const value = Number(resolvedRaw ?? 0);
   const fixedRule =
     category.adminCommissionFixedRule || COMMISSION_FIXED_RULE.PER_QTY;
 
@@ -69,11 +78,18 @@ function resolveHandlingConfig(category) {
       ? HANDLING_FEE_TYPE.FIXED
       : HANDLING_FEE_TYPE.NONE);
 
-  const value = Number(
-    category.handlingFeeValue ??
-      category.handlingFees ??
-      0,
-  );
+  // Backward-compat: admin UI writes legacy `handlingFees` while pricing reads
+  // `handlingFeeValue`. Since `handlingFeeValue` defaults to 0, treat it as
+  // unset when legacy is non-zero.
+  const legacyHandlingFees = Number(category.handlingFees ?? 0);
+  const primaryHandlingValue = Number(category.handlingFeeValue);
+  const resolvedRaw =
+    category.handlingFeeValue == null ||
+    (!Number.isFinite(primaryHandlingValue) ||
+      (primaryHandlingValue === 0 && legacyHandlingFees > 0))
+      ? legacyHandlingFees
+      : primaryHandlingValue;
+  const value = Number(resolvedRaw ?? 0);
 
   return {
     type,
@@ -460,14 +476,12 @@ export async function generateOrderPaymentBreakdown({
       headerCategoryName: category.name,
       adminCommissionType:
         category.adminCommissionType || COMMISSION_TYPE.PERCENTAGE,
-      adminCommissionValue:
-        category.adminCommissionValue ?? category.adminCommission ?? 0,
+      adminCommissionValue: resolveCommissionConfig(category).value,
       adminCommissionFixedRule:
         category.adminCommissionFixedRule || COMMISSION_FIXED_RULE.PER_QTY,
       handlingFeeType:
         category.handlingFeeType || HANDLING_FEE_TYPE.FIXED,
-      handlingFeeValue:
-        category.handlingFeeValue ?? category.handlingFees ?? 0,
+      handlingFeeValue: resolveHandlingConfig(category).value,
     })),
     handlingFeeStrategy: effectiveHandlingStrategy,
     handlingCategoryUsed: handling.handlingCategoryUsed,

@@ -93,7 +93,19 @@ async function validateDependencies() {
   }
   
   // Validate required environment variables
-  const requiredVars = ['MONGO_URI'];
+  const requiredVars = [];
+  const hasMongoUri = Boolean(
+    String(
+      process.env.MONGO_URI ||
+        process.env.MONGODB_URI ||
+        process.env.DATABASE_URL ||
+        "",
+    ).trim(),
+  );
+  if (!hasMongoUri) {
+    result.valid = false;
+    result.errors.push('Required environment variable MONGO_URI is not set (or set MONGODB_URI / DATABASE_URL)');
+  }
   
   if (isProduction) {
     requiredVars.push('JWT_SECRET');
@@ -156,11 +168,16 @@ function logStartupInfo() {
  * @returns {Promise<void>}
  */
 async function connectMongoDB(maxRetries = 5) {
-  const mongoUri = process.env.MONGO_URI;
+  const mongoUri = String(
+    process.env.MONGO_URI ||
+      process.env.MONGODB_URI ||
+      process.env.DATABASE_URL ||
+      "",
+  ).trim();
   const connectTimeout = parseInt(process.env.MONGO_CONNECT_TIMEOUT_MS || '10000', 10);
   
   if (!mongoUri) {
-    throw new Error('MONGO_URI environment variable is required');
+    throw new Error('MONGO_URI environment variable is required (or set MONGODB_URI / DATABASE_URL)');
   }
   
   // If already connected, return

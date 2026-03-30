@@ -90,29 +90,134 @@ const categorySchema = new mongoose.Schema(
   },
 );
 
+function normalizeNonNegativeNumber(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return 0;
+  return Math.max(num, 0);
+}
+
+function getUpdateSet(update) {
+  if (!update || typeof update !== "object") return null;
+  if (update.$set && typeof update.$set === "object") return update.$set;
+  return update;
+}
+
+function hasOwn(obj, key) {
+  return Object.prototype.hasOwnProperty.call(obj, key);
+}
+
 categorySchema.pre("save", function syncLegacyFinanceFields(next) {
-  if (this.adminCommissionValue == null) {
-    this.adminCommissionValue = this.adminCommission ?? 0;
-  }
+  try {
+    const adminType = this.adminCommissionType || "percentage";
+    const handlingType = this.handlingFeeType || "fixed";
 
-  if (this.adminCommission == null) {
-    this.adminCommission = this.adminCommissionType === "percentage" ? (this.adminCommissionValue ?? 0) : 0;
-  }
+    const legacyAdminCommission = normalizeNonNegativeNumber(this.adminCommission);
+    const newAdminCommissionValue = normalizeNonNegativeNumber(this.adminCommissionValue);
+    const legacyHandlingFees = normalizeNonNegativeNumber(this.handlingFees);
+    const newHandlingFeeValue = normalizeNonNegativeNumber(this.handlingFeeValue);
 
-  if (this.handlingFeeValue == null) {
-    this.handlingFeeValue = this.handlingFees ?? 0;
-  }
+    const adminCommissionModified = this.isModified("adminCommission");
+    const adminCommissionValueModified = this.isModified("adminCommissionValue");
+    const handlingFeesModified = this.isModified("handlingFees");
+    const handlingFeeValueModified = this.isModified("handlingFeeValue");
 
-  if (this.handlingFees == null) {
-    this.handlingFees = this.handlingFeeType === "fixed" ? (this.handlingFeeValue ?? 0) : 0;
-  }
+    // Keep legacy + new commission fields in sync.
+    if (
+      (this.isNew && legacyAdminCommission > 0 && newAdminCommissionValue === 0) ||
+      (adminCommissionModified && !adminCommissionValueModified)
+    ) {
+      this.adminCommissionValue = legacyAdminCommission;
+    }
+    if (
+      (this.isNew && newAdminCommissionValue > 0 && legacyAdminCommission === 0) ||
+      (adminCommissionValueModified && !adminCommissionModified)
+    ) {
+      this.adminCommission = newAdminCommissionValue;
+    }
 
-  if (this.handlingFeeType === "none") {
-    this.handlingFees = 0;
-    this.handlingFeeValue = 0;
-  }
+    // Keep legacy + new handling fee fields in sync.
+    if (
+      (this.isNew && legacyHandlingFees > 0 && newHandlingFeeValue === 0) ||
+      (handlingFeesModified && !handlingFeeValueModified)
+    ) {
+      this.handlingFeeValue = legacyHandlingFees;
+    }
+    if (
+      (this.isNew && newHandlingFeeValue > 0 && legacyHandlingFees === 0) ||
+      (handlingFeeValueModified && !handlingFeesModified)
+    ) {
+      this.handlingFees = newHandlingFeeValue;
+    }
 
-  next();
+    // Enforce canonical storage semantics.
+    if (adminType === "percentage") {
+      const value = normalizeNonNegativeNumber(this.adminCommissionValue);
+      this.adminCommissionValue = value;
+      this.adminCommission = value;
+    } else {
+      this.adminCommissionValue = normalizeNonNegativeNumber(this.adminCommissionValue);
+      // Legacy field historically represented percent only.
+      this.adminCommission = 0;
+    }
+
+    if (handlingType === "none") {
+      this.handlingFees = 0;
+      this.handlingFeeValue = 0;
+    } else if (handlingType === "fixed") {
+      const value = normalizeNonNegativeNumber(this.handlingFeeValue);
+      this.handlingFeeValue = value;
+      this.handlingFees = value;
+    } else {
+      // Percentage handling fee cannot be represented with legacy flat field.
+      this.handlingFeeValue = normalizeNonNegativeNumber(this.handlingFeeValue);
+      this.handlingFees = 0;
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+categorySchema.pre("findOneAndUpdate", function syncLegacyFinanceFieldsOnUpdate(next) {
+  try {
+    const update = this.getUpdate();
+    const set = getUpdateSet(update);
+    if (!set) return next();
+
+    // If legacy fields are updated, also update new fields so pricing reads the correct values.
+    if (hasOwn(set, "adminCommission") && !hasOwn(set, "adminCommissionValue")) {
+      set.adminCommissionValue = set.adminCommission;
+    }
+    if (hasOwn(set, "adminCommissionValue") && !hasOwn(set, "adminCommission")) {
+      set.adminCommission = set.adminCommissionValue;
+    }
+
+    if (hasOwn(set, "handlingFees") && !hasOwn(set, "handlingFeeValue")) {
+      set.handlingFeeValue = set.handlingFees;
+    }
+    if (hasOwn(set, "handlingFeeValue") && !hasOwn(set, "handlingFees")) {
+      if (set.handlingFeeType === "none" || set.handlingFeeType === "percentage") {
+        set.handlingFees = 0;
+      } else {
+        set.handlingFees = set.handlingFeeValue;
+      }
+    }
+
+    // Normalize "none" semantics even for update queries (save hooks won't run).
+    if (set.handlingFeeType === "none") {
+      set.handlingFees = 0;
+      set.handlingFeeValue = 0;
+    }
+    if (set.adminCommissionType && set.adminCommissionType !== "percentage") {
+      set.adminCommission = 0;
+    }
+
+    this.setUpdate(update);
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
 
 // Indexes for common queries
