@@ -1,7 +1,6 @@
 import express from "express";
 import {
   createRazorpayOrder,
-  handleRazorpayWebhook,
   verifyPayment,
 } from "../controller/paymentController.js";
 import { allowRoles, verifyToken } from "../middleware/authMiddleware.js";
@@ -33,10 +32,4 @@ router.post(
   paymentPayloadLimit,
   verifyPayment,
 );
-router.post(
-  "/webhook/razorpay",
-  paymentRouteRateLimiter,
-  handleRazorpayWebhook,
-);
-
 export default router;

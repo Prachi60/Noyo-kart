@@ -51,10 +51,7 @@ const EnvSettings = () => {
         CLOUDINARY_API_KEY: '',
         CLOUDINARY_API_SECRET: '', // Secret
         CLOUDINARY_CLOUD_NAME: '',
-
-        RAZORPAY_KEY_ID: '',
-        RAZORPAY_KEY_SECRET: '', // Secret
-
+        
         SMS_INDIA_HUB_USERNAME: '',
         SMS_INDIA_HUB_API_KEY: '', // Secret
         SMS_INDIA_HUB_SENDER_ID: '',
@@ -249,15 +246,7 @@ const EnvSettings = () => {
                                     </div>
                                 </div>
 
-                                {/* Razorpay */}
-                                <div className="space-y-4 pt-4 border-t border-slate-100">
-                                    <h4 className="text-xs font-bold text-slate-400 uppercase">Razorpay (Payments)</h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <InputField label="Key ID" name="RAZORPAY_KEY_ID" icon={Key} />
-                                        <InputField label="Key Secret" name="RAZORPAY_KEY_SECRET" icon={Lock} isSecret={true} />
-                                    </div>
-                                </div>
-
+                                {/* Razorpay configuration removed */}
                                 {/* SMS Hub */}
                                 <div className="space-y-4 pt-4 border-t border-slate-100">
                                     <h4 className="text-xs font-bold text-slate-400 uppercase">SMS India Hub</h4>

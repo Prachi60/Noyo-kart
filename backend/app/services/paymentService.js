@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import mongoose from "mongoose";
-import Razorpay from "razorpay";
+
 import Order from "../models/order.js";
 import CheckoutGroup from "../models/checkoutGroup.js";
 import Payment from "../models/payment.js";
@@ -19,16 +19,7 @@ import { releaseReservedStockForOrder } from "./stockService.js";
 import { emitNotificationEvent } from "../modules/notifications/notification.emitter.js";
 import { NOTIFICATION_EVENTS } from "../modules/notifications/notification.constants.js";
 
-let _razorpayClient = null;
 
-function getRazorpayClient() {
-  if (_razorpayClient) return _razorpayClient;
-  _razorpayClient = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID,
-    key_secret: process.env.RAZORPAY_KEY_SECRET,
-  });
-  return _razorpayClient;
-}
 
 function sanitizeGatewayPayload(payload = {}) {
   return {
