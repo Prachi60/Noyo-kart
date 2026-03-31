@@ -28,9 +28,12 @@ export const customerApi = {
     invalidateCache("/cart");
     return axiosInstance.put("/cart/update", data);
   },
-  removeFromCart: (productId) => {
+  removeFromCart: (productId, variantSku = "") => {
     invalidateCache("/cart");
-    return axiosInstance.delete(`/cart/remove/${productId}`);
+    const params = {};
+    const normalizedVariantSku = String(variantSku || "").trim();
+    if (normalizedVariantSku) params.variantSku = normalizedVariantSku;
+    return axiosInstance.delete(`/cart/remove/${productId}`, { params });
   },
   clearCart: () => {
     invalidateCache("/cart");
@@ -85,7 +88,7 @@ export const customerApi = {
   // Payments
   createPaymentOrder: (data) =>
     axiosInstance.post("/payments/create-order", data),
-  verifyPayment: (data) => axiosInstance.post("/payments/verify", data),
+  verifyPaymentStatus: (id) => axiosInstance.get(`/payments/status/${id}`),
 
   // Support & Reviews
   getProductReviews: (productId) =>

@@ -137,9 +137,9 @@ export const getProducts = async (req, res) => {
     const finalCategoryId = category || categoryId;
     const finalSubcategoryId = subcategory || subcategoryId;
 
-    if (finalHeaderId) query.headerId = finalHeaderId;
-    if (finalCategoryId) query.categoryId = finalCategoryId;
-    if (finalSubcategoryId) query.subcategoryId = finalSubcategoryId;
+    if (finalHeaderId && finalHeaderId !== "all") query.headerId = finalHeaderId;
+    if (finalCategoryId && finalCategoryId !== "all") query.categoryId = finalCategoryId;
+    if (finalSubcategoryId && finalSubcategoryId !== "all") query.subcategoryId = finalSubcategoryId;
 
     const requestedSellerIds = parseSellerIdFilters({ sellerId, sellerIds });
     const coords = parseCustomerCoordinates({ lat, lng });
@@ -193,12 +193,11 @@ export const getProducts = async (req, res) => {
       query.status = status;
     }
 
-    // Multiple categories: categoryIds=id1,id2
     if (categoryIds && typeof categoryIds === "string") {
       const ids = categoryIds
         .split(",")
         .map((id) => id.trim())
-        .filter(Boolean);
+        .filter((id) => id && id !== "all");
       if (ids.length) query.categoryId = { $in: ids };
     }
     // Multiple sellers: sellerIds=id1,id2 (or single sellerId)
@@ -207,7 +206,7 @@ export const getProducts = async (req, res) => {
         const ids = sellerIds
           .split(",")
           .map((id) => id.trim())
-          .filter(Boolean);
+          .filter((id) => id && id !== "all");
         if (ids.length) query.sellerId = { $in: ids };
       } else if (sellerId) {
         query.sellerId = sellerId;

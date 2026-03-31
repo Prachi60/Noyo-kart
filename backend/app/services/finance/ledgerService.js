@@ -71,9 +71,9 @@ export async function createLedgerEntry(
     balanceAfter: balanceAfter == null ? null : roundCurrency(balanceAfter),
   };
 
-  const options = session ? { session } : {};
-  const entry = await LedgerEntry.create([payload], options);
-  return entry[0];
+  const entry = new LedgerEntry(payload);
+  await entry.save(session ? { session } : {});
+  return entry;
 }
 
 export async function getLedgerEntries({

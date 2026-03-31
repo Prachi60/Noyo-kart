@@ -3,6 +3,8 @@ import dotenv from "dotenv";
 import http from "http";
 import cors from "cors";
 import helmet from "helmet";
+import path from "path";
+import { fileURLToPath } from "url";
 import { Server } from "socket.io";
 import setupRoutes from "./app/routes/index.js";
 import { initSocket, getIO } from "./app/socket/socketManager.js";
@@ -32,7 +34,9 @@ import {
 import logger from "./app/services/logger.js";
 import { stopScheduledJobs } from "./app/services/distributedScheduler.js";
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, ".env") });
 
 const PORT = parseInt(process.env.PORT || '7000', 10);
 const HEALTH_CHECK_PORT = parseInt(process.env.HEALTH_CHECK_PORT || '9090', 10);
@@ -99,9 +103,9 @@ function createApp() {
   app.use(cors(corsOptions));
   app.use(globalApiRateLimiter);
 
-  // Razorpay webhook needs raw body for signature verification
+  // PhonePe webhook needs raw body for signature verification
   app.use(
-    "/api/payments/webhook/razorpay",
+    "/api/payments/webhook/phonepe",
     express.raw({
       type: "application/json",
       limit: process.env.PAYMENT_WEBHOOK_MAX_PAYLOAD || "1mb",

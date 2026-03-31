@@ -7,6 +7,7 @@ import Seller from "../models/seller.js";
 import Delivery from "../models/delivery.js";
 import Setting from "../models/setting.js";
 import User from "../models/customer.js";
+import CheckoutGroup from "../models/checkoutGroup.js";
 import handleResponse from "../utils/helper.js";
 import getPagination from "../utils/pagination.js";
 import { WORKFLOW_STATUS, DEFAULT_SELLER_TIMEOUT_MS } from "../constants/orderWorkflow.js";
@@ -311,7 +312,7 @@ export const getOrderDetails = async (req, res) => {
       return handleResponse(res, 404, "Order not found");
     }
 
-    const order = await Order.findOne(orderKey)
+    let order = await Order.findOne(orderKey)
       .populate("customer", "name email phone")
       .populate("items.product", "name mainImage price salePrice")
       .populate("deliveryBoy", "name phone")
@@ -320,6 +321,31 @@ export const getOrderDetails = async (req, res) => {
       .lean();
 
     if (!order) {
+      if (orderId && orderId.startsWith("CHK-")) {
+        const group = await CheckoutGroup.findOne({ checkoutGroupId: orderId }).lean();
+        if (group) {
+          // Construct virtual summary from snapshots
+          const virtualSummary = {
+            orderId: group.checkoutGroupId,
+            status: group.status?.toLowerCase() || "pending",
+            orderStatus: group.status?.toLowerCase() || "pending",
+            paymentStatus: group.paymentStatus === "CAPTURED" ? "PAID" : (group.paymentStatus || "CREATED"),
+            workflowStatus: group.status || "CREATED",
+            pricing: {
+              subtotal: group.pricingSummary?.subtotal || 0,
+              deliveryFee: group.pricingSummary?.deliveryFee || 0,
+              platformFee: group.pricingSummary?.platformFee || 0,
+              total: group.pricingSummary?.totalAmount || 0,
+            },
+            address: group.addressSnapshot || {},
+            items: [], // Snapshots can be complex; return empty for now to avoid display errors
+            createdAt: group.createdAt,
+            isGroupSummary: true,
+            isFragmented: true, // Indicates this is a summary of potentially multiple orders
+          };
+          return handleResponse(res, 200, "Group summary retrieved", virtualSummary);
+        }
+      }
       return handleResponse(res, 404, "Order not found");
     }
 

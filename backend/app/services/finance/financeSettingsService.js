@@ -79,17 +79,14 @@ export async function getOrCreateFinanceSettings({ session } = {}) {
 
   if (!settings) {
     settings = await Setting.create(
-      [
-        {
-          ...DEFAULT_FINANCE_SETTINGS,
-          pricingMode: DEFAULT_FINANCE_SETTINGS.deliveryPricingMode,
-          baseDeliveryCharge: DEFAULT_FINANCE_SETTINGS.customerBaseDeliveryFee,
-          fleetCommissionRatePerKm: DEFAULT_FINANCE_SETTINGS.deliveryPartnerRatePerKm,
-        },
-      ],
+      {
+        ...DEFAULT_FINANCE_SETTINGS,
+        pricingMode: DEFAULT_FINANCE_SETTINGS.deliveryPricingMode,
+        baseDeliveryCharge: DEFAULT_FINANCE_SETTINGS.customerBaseDeliveryFee,
+        fleetCommissionRatePerKm: DEFAULT_FINANCE_SETTINGS.deliveryPartnerRatePerKm,
+      },
       options,
     );
-    settings = settings[0];
   }
 
   return normalizeFinanceSettings(settings.toObject?.() || settings);

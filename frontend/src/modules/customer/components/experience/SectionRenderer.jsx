@@ -208,7 +208,7 @@ const SectionRenderer = ({ sections = [], productsById = {}, categoriesById = {}
             <div
               key={section._id}
               id={`section-${section._id}`}
-              className="-mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 mt-6 mb-2"
+              className="-mx-2 md:-mx-4 px-2 md:px-4 mt-6 mb-2"
             >
                 <div className="flex items-center justify-between mb-3">
                   {heading && (
@@ -241,7 +241,7 @@ const SectionRenderer = ({ sections = [], productsById = {}, categoriesById = {}
             <div
               key={section._id}
               id={`section-${section._id}`}
-              className="-mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 mt-6"
+              className="-mx-2 md:-mx-4 px-2 md:px-4 mt-6"
             >
               <div className="flex items-center justify-between mb-3">
                 {heading && (
@@ -267,7 +267,7 @@ const SectionRenderer = ({ sections = [], productsById = {}, categoriesById = {}
               >
                 {items.map((product) => (
                   <div key={product._id || product.id}>
-                    <ProductCard product={product} compact={columns > 2} neutralBg={true} />
+                    <ProductCard product={product} compact={columns >= 2} neutralBg={true} />
                   </div>
                 ))}
               </div>

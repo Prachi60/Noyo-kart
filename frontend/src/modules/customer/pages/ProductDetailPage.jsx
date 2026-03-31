@@ -207,14 +207,14 @@ const ProductDetailPage = () => {
                         {quantity > 0 ? (
                             <div className="flex items-center bg-[#61dafbaa] text-white rounded-2xl h-16 w-full sm:w-auto px-2 shadow-xl shadow-brand-100">
                                 <button
-                                    onClick={() => updateQuantity(product.id, -1)}
+                                    onClick={() => updateQuantity(product.id, -1, "")}
                                     className="w-12 h-12 flex items-center justify-center hover:bg-white/20 rounded-xl transition-all"
                                 >
                                     <Minus size={24} strokeWidth={3} />
                                 </button>
                                 <span className="w-16 text-center font-black text-xl">{quantity}</span>
                                 <button
-                                    onClick={() => updateQuantity(product.id, 1)}
+                                    onClick={() => updateQuantity(product.id, 1, "")}
                                     className="w-12 h-12 flex items-center justify-center hover:bg-white/20 rounded-xl transition-all"
                                 >
                                     <Plus size={24} strokeWidth={3} />

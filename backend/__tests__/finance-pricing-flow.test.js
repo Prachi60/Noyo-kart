@@ -113,6 +113,40 @@ describe("finance pricing flow", () => {
     expect(sum.handlingFeeCharged).toBe(30);
   });
 
+  it("falls back to legacy header-category finance fields", () => {
+    const legacyCommission = calculateCategoryCommission(
+      { price: 100, quantity: 1 },
+      {
+        adminCommissionType: "percentage",
+        adminCommission: 20,
+        adminCommissionValue: 0,
+      },
+    );
+    expect(legacyCommission.adminCommission).toBe(20);
+
+    const categoryById = new Map([
+      [
+        "cat-1",
+        {
+          _id: "cat-1",
+          name: "Fruits",
+          handlingFeeType: "fixed",
+          handlingFees: 30,
+          handlingFeeValue: 0,
+        },
+      ],
+    ]);
+
+    const items = [{ headerCategoryId: "cat-1", price: 50, quantity: 2 }];
+    const breakdown = calculateHandlingFee(items, {
+      handlingFeeStrategy: "highest_category_fee",
+      categoryById,
+    });
+
+    expect(breakdown.handlingFeeCharged).toBe(30);
+    expect(breakdown.handlingCategoryUsed.categoryName).toBe("Fruits");
+  });
+
   it("calculates customer delivery fee for both distance and fixed modes", () => {
     const distanceBased = calculateCustomerDeliveryFee(2.2, {
       deliveryPricingMode: "distance_based",

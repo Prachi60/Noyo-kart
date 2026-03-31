@@ -1,5 +1,7 @@
 import axios from 'axios';
 
+const ROLE_STORAGE_KEYS = ['auth_seller', 'auth_admin', 'auth_delivery', 'auth_customer'];
+
 const axiosInstance = axios.create({
     baseURL: import.meta.env.VITE_API_URL || 'http://localhost:7000/api',
     headers: {
@@ -32,7 +34,7 @@ axiosInstance.interceptors.request.use(
             if (url.startsWith('/seller')) token = localStorage.getItem('auth_seller');
             else if (url.startsWith('/admin')) token = localStorage.getItem('auth_admin');
             else if (url.startsWith('/delivery')) token = localStorage.getItem('auth_delivery');
-            else if (url.startsWith('/customer') || url.startsWith('/cart') || url.startsWith('/wishlist') || url.startsWith('/categories') || url.startsWith('/products')) {
+            else if (url.startsWith('/customer') || url.startsWith('/cart') || url.startsWith('/wishlist') || url.startsWith('/categories') || url.startsWith('/products') || url.startsWith('/payments')) {
                 token = localStorage.getItem('auth_customer');
             }
         }
@@ -64,22 +66,16 @@ axiosInstance.interceptors.response.use(
         const originalRequest = error.config;
         if (error.response?.status === 401 && !originalRequest._retry) {
             originalRequest._retry = true;
-
-            // Only reload when we had a token that's now invalid (expired/logged out elsewhere).
-            // If no token exists, skip reload to avoid infinite loop on public pages.
-            const hasToken = ['auth_seller', 'auth_admin', 'auth_delivery', 'auth_customer', 'token'].some(
-                (key) => localStorage.getItem(key)
-            );
-            if (!hasToken) {
-                return Promise.reject(error);
+            const hasStoredRoleToken = ROLE_STORAGE_KEYS.some((key) => localStorage.getItem(key));
+            if (hasStoredRoleToken) {
+                console.warn(
+                    '[axios] Received 401 response. Preserving stored auth tokens; session data is only cleared by explicit logout.',
+                    {
+                        url: originalRequest?.url,
+                        method: originalRequest?.method,
+                    }
+                );
             }
-
-            // Clear all possible auth tokens from localStorage
-            const storageKeys = ['auth_seller', 'auth_admin', 'auth_delivery', 'auth_customer', 'token'];
-            storageKeys.forEach(key => localStorage.removeItem(key));
-
-            // Reload will trigger ProtectedRoute to redirect to proper login page
-            window.location.reload();
         }
         return Promise.reject(error);
     }

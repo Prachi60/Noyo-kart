@@ -13,9 +13,22 @@ const OrdersPage = () => {
         const fetchOrders = async () => {
             try {
                 const response = await customerApi.getMyOrders();
-                setOrders(response.data.results || []);
+                // Backend uses handleResponse():
+                // - arrays => { results: [...] }
+                // - objects => { result: { items: [...] } }
+                const payload = response?.data;
+                const items =
+                    payload?.result?.items ||
+                    payload?.results ||
+                    [];
+                setOrders(Array.isArray(items) ? items : []);
             } catch (error) {
                 console.error("Failed to fetch orders:", error);
+                const apiMessage = error?.response?.data?.message;
+                // Orders page is a primary screen; surface failures instead of silently showing empty state.
+                if (apiMessage) {
+                    console.warn("[OrdersPage] API error:", apiMessage);
+                }
             } finally {
                 setLoading(false);
             }

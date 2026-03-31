@@ -467,23 +467,23 @@ const Home = () => {
         productParams.lng = currentLocation.longitude;
       }
 
-        const [catRes, prodRes, expRes, sectionsRes] = await Promise.all([
-          customerApi.getCategories(),
-          hasValidLocation
-            ? customerApi.getProducts(productParams)
-            : Promise.resolve({ data: { success: true, result: { items: [] } } }),
-          customerApi
-            .getExperienceSections({ pageType: "home" })
-            .catch(() => null),
-          hasValidLocation
-            ? customerApi
-                .getOfferSections({
-                  lat: currentLocation.latitude,
-                  lng: currentLocation.longitude,
-                })
-                .catch(() => ({ data: {} }))
-            : Promise.resolve({ data: { results: [] } }),
-        ]);
+      const [catRes, prodRes, expRes, sectionsRes] = await Promise.all([
+        customerApi.getCategories(),
+        hasValidLocation
+          ? customerApi.getProducts(productParams)
+          : Promise.resolve({ data: { success: true, result: { items: [] } } }),
+        customerApi
+          .getExperienceSections({ pageType: "home" })
+          .catch(() => null),
+        hasValidLocation
+          ? customerApi
+            .getOfferSections({
+              lat: currentLocation.latitude,
+              lng: currentLocation.longitude,
+            })
+            .catch(() => ({ data: {} }))
+          : Promise.resolve({ data: { results: [] } }),
+      ]);
 
       if (catRes.data.success) {
         const dbCats = catRes.data.results || catRes.data.result || [];
@@ -510,17 +510,17 @@ const Home = () => {
             // Theme / banner still come from local metadata for now
             const meta = CATEGORY_METADATA[catName] ||
               CATEGORY_METADATA[
-                catName.charAt(0).toUpperCase() + catName.slice(1).toLowerCase()
+              catName.charAt(0).toUpperCase() + catName.slice(1).toLowerCase()
               ] ||
               CATEGORY_METADATA[catName.toUpperCase()] || {
-                icon: Sparkles,
-                theme: DEFAULT_CATEGORY_THEME,
-                banner: {
-                  title: catName.toUpperCase(),
-                  subtitle: "TOP PICKS",
-                  floatingElements: "sparkles",
-                },
-              };
+              icon: Sparkles,
+              theme: DEFAULT_CATEGORY_THEME,
+              banner: {
+                title: catName.toUpperCase(),
+                subtitle: "TOP PICKS",
+                floatingElements: "sparkles",
+              },
+            };
 
             // Icon is fully driven by admin-chosen iconId, mapped to MUI
             const IconComp =
@@ -548,12 +548,12 @@ const Home = () => {
 
         const mergedAllCategory = allHeaderFromAdmin
           ? {
-              ...ALL_CATEGORY,
-              // Preserve special id/_id used in UI logic, but take color and icon from admin
-              headerColor:
-                allHeaderFromAdmin.headerColor || ALL_CATEGORY.headerColor,
-              icon: allHeaderFromAdmin.icon || ALL_CATEGORY.icon,
-            }
+            ...ALL_CATEGORY,
+            // Preserve special id/_id used in UI logic, but take color and icon from admin
+            headerColor:
+              allHeaderFromAdmin.headerColor || ALL_CATEGORY.headerColor,
+            icon: allHeaderFromAdmin.icon || ALL_CATEGORY.icon,
+          }
           : ALL_CATEGORY;
 
         const headersWithoutAll = formattedHeaders.filter(
@@ -582,7 +582,7 @@ const Home = () => {
               );
               if (match) setActiveCategory(match);
             }
-          } catch (e) {}
+          } catch (e) { }
         }
 
         // 2. Process Quick Navigation Categories (Horizontal Scroll)
@@ -703,9 +703,9 @@ const Home = () => {
             (payload.banners?.items?.length > 0 ||
               payload.categoryIds?.length > 0)
             ? {
-                banners: payload.banners || { items: [] },
-                categoryIds: payload.categoryIds || [],
-              }
+              banners: payload.banners || { items: [] },
+              categoryIds: payload.categoryIds || [],
+            }
             : { banners: { items: [] }, categoryIds: [] },
         );
       } catch (e) {
@@ -933,7 +933,7 @@ const Home = () => {
                   className={cn(
                     "flex",
                     !isInstantBannerJump &&
-                      "transition-transform duration-500 ease-out",
+                    "transition-transform duration-500 ease-out",
                   )}
                   style={{
                     transform: `translateX(-${mobileBannerIndex * 100}%)`,
@@ -1159,16 +1159,15 @@ const Home = () => {
                   </span>
                 </div>
               </div>
-              <motion.div
+              <motion.button
                 onClick={() => navigate("/category/all")}
                 whileHover={{ x: 5, scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="flex items-center gap-1 md:gap-2 bg-white px-3 py-1.5 md:px-6 md:py-3 rounded-full text-[#61dafbaa] font-bold text-[10px] md:text-sm cursor-pointer shadow-sm md:shadow-lg border border-[#61dafbaa]/5 transition-all">
-                See all{" "}
-                <ArrowRightIcon
-                  sx={{ fontSize: 12, ml: { xs: 0.2, md: 0.5 } }}
-                />
-              </motion.div>
+                className="flex items-center gap-1 bg-white px-2.5 py-1 md:px-4 md:py-2 rounded-full text-[#61dafbaa] font-black text-[11px] md:text-sm cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.05)] md:shadow-md border border-[#61dafbaa]/10 transition-all whitespace-nowrap"
+              >
+                See all
+                <ChevronRight size={12} className="ml-0.5" strokeWidth={3} />
+              </motion.button>
             </div>
 
             <div className="relative z-10 flex overflow-x-auto gap-3 md:gap-6 pb-6 md:pb-8 no-scrollbar -mx-4 px-4 md:mx-0 md:px-0 snap-x snap-mandatory scroll-smooth">
@@ -1248,15 +1247,15 @@ const Home = () => {
                         .filter(Boolean)
                         .join(", ") ||
                         section.categoryId?.name) && (
-                        <p className="text-xs md:text-sm font-semibold text-black/75 mt-1">
-                          {(section.categoryIds || [])
-                            .map((c) =>
-                              typeof c === "object" && c?.name ? c.name : null,
-                            )
-                            .filter(Boolean)
-                            .join(", ") || section.categoryId?.name}
-                        </p>
-                      )}
+                          <p className="text-xs md:text-sm font-semibold text-black/75 mt-1">
+                            {(section.categoryIds || [])
+                              .map((c) =>
+                                typeof c === "object" && c?.name ? c.name : null,
+                              )
+                              .filter(Boolean)
+                              .join(", ") || section.categoryId?.name}
+                          </p>
+                        )}
                     </div>
                     <motion.div
                       whileHover={{ y: -4, rotate: -4, scale: 1.06 }}

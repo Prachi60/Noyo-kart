@@ -3,6 +3,7 @@ import { orderMatchQueryFromRouteParam } from "../utils/orderLookup.js";
 import Transaction from "../models/transaction.js";
 import Delivery from "../models/delivery.js";
 import DeliveryAssignment from "../models/deliveryAssignment.js";
+import Wallet from "../models/wallet.js";
 import handleResponse from "../utils/helper.js";
 import mongoose from "mongoose";
 import { WORKFLOW_STATUS } from "../constants/orderWorkflow.js";
@@ -10,6 +11,7 @@ import { writeDeliveryLocation, appendTrailPoint } from "../services/firebaseSer
 import { getRedisClient } from "../config/redis.js";
 import { distanceMeters } from "../utils/geoUtils.js";
 import { applyDeliveredSettlement } from "../services/orderSettlement.js";
+import { roundCurrency } from "../utils/money.js";
 
 const LOC_MIN_INTERVAL_MS = () =>
   parseInt(process.env.LOCATION_MIN_INTERVAL_MS || "3000", 10);
@@ -75,18 +77,13 @@ export const getDeliveryStats = async (req, res) => {
             .filter(t => t.status === 'Settled' && (t.type === 'Incentive' || t.type === 'Bonus'))
             .reduce((acc, t) => acc + t.amount, 0);
 
-        // All-time cash collected logic
-        const cashTransactions = await Transaction.find({
-            user: deliveryBoyId,
-            userModel: 'Delivery',
-            type: { $in: ['Cash Collection', 'Cash Settlement'] }
-        });
-
-        console.log(`Found ${cashTransactions.length} cash transactions for user ${deliveryBoyId}`);
-
-        const cashCollected = cashTransactions.reduce((acc, t) => {
-            return t.type === 'Cash Collection' ? acc + t.amount : acc - Math.abs(t.amount);
-        }, 0);
+        const wallet = await Wallet.findOne({
+            ownerType: "DELIVERY_PARTNER",
+            ownerId: deliveryBoyId,
+        })
+            .select("cashInHand")
+            .lean();
+        const cashCollected = roundCurrency(wallet?.cashInHand || 0);
 
         return handleResponse(res, 200, "Stats fetched", {
             today: todayEarnings,
@@ -108,6 +105,12 @@ export const getDeliveryEarnings = async (req, res) => {
         const transactions = await Transaction.find({ user: deliveryBoyId, userModel: 'Delivery' })
             .sort({ createdAt: -1 })
             .populate("order", "orderId pricing");
+        const wallet = await Wallet.findOne({
+            ownerType: "DELIVERY_PARTNER",
+            ownerId: deliveryBoyId,
+        })
+            .select("cashInHand")
+            .lean();
 
         const totalEarnings = transactions
             .filter(t => t.status === 'Settled' && (t.type === 'Delivery Earning' || t.type === 'Incentive' || t.type === 'Bonus'))
@@ -121,11 +124,7 @@ export const getDeliveryEarnings = async (req, res) => {
             .filter(t => (t.type === 'Incentive' || t.type === 'Bonus') && t.status === 'Settled')
             .reduce((acc, t) => acc + t.amount, 0);
 
-        // Calculate Real Cash Collected
-        const cashTransactions = transactions.filter(t => t.status === 'Settled' && (t.type === 'Cash Collection' || t.type === 'Cash Settlement'));
-        const cashCollected = cashTransactions.reduce((acc, t) => {
-            return t.type === 'Cash Collection' ? acc + t.amount : acc - Math.abs(t.amount);
-        }, 0);
+        const cashCollected = roundCurrency(wallet?.cashInHand || 0);
 
         // Last 7 days aggregation for chart
         const sevenDaysAgo = new Date();
@@ -174,6 +173,223 @@ export const getDeliveryEarnings = async (req, res) => {
         });
     } catch (error) {
         return handleResponse(res, 500, error.message);
+    }
+};
+
+/* ===============================
+   GET DELIVERY COD CASH SUMMARY
+================================ */
+export const getDeliveryCodCashSummary = async (req, res) => {
+    try {
+        const rawId = req.user?.id ?? req.user?._id;
+        if (!rawId) {
+            return handleResponse(res, 401, "Unauthorized");
+        }
+        if (!mongoose.Types.ObjectId.isValid(String(rawId))) {
+            return handleResponse(res, 401, "Invalid user id");
+        }
+
+        const deliveryBoyId = new mongoose.Types.ObjectId(String(rawId));
+
+        const wallet = await Wallet.findOne({
+            ownerType: "DELIVERY_PARTNER",
+            ownerId: deliveryBoyId,
+        })
+            .select("cashInHand")
+            .lean();
+
+        const orders = await Order.find({
+            deliveryBoy: deliveryBoyId,
+            paymentMode: "COD",
+            status: { $ne: "cancelled" },
+            orderStatus: { $ne: "cancelled" },
+        })
+            .select(
+                "orderId status orderStatus deliveredAt createdAt financeFlags paymentBreakdown pricing",
+            )
+            .sort({ createdAt: -1 })
+            .limit(200)
+            .lean();
+
+        const normalized = orders.map((order) => {
+            const codMarkedCollected = Boolean(order.financeFlags?.codMarkedCollected);
+            const gross = roundCurrency(order.paymentBreakdown?.grandTotal ?? order.pricing?.total ?? 0);
+            const riderCommission = roundCurrency(order.paymentBreakdown?.riderPayoutTotal ?? 0);
+
+            const estimatedNet = roundCurrency(Math.max(gross - riderCommission, 0));
+            const pendingNet = roundCurrency(order.paymentBreakdown?.codPendingAmount ?? 0);
+            const contribution = codMarkedCollected ? pendingNet : estimatedNet;
+
+            return {
+                orderId: order.orderId,
+                status: order.status,
+                orderStatus: order.orderStatus,
+                deliveredAt: order.deliveredAt || null,
+                createdAt: order.createdAt || null,
+                codMarkedCollected,
+                amountGross: gross,
+                riderCommission,
+                amountNetExpected: estimatedNet,
+                amountNetPending: pendingNet,
+                systemFloatContribution: contribution,
+            };
+        });
+
+        const systemFloatCOD = roundCurrency(
+            normalized.reduce((sum, row) => sum + Number(row.systemFloatContribution || 0), 0),
+        );
+
+        const toRemit = normalized
+            .filter((row) => row.codMarkedCollected && Number(row.amountNetPending || 0) > 0)
+            .slice(0, 50);
+
+        const toCollect = normalized
+            .filter((row) => !row.codMarkedCollected && Number(row.amountNetExpected || 0) > 0)
+            .slice(0, 50);
+
+        return handleResponse(res, 200, "COD cash summary fetched", {
+            systemFloatCOD,
+            cashInHand: roundCurrency(wallet?.cashInHand || 0),
+            toRemit,
+            toCollect,
+        });
+    } catch (error) {
+        return handleResponse(res, 500, error.message);
+    }
+};
+
+/* ===============================
+   SUBMIT DELIVERY COD CASH
+================================ */
+export const submitDeliveryCodCashToAdmin = async (req, res) => {
+    try {
+        const rawId = req.user?.id ?? req.user?._id;
+        if (!rawId) {
+            return handleResponse(res, 401, "Unauthorized");
+        }
+        if (!mongoose.Types.ObjectId.isValid(String(rawId))) {
+            return handleResponse(res, 401, "Invalid user id");
+        }
+
+        const deliveryBoyId = new mongoose.Types.ObjectId(String(rawId));
+        const orders = await Order.find({
+            deliveryBoy: deliveryBoyId,
+            paymentMode: "COD",
+            status: { $ne: "cancelled" },
+            orderStatus: { $ne: "cancelled" },
+            "financeFlags.codMarkedCollected": true,
+            "paymentBreakdown.codPendingAmount": { $gt: 0 },
+        })
+            .select("orderId paymentBreakdown.codPendingAmount")
+            .sort({ createdAt: 1 })
+            .lean();
+
+        if (!orders.length) {
+            return handleResponse(
+                res,
+                400,
+                "No collected COD cash is ready to submit yet. Mark customer cash as collected first.",
+            );
+        }
+
+        const totalAvailable = roundCurrency(
+            orders.reduce(
+                (sum, order) => sum + Number(order?.paymentBreakdown?.codPendingAmount || 0),
+                0,
+            ),
+        );
+        const requestedRaw = req.body?.amount;
+        const requestedAmount =
+            requestedRaw == null || requestedRaw === ""
+                ? null
+                : roundCurrency(requestedRaw);
+
+        if (requestedAmount != null && (!Number.isFinite(Number(requestedRaw)) || requestedAmount <= 0)) {
+            return handleResponse(res, 400, "Enter a valid amount to submit");
+        }
+
+        const amountToSubmit = requestedAmount == null ? totalAvailable : requestedAmount;
+        if (amountToSubmit <= 0) {
+            return handleResponse(
+                res,
+                400,
+                "No collected COD cash is ready to submit yet. Mark customer cash as collected first.",
+            );
+        }
+        if (amountToSubmit > totalAvailable) {
+            return handleResponse(
+                res,
+                400,
+                `You can submit up to ${String.fromCharCode(8377)}${totalAvailable.toLocaleString()}`,
+            );
+        }
+
+        const settledOrders = [];
+        let totalSubmitted = 0;
+        let remaining = amountToSubmit;
+
+        for (const order of orders) {
+            const amount = roundCurrency(order?.paymentBreakdown?.codPendingAmount || 0);
+            if (amount <= 0 || remaining <= 0) continue;
+            const settleAmount = roundCurrency(Math.min(amount, remaining));
+
+            await reconcileCodCash(
+                order._id,
+                settleAmount,
+                deliveryBoyId,
+                {
+                    actorId: req.user?.id || null,
+                    metadata: {
+                        source: "delivery_cod_cash_page",
+                        initiatedBy: "delivery_partner",
+                    },
+                },
+            );
+
+            totalSubmitted = roundCurrency(totalSubmitted + settleAmount);
+            remaining = roundCurrency(remaining - settleAmount);
+            settledOrders.push({
+                orderId: order.orderId,
+                amount: settleAmount,
+            });
+        }
+
+        if (totalSubmitted <= 0) {
+            return handleResponse(
+                res,
+                400,
+                "No collected COD cash is ready to submit yet. Mark customer cash as collected first.",
+            );
+        }
+
+        await Transaction.create({
+            user: deliveryBoyId,
+            userModel: "Delivery",
+            type: "Cash Settlement",
+            amount: -Math.abs(totalSubmitted),
+            status: "Settled",
+            reference: `CSH-SET-${deliveryBoyId}-${Date.now()}`,
+            meta: {
+                source: "delivery_cod_cash_page",
+                orders: settledOrders.map((item) => item.orderId),
+            },
+        });
+
+        const wallet = await Wallet.findOne({
+            ownerType: "DELIVERY_PARTNER",
+            ownerId: deliveryBoyId,
+        })
+            .select("cashInHand")
+            .lean();
+
+        return handleResponse(res, 200, "COD cash submitted to admin successfully", {
+            totalSubmitted,
+            orderCount: settledOrders.length,
+            orders: settledOrders,
+            cashInHand: roundCurrency(wallet?.cashInHand || 0),
+        });
+    } catch (error) {
+        return handleResponse(res, error.statusCode || 500, error.message);
     }
 };
 

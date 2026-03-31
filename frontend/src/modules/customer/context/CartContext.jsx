@@ -24,12 +24,44 @@ export const CartProvider = ({ children }) => {
   // Clear cart locally when user logs out is handled by the useEffect dependency on isAuthenticated
   const normalizeBackendCart = (items) => {
     if (!items) return [];
-    return items.map((item) => ({
-      ...item.productId,
-      id: item.productId._id, // Normalize ID
-      quantity: item.quantity,
-      image: item.productId.mainImage, // Handle mapping for frontend
-    }));
+    return items.map((item) => {
+      const product = item.productId;
+      const variantKey = String(item.variantSku || "").trim();
+      const { price, salePrice, variantName } = resolveVariantPricing(product, variantKey);
+      return {
+        ...product,
+        id: product?._id, // Normalize ID
+        quantity: item.quantity,
+        variantSku: variantKey,
+        variantName,
+        price,
+        salePrice,
+        image: product?.mainImage, // Handle mapping for frontend
+      };
+    });
+  };
+
+  const resolveVariantPricing = (product, variantSku = "") => {
+    const normalizedKey = String(variantSku || "").trim();
+    if (!normalizedKey) {
+      return {
+        price: Number(product?.price || 0),
+        salePrice: Number(product?.salePrice || 0),
+        variantName: "",
+      };
+    }
+
+    const variants = Array.isArray(product?.variants) ? product.variants : [];
+    const hit = variants.find((v) => {
+      const sku = String(v?.sku || "").trim();
+      const name = String(v?.name || "").trim();
+      return (sku && sku === normalizedKey) || (!sku && name === normalizedKey) || name === normalizedKey;
+    });
+    return {
+      price: Number(hit?.price || product?.price || 0),
+      salePrice: Number(hit?.salePrice || 0),
+      variantName: String(hit?.name || "").trim(),
+    };
   };
 
   const syncCart = (backendItems) => {
@@ -76,14 +108,19 @@ export const CartProvider = ({ children }) => {
   }, [cart, isAuthenticated]);
 
   const addToCart = async (product) => {
+    const variantSku = String(product?.variantSku || product?.variantName || "").trim();
     const id = product.id || product._id;
+    const key = `${id}::${variantSku || ""}`;
+    const { price, salePrice, variantName } = resolveVariantPricing(product, variantSku);
 
     // Optimistic UI update for instant feedback
     setCart((prev) => {
-      const existingItem = prev.find((item) => (item.id || item._id) === id);
+      const existingItem = prev.find(
+        (item) => `${item.id || item._id}::${String(item.variantSku || "").trim()}` === key,
+      );
       if (existingItem) {
         return prev.map((item) =>
-          (item.id || item._id) === id
+          `${item.id || item._id}::${String(item.variantSku || "").trim()}` === key
             ? { ...item, quantity: item.quantity + 1 }
             : item,
         );
@@ -94,6 +131,10 @@ export const CartProvider = ({ children }) => {
         {
           ...product,
           id,
+          variantSku,
+          variantName,
+          price,
+          salePrice,
           quantity: 1,
           image: product.image || product.mainImage,
         },
@@ -105,6 +146,7 @@ export const CartProvider = ({ children }) => {
       try {
         const response = await customerApi.addToCart({
           productId: id,
+          variantSku,
           quantity: 1,
         });
         pendingRequestsRef.current -= 1;
@@ -120,16 +162,26 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  const removeFromCart = async (productId) => {
-    // Optimistic update
+  const removeFromCart = async (productId, variantSku = "") => {
+    const normalizedVariantSku = String(variantSku || "").trim();
+    const key = `${productId}::${normalizedVariantSku || ""}`;
+
+    // Optimistic update (remove only the matching line when variantSku is provided).
     setCart((prev) =>
-      prev.filter((item) => (item.id || item._id) !== productId),
+      prev.filter(
+        (item) =>
+          `${item.id || item._id}::${String(item.variantSku || "").trim()}` !==
+          key,
+      ),
     );
 
     if (isAuthenticated) {
       pendingRequestsRef.current += 1;
       try {
-        const response = await customerApi.removeFromCart(productId);
+        const response = await customerApi.removeFromCart(
+          productId,
+          normalizedVariantSku,
+        );
         pendingRequestsRef.current -= 1;
         await syncCart(response.data.result.items);
       } catch (error) {
@@ -142,23 +194,29 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  const updateQuantity = async (productId, delta) => {
+  const updateQuantity = async (productId, delta, variantSku = "") => {
+    const normalizedVariantSku = String(variantSku || "").trim();
+    const key = `${productId}::${normalizedVariantSku || ""}`;
     const currentItem = cart.find(
-      (item) => (item.id || item._id) === productId,
+      (item) =>
+        `${item.id || item._id}::${String(item.variantSku || "").trim()}` === key,
     );
     if (!currentItem) return;
 
     const newQty = Math.max(0, currentItem.quantity + delta);
 
     if (newQty === 0) {
-      removeFromCart(productId);
+      removeFromCart(productId, normalizedVariantSku);
       return;
     }
 
     // Optimistic update
     setCart((prev) =>
       prev.map((item) => {
-        if ((item.id || item._id) === productId) {
+        if (
+          `${item.id || item._id}::${String(item.variantSku || "").trim()}` ===
+          key
+        ) {
           return { ...item, quantity: newQty };
         }
         return item;
@@ -171,6 +229,7 @@ export const CartProvider = ({ children }) => {
         const response = await customerApi.updateCartQuantity({
           productId,
           quantity: newQty,
+          variantSku: normalizedVariantSku,
         });
         pendingRequestsRef.current -= 1;
         await syncCart(response.data.result.items);
@@ -197,10 +256,13 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  const cartTotal = cart.reduce(
-    (total, item) => total + item.price * item.quantity,
-    0,
-  );
+  const cartTotal = cart.reduce((total, item) => {
+    const unit =
+      Number(item.salePrice || 0) > 0 && Number(item.salePrice) < Number(item.price || 0)
+        ? Number(item.salePrice)
+        : Number(item.price || 0);
+    return total + unit * Number(item.quantity || 0);
+  }, 0);
   const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
 
   return (

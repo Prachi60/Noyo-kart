@@ -230,11 +230,19 @@ const Dashboard = () => {
               <p className="ds-caption mb-0.5">Incentives</p>
               <p className="font-bold text-gray-900">₹{earnings.incentives}</p>
             </div>
-            <div className="text-center group cursor-pointer">
+            <div
+              className="text-center group cursor-pointer"
+              role="button"
+              tabIndex={0}
+              onClick={() => navigate("/delivery/cod-cash")}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") navigate("/delivery/cod-cash");
+              }}
+            >
               <div className="flex justify-center mb-2 text-brand-600 bg-brand-50 group-hover:bg-brand-100 transition-colors w-10 h-10 rounded-full items-center mx-auto">
                 <IndianRupee size={18} />
               </div>
-              <p className="ds-caption mb-0.5">Cash</p>
+              <p className="ds-caption mb-0.5">COD Cash</p>
               <p className="font-bold text-gray-900">
                 ₹{earnings.cashCollected}
               </p>
