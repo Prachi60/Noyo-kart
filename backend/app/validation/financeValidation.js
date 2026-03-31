@@ -43,9 +43,8 @@ export const createFinanceOrderSchema = checkoutPreviewSchema.keys({
 });
 
 export const verifyOnlinePaymentSchema = Joi.object({
-  razorpay_order_id: Joi.string().trim().required(),
-  razorpay_payment_id: Joi.string().trim().required(),
-  razorpay_signature: Joi.string().trim().required(),
+  merchantOrderId: Joi.string().trim().required(),
+  transactionId: Joi.string().trim().optional(),
   paymentMeta: Joi.object().unknown(true).optional(),
 });
 

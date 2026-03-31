@@ -515,6 +515,25 @@ const OrderDetailPage = () => {
     }
   };
 
+  const handleRetryPayment = async () => {
+    try {
+      if (!order) return;
+      const paymentRef = order.checkoutGroupId || order.orderId;
+      const response = await customerApi.createPaymentOrder({
+        orderRef: paymentRef,
+        orderId: order.orderId
+      });
+      if (response.data.success && response.data.result?.redirectUrl) {
+        window.location.href = response.data.result.redirectUrl;
+      } else {
+        toast.error(response.data.message || "Failed to initiate payment");
+      }
+    } catch (err) {
+      console.error("[OrderDetailPage] Retry payment error:", err);
+      toast.error("Unable to start payment. Please try again later.");
+    }
+  };
+
   if (!order) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-slate-50 to-white">
@@ -544,6 +563,36 @@ const OrderDetailPage = () => {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
+        {/* Payment Required Card - Only for Online Pending Orders */}
+        {order.paymentMode === "ONLINE" && order.paymentStatus !== "PAID" && status !== "cancelled" && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-brand-50 rounded-3xl p-5 shadow-sm border border-brand-100 relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 p-4 opacity-10">
+              <CreditCard size={64} className="text-brand-600" />
+            </div>
+            <div className="relative z-10 flex items-center justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse" />
+                  <h3 className="text-sm font-black text-brand-900 uppercase tracking-tight">Payment Required</h3>
+                </div>
+                <p className="text-xs text-brand-700 font-medium leading-relaxed">
+                  Complete your payment of <span className="font-bold">₹{order.pricing.total}</span> to proceed with this order.
+                </p>
+              </div>
+              <button 
+                onClick={handleRetryPayment}
+                className="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl text-xs font-black shadow-lg shadow-brand-200 transition-all active:scale-95 flex items-center gap-2 uppercase tracking-wide shrink-0"
+              >
+                Pay Now <ArrowRight size={14} />
+              </button>
+            </div>
+          </motion.div>
+        )}
+
         {/* Enhanced Map with Cleaner Design - Hide when delivered or cancelled */}
         {status !== "delivered" && status !== "cancelled" && (
           <motion.div 

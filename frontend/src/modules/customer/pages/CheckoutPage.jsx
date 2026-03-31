@@ -696,6 +696,7 @@ const CheckoutPage = () => {
         const result = response.data.result;
         const mainOrder = result.order || (Array.isArray(result.orders) ? result.orders[0] : null);
         const mainOrderId = mainOrder?.orderId || result.orderId;
+        const paymentRef = result.paymentRef || result.checkoutGroupId || mainOrderId;
         
         console.log("[CheckoutPage] Order placed. Result:", result, "Target ID:", mainOrderId);
         
@@ -707,6 +708,31 @@ const CheckoutPage = () => {
           return;
         }
 
+        // If online payment, initiate gateway redirect
+        if (selectedPayment === "online") {
+          try {
+            const paymentRes = await customerApi.createPaymentOrder({
+              orderRef: paymentRef,
+              orderId: mainOrderId
+            });
+            
+            if (paymentRes.data.success && paymentRes.data.result?.redirectUrl) {
+              clearCart();
+              window.location.href = paymentRes.data.result.redirectUrl;
+              return; // End function here as we are redirecting
+            } else {
+              throw new Error(paymentRes.data.message || "Failed to initiate payment gateway");
+            }
+          } catch (payError) {
+            console.error("[CheckoutPage] Payment initiation failed:", payError);
+            setIsPlacingOrder(false);
+            showToast(payError.message || "Order created but payment gateway failed. Please pay from order details.", "error");
+            navigate(`/orders/${mainOrderId}`);
+            return;
+          }
+        }
+
+        // COD Flow
         clearCart();
         showToast(`Order placed — waiting for seller to accept.`, "success");
         setOrderId(mainOrderId);
@@ -721,7 +747,6 @@ const CheckoutPage = () => {
           navigate(`/orders/${mainOrderId}`);
         }, 3000);
       } else {
-        // Handle case where success is false but didn't throw (unlikely with Axios)
         setIsPlacingOrder(false);
         showToast(response.data.message || "Could not place order.", "error");
       }
