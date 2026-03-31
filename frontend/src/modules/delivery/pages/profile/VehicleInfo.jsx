@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Truck, ShieldCheck, FileText, AlertCircle } from "lucide-react";
 import Button from "@/shared/components/ui/Button";
 import Card from "@/shared/components/ui/Card";
-import { useAuth } from "@/core/context/AuthContext";
-import { useSettings } from "@/core/context/SettingsContext";
+import { useAuth } from "@core/context/AuthContext";
+import { useSettings } from "@core/context/SettingsContext";
 
 const VehicleInfo = () => {
   const navigate = useNavigate();

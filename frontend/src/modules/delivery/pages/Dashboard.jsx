@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import Button from "@/shared/components/ui/Button";
 import Card from "@/shared/components/ui/Card";
 
-import { useAuth } from "@/core/context/AuthContext";
+import { useAuth } from "@core/context/AuthContext";
 import { deliveryApi } from "../services/deliveryApi";
 
 const Dashboard = () => {
