@@ -4,78 +4,14 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useMemo
 } from "react";
 import axiosInstance from "@core/api/axios";
 import { getWithDedupe } from "@core/api/dedupe";
+import { DEFAULT_SETTINGS, applyThemeVariables } from "./SettingsDefaults";
 
-const SettingsContext = createContext(undefined);
-
-/** Default fallbacks when settings are not yet loaded or API fails */
-const DEFAULT_SETTINGS = {
-  appName: "App",
-  supportEmail: "",
-  supportPhone: "",
-  currencySymbol: "₹",
-  currencyCode: "INR",
-  timezone: "Asia/Kolkata",
-  logoUrl: "",
-  faviconUrl: "",
-  primaryColor: "#61dafbaa",
-  secondaryColor: "#64748b",
-  companyName: "",
-  taxId: "",
-  address: "",
-  facebook: "",
-  twitter: "",
-  instagram: "",
-  linkedin: "",
-  youtube: "",
-  playStoreLink: "",
-  appStoreLink: "",
-  metaTitle: "",
-  metaDescription: "",
-  metaKeywords: "",
-  keywords: [],
-  returnDeliveryCommission: 0,
-  deliveryPricingMode: "distance_based",
-  pricingMode: "distance_based",
-  customerBaseDeliveryFee: 30,
-  riderBasePayout: 30,
-  baseDeliveryCharge: 30,
-  baseDistanceCapacityKm: 0.5,
-  incrementalKmSurcharge: 10,
-  deliveryPartnerRatePerKm: 5,
-  fleetCommissionRatePerKm: 5,
-  fixedDeliveryFee: 30,
-  handlingFeeStrategy: "highest_category_fee",
-  codEnabled: true,
-  onlineEnabled: true,
-};
-
-/**
- * Applies theme CSS variables to document root from settings.
- * Called when settings are loaded so the whole app uses dynamic colors.
- */
-function applyThemeVariables(settings) {
-  if (!settings) return;
-  const root = document.documentElement;
-  root.style.setProperty(
-    "--primary",
-    settings.primaryColor || DEFAULT_SETTINGS.primaryColor,
-  );
-  root.style.setProperty(
-    "--secondary",
-    settings.secondaryColor || DEFAULT_SETTINGS.secondaryColor,
-  );
-  root.style.setProperty(
-    "--primary-color",
-    settings.primaryColor || DEFAULT_SETTINGS.primaryColor,
-  );
-  root.style.setProperty(
-    "--secondary-color",
-    settings.secondaryColor || DEFAULT_SETTINGS.secondaryColor,
-  );
-}
+// Create context with null so we can check if it's provided
+const SettingsContext = createContext(null);
 
 export const SettingsProvider = ({ children }) => {
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
@@ -110,12 +46,13 @@ export const SettingsProvider = ({ children }) => {
     fetchSettings();
   }, [fetchSettings]);
 
-  const value = {
+  // UseMemo to avoid rerenders of children if values haven't changed
+  const value = useMemo(() => ({
     settings,
     loading,
     error,
     refetch: fetchSettings,
-  };
+  }), [settings, loading, error, fetchSettings]);
 
   return (
     <SettingsContext.Provider value={value}>
@@ -124,11 +61,12 @@ export const SettingsProvider = ({ children }) => {
   );
 };
 
-export function useSettings() {
-  const ctx = useContext(SettingsContext);
-  if (ctx === undefined) {
+export const useSettings = () => {
+  const context = useContext(SettingsContext);
+  if (!context) {
     throw new Error("useSettings must be used within a SettingsProvider");
   }
-  return ctx;
-}
+  return context;
+};
 
+export default SettingsContext;

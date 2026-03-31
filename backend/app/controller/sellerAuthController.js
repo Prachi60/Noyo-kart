@@ -6,6 +6,7 @@ import {
   verifySellerOtpCode,
   verifySellerVerificationToken,
 } from "../services/sellerVerificationService.js";
+import { uploadToCloudinary } from "../services/mediaService.js";
 
 /* ===============================
    Utils
@@ -97,7 +98,31 @@ export const signupSeller = async (req, res) => {
             lat,
             lng,
             radius
-        } = req.body;
+        } = req.body || {};
+
+        // 1. Handle file uploads if they exist in req.files (multipart form)
+        const documentFiles = req.files || [];
+        const uploadedDocs = {};
+        
+        if (Array.isArray(documentFiles) && documentFiles.length > 0) {
+            for (const file of documentFiles) {
+                try {
+                    const fieldName = file.fieldname;
+                    if (fieldName && REQUIRED_SELLER_DOCUMENT_FIELDS.includes(fieldName)) {
+                        const url = await uploadToCloudinary(file.buffer, "docs");
+                        uploadedDocs[fieldName] = url;
+                    }
+                } catch (err) {
+                    console.error("Failed to upload document to Cloudinary", err);
+                }
+            }
+        }
+
+        // Merge uploaded document URLs into body for resolveSellerDocuments
+        const augmentedBody = { 
+            ...req.body, 
+            ...uploadedDocs 
+        };
 
         const parsedLat = lat !== undefined ? Number(lat) : undefined;
         const parsedLng = lng !== undefined ? Number(lng) : undefined;
@@ -136,7 +161,7 @@ export const signupSeller = async (req, res) => {
         }
 
         const parsedDocuments = parseDocumentsPayload(documents);
-        const sellerDocuments = resolveSellerDocuments(req.body, parsedDocuments);
+        const sellerDocuments = resolveSellerDocuments(augmentedBody, parsedDocuments);
         const missingRequiredDocuments = getMissingRequiredSellerDocuments(
             sellerDocuments || {}
         );

@@ -369,9 +369,9 @@ const AddressesPage = () => {
                         <div className="grid gap-2">
                             <Label>Address Type</Label>
                             <div className="flex gap-2">
-                                <Button type="button" variant="outline" className={`flex-1 ${addForm.type === 'home' ? 'border-[#61dafbaa] text-[#61dafbaa] bg-brand-50' : ''}`} onClick={() => setAddForm(f => ({ ...f, type: 'home' }))}>Home</Button>
-                                <Button type="button" variant="outline" className={`flex-1 ${addForm.type === 'work' ? 'border-[#61dafbaa] text-[#61dafbaa] bg-brand-50' : ''}`} onClick={() => setAddForm(f => ({ ...f, type: 'work' }))}>Work</Button>
-                                <Button type="button" variant="outline" className={`flex-1 ${addForm.type === 'other' ? 'border-[#61dafbaa] text-[#61dafbaa] bg-brand-50' : ''}`} onClick={() => setAddForm(f => ({ ...f, type: 'other' }))}>Other</Button>
+                                <Button type="button" variant="outline" className={`flex-1 ${addForm.type === 'home' ? 'border-[#45B0E2] text-[#45B0E2] bg-brand-50' : ''}`} onClick={() => setAddForm(f => ({ ...f, type: 'home' }))}>Home</Button>
+                                <Button type="button" variant="outline" className={`flex-1 ${addForm.type === 'work' ? 'border-[#45B0E2] text-[#45B0E2] bg-brand-50' : ''}`} onClick={() => setAddForm(f => ({ ...f, type: 'work' }))}>Work</Button>
+                                <Button type="button" variant="outline" className={`flex-1 ${addForm.type === 'other' ? 'border-[#45B0E2] text-[#45B0E2] bg-brand-50' : ''}`} onClick={() => setAddForm(f => ({ ...f, type: 'other' }))}>Other</Button>
                             </div>
                         </div>
                         <div className="grid gap-2">
@@ -412,7 +412,7 @@ const AddressesPage = () => {
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsAddOpen(false)} disabled={saving}>Cancel</Button>
-                        <Button className="bg-[#61dafbaa] hover:bg-[#0b721b]" onClick={handleSaveNewAddress} disabled={saving}>{saving ? 'Saving...' : 'Save Address'}</Button>
+                        <Button className="bg-[#45B0E2] hover:bg-[#0b721b]" onClick={handleSaveNewAddress} disabled={saving}>{saving ? 'Saving...' : 'Save Address'}</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -430,9 +430,9 @@ const AddressesPage = () => {
                         <div className="grid gap-2">
                             <Label>Address Type</Label>
                             <div className="flex gap-2">
-                                <Button type="button" variant="outline" className={`flex-1 ${editForm.type === 'home' ? 'border-[#61dafbaa] text-[#61dafbaa] bg-brand-50' : ''}`} onClick={() => setEditForm(f => ({ ...f, type: 'home' }))}>Home</Button>
-                                <Button type="button" variant="outline" className={`flex-1 ${editForm.type === 'work' ? 'border-[#61dafbaa] text-[#61dafbaa] bg-brand-50' : ''}`} onClick={() => setEditForm(f => ({ ...f, type: 'work' }))}>Work</Button>
-                                <Button type="button" variant="outline" className={`flex-1 ${editForm.type === 'other' ? 'border-[#61dafbaa] text-[#61dafbaa] bg-brand-50' : ''}`} onClick={() => setEditForm(f => ({ ...f, type: 'other' }))}>Other</Button>
+                                <Button type="button" variant="outline" className={`flex-1 ${editForm.type === 'home' ? 'border-[#45B0E2] text-[#45B0E2] bg-brand-50' : ''}`} onClick={() => setEditForm(f => ({ ...f, type: 'home' }))}>Home</Button>
+                                <Button type="button" variant="outline" className={`flex-1 ${editForm.type === 'work' ? 'border-[#45B0E2] text-[#45B0E2] bg-brand-50' : ''}`} onClick={() => setEditForm(f => ({ ...f, type: 'work' }))}>Work</Button>
+                                <Button type="button" variant="outline" className={`flex-1 ${editForm.type === 'other' ? 'border-[#45B0E2] text-[#45B0E2] bg-brand-50' : ''}`} onClick={() => setEditForm(f => ({ ...f, type: 'other' }))}>Other</Button>
                             </div>
                         </div>
                         <div className="grid gap-2">
@@ -473,7 +473,7 @@ const AddressesPage = () => {
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsEditOpen(false)} disabled={updating}>Cancel</Button>
-                        <Button className="bg-[#61dafbaa] hover:bg-[#0b721b]" onClick={handleUpdateAddress} disabled={updating}>{updating ? 'Updating...' : 'Update Address'}</Button>
+                        <Button className="bg-[#45B0E2] hover:bg-[#0b721b]" onClick={handleUpdateAddress} disabled={updating}>{updating ? 'Updating...' : 'Update Address'}</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

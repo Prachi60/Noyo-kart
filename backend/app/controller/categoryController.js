@@ -2,6 +2,7 @@ import Category from "../models/category.js";
 import handleResponse from "../utils/helper.js";
 import getPagination from "../utils/pagination.js";
 import { buildKey, getOrSet, getTTL, invalidate } from "../services/cacheService.js";
+import { uploadToCloudinary } from "../services/mediaService.js";
 
 function normalizeUrl(value) {
   const normalized = String(value || "").trim();
@@ -106,6 +107,15 @@ export const getCategories = async (req, res) => {
 export const createCategory = async (req, res) => {
   try {
     const categoryData = { ...req.body };
+    
+    if (req.file) {
+      try {
+        const url = await uploadToCloudinary(req.file.buffer, "categories");
+        categoryData.image = url;
+      } catch (err) {
+        console.error("Cloudinary upload failed for category:", err);
+      }
+    }
 
     const imageUrl = normalizeUrl(categoryData.image || categoryData.imageUrl);
     if (imageUrl) {
@@ -139,6 +149,15 @@ export const updateCategory = async (req, res) => {
   try {
     const { id } = req.params;
     const categoryData = { ...req.body };
+
+    if (req.file) {
+      try {
+        const url = await uploadToCloudinary(req.file.buffer, "categories");
+        categoryData.image = url;
+      } catch (err) {
+        console.error("Cloudinary upload failed for category update:", err);
+      }
+    }
 
     const imageUrl = normalizeUrl(categoryData.image || categoryData.imageUrl);
     if (imageUrl) {

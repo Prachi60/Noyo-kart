@@ -85,12 +85,12 @@ const ShopByStorePage = () => {
       {/* Header */}
       <div className="mb-8 md:mb-12 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
-          <p className="text-xs md:text-sm font-black uppercase tracking-[0.25em] text-[#61dafbaa]/80 mb-2">
+          <p className="text-xs md:text-sm font-black uppercase tracking-[0.25em] text-[#45B0E2]/80 mb-2">
             Shop by store
           </p>
           <h1 className="text-3xl md:text-5xl font-black tracking-tight text-slate-900 mb-3">
             Curated Aisles,{" "}
-            <span className="text-[#61dafbaa]">Just for You</span>
+            <span className="text-[#45B0E2]">Just for You</span>
           </h1>
           <p className="text-slate-500 text-sm md:text-lg font-medium max-w-2xl">
             Jump straight into themed collections – from{" "}
@@ -100,7 +100,7 @@ const ShopByStorePage = () => {
           </p>
         </div>
         {activeStore && (
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#61dafbaa]/5 border border-[#61dafbaa]/15 text-xs md:text-sm font-bold text-[#61dafbaa]">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#45B0E2]/5 border border-[#45B0E2]/15 text-xs md:text-sm font-bold text-[#45B0E2]">
             <Tag size={16} />
             <span className="truncate max-w-[180px] md:max-w-xs">
               Currently exploring: {activeStore.title}
@@ -129,7 +129,7 @@ const ShopByStorePage = () => {
                   onClick={() => setActiveStoreId(store._id)}
                   className={`flex items-center gap-3 rounded-2xl border-2 min-w-[210px] md:min-w-[260px] pr-4 transition-all shadow-sm hover:shadow-lg ${
                     isActive
-                      ? "border-[#61dafbaa] bg-white"
+                      ? "border-[#45B0E2] bg-white"
                       : "border-slate-100 bg-slate-50/60"
                   }`}
                 >
@@ -154,7 +154,7 @@ const ShopByStorePage = () => {
                   <ChevronRight
                     size={18}
                     className={`${
-                      isActive ? "text-[#61dafbaa]" : "text-slate-400"
+                      isActive ? "text-[#45B0E2]" : "text-slate-400"
                     }`}
                   />
                 </button>

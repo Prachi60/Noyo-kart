@@ -110,8 +110,7 @@ const DashboardLayout = ({ children, navItems, title }) => {
 
         fetchOrdersRef.current = fetchOrders;
         fetchOrders();
-        const pollInterval = setInterval(fetchOrders, POLL_INTERVAL_MS);
-        return () => clearInterval(pollInterval);
+        // Removed aggressive polling: Sockets handle real-time updates now.
     }, [role]);
 
     useEffect(() => {

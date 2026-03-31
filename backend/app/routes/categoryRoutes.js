@@ -6,6 +6,10 @@ import {
     deleteCategory
 } from "../controller/categoryController.js";
 import { verifyToken, allowRoles } from "../middleware/authMiddleware.js";
+import multer from "multer";
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 const router = express.Router();
 
@@ -17,6 +21,7 @@ router.post(
     "/",
     verifyToken,
     allowRoles("admin"),
+    upload.single("image"),
     createCategory
 );
 
@@ -24,6 +29,7 @@ router.put(
     "/:id",
     verifyToken,
     allowRoles("admin"),
+    upload.single("image"),
     updateCategory
 );
 

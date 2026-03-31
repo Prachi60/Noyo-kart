@@ -59,7 +59,7 @@ const lifecycleClassMap = {
 
 const SELLER_CIRCLE_PALETTE = [
   "#2563eb",
-  "#61dafbaa",
+  "#45B0E2",
   "#ea580c",
   "#dc2626",
   "#7c3aed",

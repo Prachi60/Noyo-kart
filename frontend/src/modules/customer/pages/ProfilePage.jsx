@@ -137,7 +137,7 @@ const ProfilePage = () => {
                                 label="Your Orders"
                                 sub="Track, return or buy things again"
                                 path="/orders"
-                                color="#61dafbaa"
+                                color="#45B0E2"
                                 bg="rgba(16,185,129,0.10)"
                             />
                             <MenuItem
@@ -169,7 +169,7 @@ const ProfilePage = () => {
                                 label="Saved Addresses"
                                 sub="Manage your delivery locations"
                                 path="/addresses"
-                                color="#61dafbaa"
+                                color="#45B0E2"
                                 bg="rgba(56,189,248,0.10)"
                             />
                         </div>

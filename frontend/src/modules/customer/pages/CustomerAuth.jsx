@@ -26,9 +26,9 @@ const CATEGORIES = [
         title: "Grocery",
         icon: <ShoppingBasket size={28} />,
         color: "#ecfeff",
-        ring: "#61dafbaa",
+        ring: "#45B0E2",
         text: "#0ea5e9",
-        theme: "#61dafb",
+        theme: "#45B0E2",
         shadow: "rgba(97, 218, 251, 0.3)",
         img: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=600"
     },

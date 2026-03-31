@@ -38,9 +38,14 @@ async function computeDistanceKmForSeller({ sellerId, addressLocation, session =
   const normalizedLocation = normalizeLocation(addressLocation);
   if (!normalizedLocation) return 0;
 
-  const query = Seller.findById(sellerId).select("location").lean();
+  const query = Seller.findById(sellerId).select("location serviceRadius shopName").lean();
   if (session) query.session(session);
   const seller = await query;
+  if (!seller) {
+    const err = new Error("Seller not found");
+    err.statusCode = 404;
+    throw err;
+  }
   const coords = seller?.location?.coordinates;
   if (!Array.isArray(coords) || coords.length < 2) return 0;
 
@@ -51,7 +56,16 @@ async function computeDistanceKmForSeller({ sellerId, addressLocation, session =
     Number(sellerLat),
     Number(sellerLng),
   );
-  return Number((distanceInMeters / 1000).toFixed(3));
+  const distanceKm = Number((distanceInMeters / 1000).toFixed(3));
+  
+  const radius = Number(seller.serviceRadius || 5);
+  if (distanceKm > radius) {
+    const err = new Error(`${seller.shopName || "Store"} does not deliver to your current location (Distance: ${distanceKm}km, Service Radius: ${radius}km)`);
+    err.statusCode = 400;
+    throw err;
+  }
+
+  return distanceKm;
 }
 
 function sumField(rows, field) {

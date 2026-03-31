@@ -14,8 +14,10 @@ import {
     createContentLengthGuard,
     otpRouteRateLimiter,
 } from "../middleware/securityMiddlewares.js";
+import multer from "multer";
 
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() });
 const sellerOtpPayloadGuard = createContentLengthGuard(
     parseInt(process.env.AUTH_MAX_PAYLOAD_BYTES || "16384", 10),
     "Verification payload too large",
@@ -38,6 +40,7 @@ router.post(
 
 router.post(
     "/signup",
+    upload.any(),
     signupSeller
 );
 router.post("/login", loginSeller);

@@ -30,29 +30,21 @@ export const adminApi = {
     getSettings: () => axiosInstance.get('/settings'),
     updateSettings: (data) => axiosInstance.put('/settings', data),
     uploadSettingsImage: (formData, type = 'logo') =>
-        axiosInstance.post(`/settings/upload?type=${type}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+        axiosInstance.post(`/settings/upload?type=${type}`, formData),
 
     // Category Management
     getCategories: (params) => axiosInstance.get('/admin/categories', { params }),
     getCategoryTree: () => axiosInstance.get('/admin/categories?tree=true'),
     getSellers: (params) => axiosInstance.get('/admin/sellers', { params }),
-    createCategory: (formData) => axiosInstance.post('/admin/categories', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-    }),
-    updateCategory: (id, formData) => axiosInstance.put(`/admin/categories/${id}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-    }),
+    createCategory: (formData) => axiosInstance.post('/admin/categories', formData),
+    updateCategory: (id, formData) => axiosInstance.put(`/admin/categories/${id}`, formData),
     deleteCategory: (id) => axiosInstance.delete(`/admin/categories/${id}`),
     getParentUnits: () => axiosInstance.get('/admin/categories?flat=true'),
 
     // Product Management
     getProducts: (params) => axiosInstance.get('/products', { params }),
-    createProduct: (formData) => axiosInstance.post('/products', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-    }),
-    updateProduct: (id, formData) => axiosInstance.put(`/products/${id}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-    }),
+    createProduct: (formData) => axiosInstance.post('/products', formData),
+    updateProduct: (id, formData) => axiosInstance.put(`/products/${id}`, formData),
     deleteProduct: (id) => axiosInstance.delete(`/products/${id}`),
     getOrders: (params) => axiosInstance.get('/orders/seller-orders', { params }),
     getOrderDetails: (orderId) => axiosInstance.get(`/orders/details/${orderId}`),
@@ -103,9 +95,7 @@ export const adminApi = {
     updateExperienceSection: (id, data) => axiosInstance.put(`/admin/experience/${id}`, data),
     deleteExperienceSection: (id) => axiosInstance.delete(`/admin/experience/${id}`),
     reorderExperienceSections: (items) => axiosInstance.put('/admin/experience/reorder', { items }),
-    uploadExperienceBanner: (formData) => axiosInstance.post('/admin/experience/upload-banner', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-    }),
+    uploadExperienceBanner: (formData) => axiosInstance.post('/admin/experience/upload-banner', formData),
 
     // Hero config (separate hero banners + categories per page)
     getHeroConfig: (params) => axiosInstance.get('/admin/experience/hero', { params }),
