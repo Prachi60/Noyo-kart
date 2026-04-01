@@ -968,7 +968,18 @@ export async function requestHandoffOtpAtomic(deliveryId, orderId, lat, lng) {
 
   emitToCustomer(order.customer.toString(), {
     event: "order:otp",
-    payload: { orderId, code },
+    payload: { orderId, code, expiresAt },
+  });
+
+  // Emitting the specialized event that DeliveryOtpDisplay expects
+  emitToCustomer(order.customer.toString(), {
+    event: "delivery:otp:generated",
+    payload: { 
+      orderId, 
+      otp: code, 
+      expiresAt, 
+      deliveryPersonNearby: true 
+    },
   });
   emitOrderStatusUpdate(orderId, { otpSent: true }, order.customer);
 

@@ -98,27 +98,48 @@ export const getOrderRoute = async (req, res) => {
 
     const seller = order.seller;
     const coords = seller?.location?.coordinates;
-    if (!Array.isArray(coords) || coords.length < 2) {
-      return handleResponse(res, 400, "Seller location missing");
-    }
-    const [slng, slat] = coords;
+    const hasSellerLoc = Array.isArray(coords) && coords.length >= 2;
 
     const origin = { lat: originLat, lng: originLng };
     let dest;
 
     if (phase === "pickup") {
-      dest = { lat: slat, lng: slng };
+      if (!hasSellerLoc) {
+        return handleResponse(res, 400, "Seller location missing or invalid in database");
+      }
+      dest = { lat: coords[1], lng: coords[0] };
     } else {
       const c = order.address?.location;
-      if (
-        typeof c?.lat !== "number" ||
-        typeof c?.lng !== "number" ||
-        !Number.isFinite(c.lat) ||
-        !Number.isFinite(c.lng)
-      ) {
-        return handleResponse(res, 400, "Customer location missing");
+      let hasCustLoc = 
+        c && 
+        typeof c.lat === "number" && 
+        typeof c.lng === "number" && 
+        Number.isFinite(c.lat) && 
+        Number.isFinite(c.lng);
+
+      if (hasCustLoc) {
+        dest = { lat: c.lat, lng: c.lng };
+      } else {
+        // Fallback: Check if the customer has a matching saved address with location
+        const User = mongoose.model("User");
+        const customer = await User.findById(order.customer).lean();
+        const fallbackAddress = customer?.addresses?.find(
+          (a) => a.label?.toLowerCase() === order.address?.type?.toLowerCase() || 
+                 a.fullAddress === order.address?.address
+        );
+
+        if (fallbackAddress?.location?.lat && fallbackAddress?.location?.lng) {
+          dest = { 
+            lat: fallbackAddress.location.lat, 
+            lng: fallbackAddress.location.lng 
+          };
+          hasCustLoc = true;
+        }
       }
-      dest = { lat: c.lat, lng: c.lng };
+
+      if (!hasCustLoc) {
+        return handleResponse(res, 400, `Customer delivery location missing for order ${order.orderId}. Please ensure your primary address has precise mapping coordinates.`);
+      }
     }
 
     const route = await getCachedRoute(origin, dest, "driving", orderId, phase);

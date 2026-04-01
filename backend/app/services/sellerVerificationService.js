@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import Seller from "../models/seller.js";
 import OtpVerification from "../models/otpVerification.js";
 import { getRedisClient } from "../config/redis.js";
+import { sendSmsIndiaHubOtp } from "./smsIndiaHubService.js";
 import { MOCK_OTP, useRealSMS } from "../utils/otp.js";
 
 const SELLER_SIGNUP_PURPOSE = "seller_signup";
@@ -225,7 +226,7 @@ async function dispatchEmailOtp({ email, otp }) {
 
 async function dispatchPhoneOtp({ phone, otp }) {
   if (useRealSMS()) {
-    console.log(`[SellerPhoneOTP][real-provider-pending] ${phone} -> ${otp}`);
+    await sendSmsIndiaHubOtp({ phone, otp });
     return;
   }
 

@@ -1,6 +1,7 @@
 import Delivery from "../models/delivery.js";
 import jwt from "jsonwebtoken";
 import handleResponse from "../utils/helper.js";
+import { sendSmsIndiaHubOtp } from "../services/smsIndiaHubService.js";
 import { generateOTP, useRealSMS } from "../utils/otp.js";
 
 const generateToken = (delivery) =>
@@ -74,11 +75,15 @@ export const signupDelivery = async (req, res) => {
             await delivery.save();
         }
 
+        if (useRealSMS()) {
+            await sendSmsIndiaHubOtp({ phone, otp });
+        }
+
         console.log("-------------------");
         console.log("Delivery Signup Request Received");
         console.log("Data:", { name, phone, vehicleType, email });
         if (useRealSMS()) {
-            console.log("Generated OTP (real SMS mode):", otp);
+            console.log("OTP dispatched via SMS provider");
         } else {
             console.log("OTP (mock mode): use 1234");
         }
@@ -113,11 +118,15 @@ export const loginDelivery = async (req, res) => {
         delivery.otpExpiry = Date.now() + 5 * 60 * 1000;
         await delivery.save();
 
+        if (useRealSMS()) {
+            await sendSmsIndiaHubOtp({ phone, otp });
+        }
+
         console.log("-------------------");
         console.log("Delivery Login Request Received");
         console.log("Phone:", phone);
         if (useRealSMS()) {
-            console.log("Generated OTP (real SMS mode):", otp);
+            console.log("OTP dispatched via SMS provider");
         } else {
             console.log("OTP (mock mode): use 1234");
         }
