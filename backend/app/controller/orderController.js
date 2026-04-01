@@ -549,16 +549,17 @@ export const requestReturn = async (req, res) => {
       );
     }
 
-    const returnWindowMinutes = parseInt(process.env.RETURN_WINDOW_MINUTES || "2", 10);
+    const parsedWindow = parseInt(process.env.RETURN_WINDOW_MINUTES || "2", 10);
+    const returnWindowMinutes = Number.isFinite(parsedWindow) && parsedWindow > 0 ? parsedWindow : 2;
     const now = new Date();
-    const placedAt = order.createdAt;
-    const deadline = new Date(placedAt.getTime() + returnWindowMinutes * 60 * 1000);
+    const returnWindowStart = order.deliveredAt || order.createdAt;
+    const deadline = new Date(returnWindowStart.getTime() + returnWindowMinutes * 60 * 1000);
 
     if (now > deadline) {
       return handleResponse(
         res,
         400,
-        `Return window has expired. You can only request a return within ${returnWindowMinutes} minutes of placing the order.`,
+        `Return window has expired. You can only request a return within ${returnWindowMinutes} minutes of delivery.`,
       );
     }
 
