@@ -156,6 +156,14 @@ const OrderDetailPage = () => {
   const extraRoomRef = useRef("");
 
   const navigate = useNavigate();
+  const handleBack = () => {
+    const idx = window?.history?.state?.idx;
+    if (typeof idx === "number" && idx > 0) {
+      navigate(-1);
+      return;
+    }
+    navigate("/orders");
+  };
 
   // Scroll to top on load
   useEffect(() => {
@@ -609,11 +617,13 @@ const OrderDetailPage = () => {
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white pb-24 font-sans">
       {/* Minimal Header */}
       <div className="bg-white/80 backdrop-blur-md sticky top-0 z-30 px-4 py-3 flex items-center justify-between border-b border-slate-100">
-        <Link
-          to="/orders"
-          className="p-2 -ml-2 rounded-full hover:bg-slate-100 transition-colors">
+        <button
+          type="button"
+          onClick={handleBack}
+          className="p-2 -ml-2 rounded-full hover:bg-slate-100 transition-colors"
+        >
           <ChevronLeft size={24} className="text-slate-800" />
-        </Link>
+        </button>
         <div className="flex-1 text-center">
           <h1 className="text-base font-bold text-slate-800">Order</h1>
           <p className="text-xs text-slate-500 font-medium">#{order.orderId.slice(-8)}</p>
