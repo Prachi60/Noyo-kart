@@ -14,7 +14,7 @@ export const deliveryApi = {
   getWalletSummary: () => axiosInstance.get("/delivery/wallet/summary"),
   getOrderHistory: (params, config = {}) =>
     axiosInstance.get("/delivery/order-history", { params, ...config }),
-  getAvailableOrders: () => axiosInstance.get("/orders/available"),
+  getAvailableOrders: (config = {}) => axiosInstance.get("/orders/available", config),
   acceptOrder: (orderId, idempotencyKey) =>
     axiosInstance.put(
       `/orders/accept/${encodeURIComponent(String(orderId))}`,
@@ -25,7 +25,8 @@ export const deliveryApi = {
     ),
   skipOrder: (orderId) =>
     axiosInstance.put(`/orders/skip/${encodeURIComponent(String(orderId))}`),
-  postLocation: (body) => axiosInstance.post("/delivery/location", body),
+  postLocation: (body, config = {}) =>
+    axiosInstance.post("/delivery/location", body, config),
   confirmPickup: (orderId, body) =>
     axiosInstance.post(`/orders/workflow/${orderId}/pickup/confirm`, body),
   markArrivedAtStore: (orderId, body) =>
@@ -46,7 +47,7 @@ export const deliveryApi = {
     axiosInstance.get(
       `/orders/details/${encodeURIComponent(String(orderId))}`,
     ),
-  getNotifications: () => axiosInstance.get("/notifications"),
+  getNotifications: (config = {}) => axiosInstance.get("/notifications", config),
   markNotificationRead: (id) => axiosInstance.put(`/notifications/${id}/read`),
   markAllNotificationsRead: () =>
     axiosInstance.put("/notifications/mark-all-read"),

@@ -82,11 +82,6 @@ const Dashboard = () => {
     fetchStats();
     fetchNotifications();
     if (isOnline) fetchAvailableOrders();
-    const interval = setInterval(() => {
-      fetchNotifications();
-      if (isOnline) fetchAvailableOrders();
-    }, 30000);
-    return () => clearInterval(interval);
   }, [isOnline]);
 
   const handleOnlineToggle = async () => {

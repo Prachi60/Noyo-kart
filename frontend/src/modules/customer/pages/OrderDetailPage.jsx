@@ -143,6 +143,9 @@ const OrderDetailPage = () => {
   const routeOriginRef = useRef(null);
   const routeRequestRef = useRef({ phase: "", startedAt: 0 });
   const [returnCountdown, setReturnCountdown] = useState(null);
+  const refreshRef = useRef({ inFlight: false, lastAt: 0 });
+  const identifiersRef = useRef([]);
+  const extraRoomRef = useRef("");
 
   const navigate = useNavigate();
 
@@ -161,6 +164,7 @@ const OrderDetailPage = () => {
 
     const fetchOrderDetails = async () => {
       try {
+        refreshRef.current.inFlight = true;
         const response = await customerApi.getOrderDetails(orderId);
         const ord = response.data.result;
         setOrder(ord);
@@ -175,6 +179,7 @@ const OrderDetailPage = () => {
         console.error("Failed to fetch order details:", error);
         toast.error("Failed to load order details");
       } finally {
+        refreshRef.current.inFlight = false;
         setLoading(false);
       }
     };
@@ -186,32 +191,30 @@ const OrderDetailPage = () => {
 
   useEffect(() => {
     if (!orderId) return undefined;
-    const iv = setInterval(() => {
-      customerApi
-        .getOrderDetails(orderId)
-        .then((r) => setOrder(r.data.result))
-        .catch(() => {});
-    }, 12000);
-    return () => clearInterval(iv);
-  }, [orderId]);
-
-  useEffect(() => {
-    if (!orderId) return undefined;
     const getToken = () => localStorage.getItem("auth_customer");
-    const acceptedOrderIds = [orderId, order?.orderId, order?.checkoutGroupId];
     getOrderSocket(getToken);
     joinOrderRoom(orderId, getToken);
-    if (order?.orderId && order.orderId !== orderId) {
-      joinOrderRoom(order.orderId, getToken);
-    }
-    const offStatus = onOrderStatusUpdate(getToken, () => {
+
+    const refresh = () => {
+      const now = Date.now();
+      if (refreshRef.current.inFlight) return;
+      if (now - refreshRef.current.lastAt < 2000) return;
+      refreshRef.current.lastAt = now;
+      refreshRef.current.inFlight = true;
       customerApi
         .getOrderDetails(orderId)
         .then((r) => setOrder(r.data.result))
-        .catch(() => {});
+        .catch(() => {})
+        .finally(() => {
+          refreshRef.current.inFlight = false;
+        });
+    };
+
+    const offStatus = onOrderStatusUpdate(getToken, () => {
+      refresh();
     });
     const offOtp = onCustomerOtp(getToken, (payload) => {
-      if (matchesOrderIdentifier(payload?.orderId, acceptedOrderIds) && payload?.code) {
+      if (matchesOrderIdentifier(payload?.orderId, identifiersRef.current) && payload?.code) {
         setHandoffOtp(payload.code);
         toast.info("Delivery OTP received — share with rider if asked.");
       }
@@ -220,11 +223,39 @@ const OrderDetailPage = () => {
       offStatus();
       offOtp();
       leaveOrderRoom(orderId, getToken);
-      if (order?.orderId && order.orderId !== orderId) {
-        leaveOrderRoom(order.orderId, getToken);
+    };
+  }, [orderId]);
+
+  useEffect(() => {
+    identifiersRef.current = [orderId, order?.orderId, order?.checkoutGroupId]
+      .map((value) => String(value || "").trim())
+      .filter(Boolean);
+  }, [orderId, order?.orderId, order?.checkoutGroupId]);
+
+  useEffect(() => {
+    if (!orderId) return undefined;
+    const getToken = () => localStorage.getItem("auth_customer");
+
+    const nextExtraRoom =
+      order?.orderId && order.orderId !== orderId ? String(order.orderId) : "";
+
+    if (extraRoomRef.current && extraRoomRef.current !== nextExtraRoom) {
+      leaveOrderRoom(extraRoomRef.current, getToken);
+      extraRoomRef.current = "";
+    }
+
+    if (nextExtraRoom && extraRoomRef.current !== nextExtraRoom) {
+      joinOrderRoom(nextExtraRoom, getToken);
+      extraRoomRef.current = nextExtraRoom;
+    }
+
+    return () => {
+      if (extraRoomRef.current) {
+        leaveOrderRoom(extraRoomRef.current, getToken);
+        extraRoomRef.current = "";
       }
     };
-  }, [orderId, order?.orderId, order?.checkoutGroupId]);
+  }, [orderId, order?.orderId]);
 
   // Subscribe to live tracking from Firebase (if available)
   useEffect(() => {

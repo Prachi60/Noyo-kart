@@ -72,10 +72,16 @@ export const customerApi = {
   placeOrder: (data) =>
     axiosInstance.post("/orders/place", data, { timeout: 120000 }),
   getMyOrders: () => getWithDedupe("/orders/my-orders"),
-  /** No dedupe: order detail must reflect live workflow; cache caused stale/empty client state on refresh. */
+  /**
+   * Order details must reflect live workflow, but we still dedupe in-flight requests to avoid
+   * network spam when multiple effects/events trigger refresh simultaneously.
+   * ttl=0 means "no caching" (only in-flight dedupe).
+   */
   getOrderDetails: (orderId) =>
-    axiosInstance.get(
+    getWithDedupe(
       `/orders/details/${encodeURIComponent(String(orderId ?? "").trim())}`,
+      {},
+      { ttl: 0 },
     ),
   getOrderRoute: (orderId, params) =>
     axiosInstance.get(`/orders/workflow/${orderId}/route`, { params }),

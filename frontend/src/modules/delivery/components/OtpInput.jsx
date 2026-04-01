@@ -240,11 +240,11 @@ const OtpInput = ({ orderId, isReturn = false, onSuccess, onError, onCancel }) =
             onKeyDown={(e) => handleKeyDown(index, e)}
             onPaste={index === 0 ? handlePaste : undefined}
             disabled={isLoading}
-            className={`w-14 h-16 text-center text-2xl font-bold font-mono border-2 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+            className={`w-14 h-16 text-center text-2xl font-bold font-mono border-2 rounded-xl transition-all duration-200 outline-none focus:outline-none focus:ring-2 focus:ring-offset-0 ${
               error
                 ? "border-red-300 bg-red-50 text-red-900 focus:border-red-500 focus:ring-red-500"
                 : digit
-                ? "border-brand-500 bg-brand-50 text-brand-900 focus:border-brand-600 focus:ring-brand-500"
+                ? "border-primary bg-primary/10 text-slate-900 focus:border-primary focus:ring-primary"
                 : "border-gray-300 bg-white text-gray-900 focus:border-blue-500 focus:ring-blue-500"
             } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
             aria-label={`Digit ${index + 1}`}
@@ -292,10 +292,10 @@ const OtpInput = ({ orderId, isReturn = false, onSuccess, onError, onCancel }) =
       <button
         onClick={handleSubmit}
         disabled={!isComplete || isLoading || isGenerating}
-        className={`w-full h-12 rounded-xl font-bold text-white transition-all duration-200 flex items-center justify-center gap-2 ${
+        className={`w-full h-12 rounded-xl font-bold transition-all duration-200 flex items-center justify-center gap-2 outline-none focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-0 ${
           !isComplete || isLoading || isGenerating
-            ? "bg-gray-300 cursor-not-allowed"
-            : "bg-brand-600 hover:bg-brand-700 active:scale-95 shadow-md hover:shadow-lg"
+            ? "bg-gray-200 text-gray-600 cursor-not-allowed"
+            : "bg-primary text-primary-foreground hover:bg-primary/90 active:scale-95 shadow-md hover:shadow-lg"
         }`}
       >
         {isLoading ? (
@@ -315,7 +315,7 @@ const OtpInput = ({ orderId, isReturn = false, onSuccess, onError, onCancel }) =
       <button
         onClick={clearInputs}
         disabled={isLoading || otp.every((d) => !d)}
-        className="w-full h-10 rounded-xl font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full h-10 rounded-xl font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 active:scale-95 transition-all duration-200 outline-none focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         Clear
       </button>

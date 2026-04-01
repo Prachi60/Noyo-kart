@@ -95,7 +95,7 @@ const OrderProgressTracker = ({
                   transition={{ delay: index * 0.1 }}
                   className={`relative z-10 h-12 w-12 rounded-full flex items-center justify-center flex-shrink-0 ${
                     isCompleted
-                      ? "bg-brand-500 text-white shadow-lg shadow-brand-200"
+                      ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
                       : isActive
                       ? "bg-amber-100 text-amber-600 border-2 border-amber-400"
                       : "bg-slate-100 text-slate-400"
@@ -140,9 +140,9 @@ const OrderProgressTracker = ({
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="h-6 w-6 rounded-full bg-brand-100 flex items-center justify-center"
+                    className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center"
                   >
-                    <CheckCircle size={14} className="text-brand-600" />
+                    <CheckCircle size={14} className="text-primary" />
                   </motion.div>
                 )}
               </div>
@@ -152,7 +152,7 @@ const OrderProgressTracker = ({
                 <div className="absolute left-6 top-12 bottom-0 w-0.5 -mb-4">
                   <div
                     className={`h-full w-full ${
-                      isCompleted ? "bg-brand-500" : "bg-slate-200"
+                      isCompleted ? "bg-primary" : "bg-slate-200"
                     }`}
                   />
                 </div>
