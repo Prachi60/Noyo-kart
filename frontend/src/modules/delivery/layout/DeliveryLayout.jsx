@@ -6,7 +6,7 @@ import { Toaster, toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { BellRing, MapPin } from "lucide-react";
 import { deliveryApi } from "../services/deliveryApi";
-import { useAuth } from "@/core/context/AuthContext";
+import { useAuth } from "@core/context/AuthContext";
 import {
   getOrderSocket,
   onDeliveryBroadcast,
@@ -144,21 +144,16 @@ const DeliveryLayout = () => {
       if (!user?.isOnline || activeOrder || suppressIncomingModal) return;
 
       try {
-        console.group("Delivery Polling Log");
-        console.log("UserID:", user?._id || user?.id);
         const res = await deliveryApi.getAvailableOrders();
         if (res.data.success) {
           const availableOrders = res.data.results || res.data.result || [];
-          console.log(`Available orders in range: ${availableOrders.length}`);
-          const before = shownOrderIdsRef.current.size;
           applyAvailableOrdersList(availableOrders);
-          if (availableOrders.length > 0 && shownOrderIdsRef.current.size === before) {
-            console.log("Orders found but already shown:", availableOrders.map((o) => o.orderId));
-          }
         }
-        console.groupEnd();
       } catch (error) {
-        console.error("Delivery Polling Error:", error);
+        // Silently handle aborted requests to reduce log noise
+        if (error.name !== 'CanceledError' && error.name !== 'AbortError') {
+          console.error("Delivery Polling Error:", error);
+        }
       } finally {
         if (isFirstLoad) setIsFirstLoad(false);
       }

@@ -5,7 +5,7 @@ import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import BottomNav from './BottomNav';
 import { sellerApi } from '@/modules/seller/services/sellerApi';
-import { useAuth } from '@/core/context/AuthContext';
+import { useAuth } from "@core/context/AuthContext";
 import { motion, AnimatePresence } from 'framer-motion';
 import { BellRing, Check, X, Clock } from 'lucide-react';
 import { toast } from 'sonner';

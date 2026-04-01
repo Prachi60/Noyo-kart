@@ -302,13 +302,13 @@ const WithdrawalRequests = () => {
                                                     <>
                                                         <button
                                                             onClick={() => handleAction('approve', req)}
-                                                            className="p-2 bg-brand-50 text-brand-600 rounded-xl hover:bg-brand-500 hover:text-white transition-all active:scale-90"
+                                                            className="p-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all active:scale-90"
                                                         >
                                                             <CheckCircle className="h-4 w-4" />
                                                         </button>
                                                         <button
                                                             onClick={() => handleAction('reject', req)}
-                                                            className="p-2 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-500 hover:text-white transition-all active:scale-90"
+                                                            className="p-2 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-600 hover:text-white transition-all active:scale-90"
                                                         >
                                                             <XCircle className="h-4 w-4" />
                                                         </button>
@@ -369,7 +369,7 @@ const WithdrawalRequests = () => {
                         <div className="flex items-center gap-6 p-6 bg-slate-50 rounded-xl border border-slate-100">
                             <div className={cn(
                                 "h-20 w-20 rounded-xl flex items-center justify-center shadow-xl",
-                                activeTab === 'sellers' ? "bg-indigo-600 text-white" : "bg-brand-600 text-white"
+                                activeTab === 'sellers' ? "bg-indigo-600 text-white" : "bg-indigo-600 text-white"
                             )}>
                                 {activeTab === 'sellers' ? <Building2 className="h-10 w-10" /> : <Truck className="h-10 w-10" />}
                             </div>
@@ -433,7 +433,7 @@ const WithdrawalRequests = () => {
                     <div className="text-center space-y-6">
                         <div className={cn(
                             "h-16 w-16 rounded-xl flex items-center justify-center mx-auto",
-                            actionModal.type === 'approve' ? "bg-brand-50 text-brand-600" : "bg-rose-50 text-rose-600"
+                            actionModal.type === 'approve' ? "bg-indigo-50 text-indigo-600" : "bg-rose-50 text-rose-600"
                         )}>
                             {actionModal.type === 'approve' ? <CheckCircle className="h-8 w-8" /> : <XCircle className="h-8 w-8" />}
                         </div>
@@ -449,7 +449,7 @@ const WithdrawalRequests = () => {
                                 disabled={loading}
                                 className={cn(
                                     "w-full py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all shadow-xl flex items-center justify-center gap-2",
-                                    actionModal.type === 'approve' ? "bg-brand-500 text-white shadow-brand-200" : "bg-rose-500 text-white shadow-rose-200"
+                                    actionModal.type === 'approve' ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-100" : "bg-rose-600 hover:bg-rose-700 text-white shadow-rose-100"
                                 )}
                             >
                                 {loading && <RotateCw className="h-4 w-4 animate-spin" />}

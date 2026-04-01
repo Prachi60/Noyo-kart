@@ -5,7 +5,7 @@ import Button from "@/shared/components/ui/Button";
 import Card from "@/shared/components/ui/Card";
 import Input from "@/shared/components/ui/Input";
 import { toast } from "sonner";
-import { useSettings } from "@/core/context/SettingsContext";
+import { useSettings } from "@core/context/SettingsContext";
 
 const SafetyPrivacy = () => {
   const navigate = useNavigate();
