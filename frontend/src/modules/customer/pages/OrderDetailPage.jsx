@@ -140,6 +140,14 @@ const OrderDetailPage = () => {
   const [routePolyline, setRoutePolyline] = useState(null);
   const [handoffOtp, setHandoffOtp] = useState(null);
   const [clockTick, setClockTick] = useState(Date.now());
+  const parsedReturnWindowMinutes = parseInt(
+    import.meta.env.VITE_RETURN_WINDOW_MINUTES || "2",
+    10,
+  );
+  const returnWindowMinutes =
+    Number.isFinite(parsedReturnWindowMinutes) && parsedReturnWindowMinutes > 0
+      ? parsedReturnWindowMinutes
+      : 2;
   const routeOriginRef = useRef(null);
   const routeRequestRef = useRef({ phase: "", startedAt: 0 });
   const [returnCountdown, setReturnCountdown] = useState(null);
@@ -295,10 +303,14 @@ const OrderDetailPage = () => {
     }
 
     const calculateCountdown = () => {
-      const placedAt = new Date(order.createdAt).getTime();
+      if (order.status !== "delivered") {
+        setReturnCountdown(null);
+        return;
+      }
+      const windowStart = new Date(order.deliveredAt || order.createdAt).getTime();
       const now = Date.now();
-      const windowMs = (parseInt(import.meta.env.VITE_RETURN_WINDOW_MINUTES || "2", 10)) * 60 * 1000;
-      const remaining = Math.max(0, (placedAt + windowMs) - now);
+      const windowMs = returnWindowMinutes * 60 * 1000;
+      const remaining = Math.max(0, (windowStart + windowMs) - now);
 
       if (remaining <= 0) {
         setReturnCountdown(0);
@@ -313,7 +325,7 @@ const OrderDetailPage = () => {
     calculateCountdown();
     const iv = setInterval(calculateCountdown, 1000);
     return () => clearInterval(iv);
-  }, [order]);
+  }, [order, returnWindowMinutes]);
 
   const handleOpenInMaps = () => {
     const loc = order?.address?.location;
@@ -489,6 +501,7 @@ const OrderDetailPage = () => {
   const canRequestReturn = () => {
     if (!order) return false;
     if (order.status === "cancelled") return false;
+    if (order.status !== "delivered") return false;
     if (
       returnDetails &&
       returnDetails.returnStatus &&
@@ -498,11 +511,10 @@ const OrderDetailPage = () => {
       return false;
     }
     
-    // Check 2-minute window
-    const placedAt = new Date(order.createdAt).getTime();
+    const windowStart = new Date(order.deliveredAt || order.createdAt).getTime();
     const now = Date.now();
-    const windowMs = (parseInt(import.meta.env.VITE_RETURN_WINDOW_MINUTES || "2", 10)) * 60 * 1000;
-    return (now - placedAt) <= windowMs;
+    const windowMs = returnWindowMinutes * 60 * 1000;
+    return now - windowStart <= windowMs;
   };
 
   const toggleItemSelection = (index) => {
@@ -977,7 +989,7 @@ const OrderDetailPage = () => {
               </div>
             ) : (
               <p className="text-sm text-slate-500 mb-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                You can request a return within the first {import.meta.env.VITE_RETURN_WINDOW_MINUTES || 2} minutes of placing your order.
+                You can request a return within the first {returnWindowMinutes} minutes after delivery.
               </p>
             )}
             
