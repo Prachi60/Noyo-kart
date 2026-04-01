@@ -114,6 +114,15 @@ const getTrackingRoutePhase = (order) => {
   return isDeliveryPhase ? "delivery" : "pickup";
 };
 
+const matchesOrderIdentifier = (payloadOrderId, identifiers = []) => {
+  const normalizedPayloadId = String(payloadOrderId || "").trim();
+  if (!normalizedPayloadId) return false;
+  return identifiers
+    .map((value) => String(value || "").trim())
+    .filter(Boolean)
+    .includes(normalizedPayloadId);
+};
+
 const OrderDetailPage = () => {
   const { orderId } = useParams();
   const [showInvoice, setShowInvoice] = useState(false);
@@ -189,8 +198,12 @@ const OrderDetailPage = () => {
   useEffect(() => {
     if (!orderId) return undefined;
     const getToken = () => localStorage.getItem("auth_customer");
+    const acceptedOrderIds = [orderId, order?.orderId, order?.checkoutGroupId];
     getOrderSocket(getToken);
     joinOrderRoom(orderId, getToken);
+    if (order?.orderId && order.orderId !== orderId) {
+      joinOrderRoom(order.orderId, getToken);
+    }
     const offStatus = onOrderStatusUpdate(getToken, () => {
       customerApi
         .getOrderDetails(orderId)
@@ -198,7 +211,7 @@ const OrderDetailPage = () => {
         .catch(() => {});
     });
     const offOtp = onCustomerOtp(getToken, (payload) => {
-      if (payload?.orderId === orderId && payload?.code) {
+      if (matchesOrderIdentifier(payload?.orderId, acceptedOrderIds) && payload?.code) {
         setHandoffOtp(payload.code);
         toast.info("Delivery OTP received — share with rider if asked.");
       }
@@ -207,8 +220,11 @@ const OrderDetailPage = () => {
       offStatus();
       offOtp();
       leaveOrderRoom(orderId, getToken);
+      if (order?.orderId && order.orderId !== orderId) {
+        leaveOrderRoom(order.orderId, getToken);
+      }
     };
-  }, [orderId]);
+  }, [orderId, order?.orderId, order?.checkoutGroupId]);
 
   // Subscribe to live tracking from Firebase (if available)
   useEffect(() => {
@@ -623,7 +639,10 @@ const OrderDetailPage = () => {
         />
 
         {/* Proximity-based Delivery OTP Display */}
-        <DeliveryOtpDisplay orderId={orderId} />
+        <DeliveryOtpDisplay
+          orderId={order?.orderId || orderId}
+          checkoutGroupId={order?.checkoutGroupId || orderId}
+        />
 
         {/* Delivery Partner Card - Redesigned */}
         {order.deliveryBoy && status !== "delivered" && status !== "cancelled" && (

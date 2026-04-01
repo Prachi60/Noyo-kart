@@ -207,6 +207,7 @@ const CheckoutPage = () => {
 
   const deliveryFee = pricingPreview?.deliveryFeeCharged || 0;
   const handlingFee = pricingPreview?.handlingFeeCharged || 0;
+  const tipAmount = pricingPreview?.tipTotal || selectedTip || 0;
   const taxAmount = pricingPreview?.taxTotal || 0;
   const discountAmount = selectedCoupon
     ? selectedCoupon.discountAmount || selectedCoupon.discount || 0
@@ -644,6 +645,7 @@ const CheckoutPage = () => {
             address: buildAddressForOrder(),
             discountTotal: discountAmount,
             taxTotal: 0,
+            tipAmount: selectedTip,
             paymentMode: selectedPayment === "online" ? "ONLINE" : "COD",
             timeSlot: selectedTimeSlot,
           };
@@ -663,6 +665,7 @@ const CheckoutPage = () => {
     isAuthenticated,
     cart,
     selectedPayment,
+    selectedTip,
     selectedTimeSlot,
     discountAmount,
     savedRecipient,
@@ -678,6 +681,7 @@ const CheckoutPage = () => {
           paymentMode: selectedPayment === "online" ? "ONLINE" : "COD",
           discountTotal: discountAmount,
           taxTotal: taxAmount,
+          tipAmount: selectedTip,
           timeSlot: selectedTimeSlot,
           walletAmount: walletAmountToUse,
           items: cart.map((item) => ({
@@ -1548,14 +1552,14 @@ const CheckoutPage = () => {
                   </motion.div>
                 )}
 
-                {false && selectedTip > 0 && (
+                {tipAmount > 0 && (
                   <div className="flex justify-between items-center px-3 py-2 bg-pink-50 rounded-xl border border-pink-100 italic">
                     <span className="text-pink-600 font-bold text-xs flex items-center gap-2">
                       <Heart size={14} className="fill-pink-500" />
                       Partner Support
                     </span>
                     <span className="font-black text-pink-600">
-                      ₹{selectedTip}
+                      ₹{tipAmount}
                     </span>
                   </div>
                 )}

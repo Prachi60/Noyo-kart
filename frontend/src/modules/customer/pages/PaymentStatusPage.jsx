@@ -52,6 +52,23 @@ const PaymentStatusPage = () => {
             }
         } catch (err) {
             console.error("Verification error:", err);
+            const statusCode = err?.response?.status;
+            const isNetworkError = !err?.response;
+
+            if (isNetworkError) {
+                setStatus("timeout");
+                setError("Cannot reach the backend. If PhonePe opened this on another device/app, localhost URLs will not work.");
+                if (pollInterval.current) clearInterval(pollInterval.current);
+                return;
+            }
+
+            if (statusCode === 401) {
+                setStatus("failure");
+                setError("Your session is missing or expired. Please log in again and check the order from My Orders.");
+                if (pollInterval.current) clearInterval(pollInterval.current);
+                return;
+            }
+
             // If it's a 404, the order might not have been recorded yet or webhook not reached
             setRetryCount(prev => prev + 1);
         }

@@ -26,16 +26,25 @@ export async function applyDeliveredSettlement(order, orderIdString) {
 
   if (settled.deliveryBoy) {
     const deliveryEarning = Math.round(settled.paymentBreakdown?.riderPayoutTotal || 0);
+    const deliveryMeta = {
+      tipAmount: Math.round(settled.paymentBreakdown?.riderTipAmount || 0),
+      payoutBase: Math.round(settled.paymentBreakdown?.riderPayoutBase || 0),
+      payoutDistance: Math.round(settled.paymentBreakdown?.riderPayoutDistance || 0),
+      payoutBonus: Math.round(settled.paymentBreakdown?.riderPayoutBonus || 0),
+    };
     await Transaction.findOneAndUpdate(
       { reference: `DEL-ERN-${orderIdString}` },
       {
+        $set: {
+          amount: deliveryEarning,
+          status: "Settled",
+          meta: deliveryMeta,
+        },
         $setOnInsert: {
           user: settled.deliveryBoy,
           userModel: "Delivery",
           order: settled._id,
           type: "Delivery Earning",
-          amount: deliveryEarning,
-          status: "Settled",
           reference: `DEL-ERN-${orderIdString}`,
         },
       },

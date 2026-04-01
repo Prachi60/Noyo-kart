@@ -33,6 +33,7 @@ export const checkoutPreviewSchema = Joi.object({
   distanceKm: Joi.number().min(0).optional(),
   discountTotal: Joi.number().min(0).default(0),
   taxTotal: Joi.number().min(0).default(0),
+  tipAmount: Joi.number().min(0).default(0),
   paymentMode: Joi.string().valid("ONLINE", "COD").default("COD"),
   timeSlot: Joi.string().allow("", null),
 });
@@ -40,6 +41,7 @@ export const checkoutPreviewSchema = Joi.object({
 export const createFinanceOrderSchema = checkoutPreviewSchema.keys({
   items: Joi.array().items(orderItemSchema).min(1).optional(),
   paymentMode: Joi.string().valid("ONLINE", "COD").required(),
+  walletAmount: Joi.number().min(0).default(0),
 });
 
 export const verifyOnlinePaymentSchema = Joi.object({

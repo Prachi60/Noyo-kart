@@ -104,7 +104,7 @@ export const getDeliveryEarnings = async (req, res) => {
         const deliveryBoyId = new mongoose.Types.ObjectId(req.user.id);
         const transactions = await Transaction.find({ user: deliveryBoyId, userModel: 'Delivery' })
             .sort({ createdAt: -1 })
-            .populate("order", "orderId pricing");
+            .populate("order", "orderId pricing paymentBreakdown");
         const wallet = await Wallet.findOne({
             ownerType: "DELIVERY_PARTNER",
             ownerId: deliveryBoyId,
@@ -115,6 +115,20 @@ export const getDeliveryEarnings = async (req, res) => {
         const totalEarnings = transactions
             .filter(t => t.status === 'Settled' && (t.type === 'Delivery Earning' || t.type === 'Incentive' || t.type === 'Bonus'))
             .reduce((acc, t) => acc + t.amount, 0);
+
+        const tipsReceived = transactions
+            .filter(t => t.type === 'Delivery Earning' && t.status === 'Settled')
+            .reduce(
+                (acc, t) =>
+                    acc +
+                    Number(
+                        t?.meta?.tipAmount ??
+                        t?.order?.paymentBreakdown?.riderTipAmount ??
+                        t?.order?.pricing?.tip ??
+                        0,
+                    ),
+                0,
+            );
 
         const onlinePay = transactions
             .filter(t => t.type === 'Delivery Earning' && t.status === 'Settled')
@@ -167,6 +181,7 @@ export const getDeliveryEarnings = async (req, res) => {
             totalEarnings,
             onlinePay,
             incentives,
+            tipsReceived,
             cashCollected,
             chartData,
             transactions: transactions.slice(0, 20)

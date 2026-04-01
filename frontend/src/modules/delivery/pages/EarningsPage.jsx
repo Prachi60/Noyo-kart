@@ -16,6 +16,13 @@ import { deliveryApi } from "../services/deliveryApi";
 
 const RUPEE = "\u20B9";
 const DOT = "\u2022";
+const resolveTipAmount = (txn) =>
+  Number(
+    txn?.meta?.tipAmount ??
+      txn?.order?.paymentBreakdown?.riderTipAmount ??
+      txn?.order?.pricing?.tip ??
+      0,
+  );
 
 const EarningsPage = () => {
   const [activeTab, setActiveTab] = useState("weekly");
@@ -24,6 +31,7 @@ const EarningsPage = () => {
     totalEarnings: 0,
     incentives: 0,
     bonuses: 0,
+    tipsReceived: 0,
     chartData: [],
     recentTransactions: [],
   });
@@ -38,6 +46,7 @@ const EarningsPage = () => {
           totalEarnings: result.totalEarnings || 0,
           incentives: result.incentives || 0,
           bonuses: result.bonuses || 0,
+          tipsReceived: result.tipsReceived || 0,
           chartData: result.chartData || [],
           recentTransactions: result.transactions || result.recentTransactions || [],
         });
@@ -129,10 +138,10 @@ const EarningsPage = () => {
                 </p>
               </div>
               <div>
-                <p className="text-blue-100 text-xs mb-1">Bonuses</p>
+                <p className="text-blue-100 text-xs mb-1">Tips</p>
                 <p className="font-bold text-lg">
                   +{RUPEE}
-                  {Number(earningsData.bonuses || 0).toLocaleString()}
+                  {Number(earningsData.tipsReceived || 0).toLocaleString()}
                 </p>
               </div>
             </div>
@@ -180,7 +189,7 @@ const EarningsPage = () => {
         <motion.div variants={itemVariants}>
           <Card className="overflow-hidden">
             <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-              <h3 className="font-bold text-gray-800">Recent Withdrawals</h3>
+              <h3 className="font-bold text-gray-800">Recent Earnings</h3>
               <Button variant="link" className="text-primary text-xs font-bold h-auto p-0">
                 View All
               </Button>
@@ -214,6 +223,11 @@ const EarningsPage = () => {
                           {txn.id ||
                             (txn._id ? txn._id.toString().slice(-6).toUpperCase() : "N/A")}
                         </p>
+                        {resolveTipAmount(txn) > 0 && (
+                          <p className="text-[11px] font-bold text-pink-600">
+                            Includes tip: {RUPEE}{resolveTipAmount(txn).toLocaleString()}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className="text-right">

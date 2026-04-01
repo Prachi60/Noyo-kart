@@ -84,6 +84,7 @@ function buildAggregateBreakdown(sellerBreakdowns = []) {
     productSubtotal: sumField(sellerBreakdowns, "productSubtotal"),
     deliveryFeeCharged: sumField(sellerBreakdowns, "deliveryFeeCharged"),
     handlingFeeCharged: sumField(sellerBreakdowns, "handlingFeeCharged"),
+    tipTotal: sumField(sellerBreakdowns, "tipTotal"),
     discountTotal: sumField(sellerBreakdowns, "discountTotal"),
     taxTotal: sumField(sellerBreakdowns, "taxTotal"),
     grandTotal: sumField(sellerBreakdowns, "grandTotal"),
@@ -92,6 +93,7 @@ function buildAggregateBreakdown(sellerBreakdowns = []) {
     riderPayoutBase: sumField(sellerBreakdowns, "riderPayoutBase"),
     riderPayoutDistance: sumField(sellerBreakdowns, "riderPayoutDistance"),
     riderPayoutBonus: sumField(sellerBreakdowns, "riderPayoutBonus"),
+    riderTipAmount: sumField(sellerBreakdowns, "riderTipAmount"),
     riderPayoutTotal: sumField(sellerBreakdowns, "riderPayoutTotal"),
     platformLogisticsMargin: sumField(sellerBreakdowns, "platformLogisticsMargin"),
     platformTotalEarning: sumField(sellerBreakdowns, "platformTotalEarning"),
@@ -115,6 +117,46 @@ function buildAggregateBreakdown(sellerBreakdowns = []) {
     ),
   };
   return aggregate;
+}
+
+function allocateCheckoutTipToSellerBreakdowns(
+  sellerBreakdownEntries = [],
+  totalTipAmount = 0,
+) {
+  const normalizedTip = round2(totalTipAmount);
+  if (!Number.isFinite(normalizedTip) || normalizedTip <= 0 || sellerBreakdownEntries.length === 0) {
+    return;
+  }
+
+  const totalBase = sellerBreakdownEntries.reduce(
+    (sum, entry) => sum + Number(entry?.breakdown?.grandTotal || 0),
+    0,
+  );
+
+  let allocatedSoFar = 0;
+  sellerBreakdownEntries.forEach((entry, index) => {
+    const breakdown = entry?.breakdown;
+    if (!breakdown) return;
+
+    let allocatedTip = 0;
+    if (index === sellerBreakdownEntries.length - 1) {
+      allocatedTip = round2(normalizedTip - allocatedSoFar);
+    } else if (totalBase > 0) {
+      allocatedTip = round2(
+        (Number(breakdown.grandTotal || 0) / totalBase) * normalizedTip,
+      );
+      allocatedSoFar = round2(allocatedSoFar + allocatedTip);
+    }
+
+    breakdown.tipTotal = round2(Number(breakdown.tipTotal || 0) + allocatedTip);
+    breakdown.riderTipAmount = round2(
+      Number(breakdown.riderTipAmount || 0) + allocatedTip,
+    );
+    breakdown.riderPayoutTotal = round2(
+      Number(breakdown.riderPayoutTotal || 0) + allocatedTip,
+    );
+    breakdown.grandTotal = round2(Number(breakdown.grandTotal || 0) + allocatedTip);
+  });
 }
 
 async function computeGlobalHandlingFeeForCheckout(hydratedItems = [], { session = null } = {}) {
@@ -206,6 +248,7 @@ function applyGlobalHandlingFeeToSellerBreakdowns(
 export async function buildCheckoutPricingSnapshot({
   orderItems = [],
   address = {},
+  tipAmount = 0,
   session = null,
 }) {
   const hydratedItems = await hydrateOrderItems(orderItems, {
@@ -250,6 +293,7 @@ export async function buildCheckoutPricingSnapshot({
   }
 
   applyGlobalHandlingFeeToSellerBreakdowns(sellerBreakdownEntries, globalHandling);
+  allocateCheckoutTipToSellerBreakdowns(sellerBreakdownEntries, tipAmount);
 
   const aggregateBreakdown = buildAggregateBreakdown(
     sellerBreakdownEntries.map((entry) => entry.breakdown),

@@ -50,10 +50,26 @@ function parseAllowedOrigins() {
     process.env.CORS_ALLOWED_ORIGINS ||
     process.env.FRONTEND_URL ||
     "http://localhost:5173,http://localhost:3000";
-  return raw
+  const parsed = raw
     .split(",")
     .map((origin) => origin.trim())
     .filter(Boolean);
+
+  const expanded = new Set(parsed);
+  for (const origin of parsed) {
+    try {
+      const url = new URL(origin);
+      if (url.hostname === "localhost") {
+        expanded.add(`${url.protocol}//127.0.0.1${url.port ? `:${url.port}` : ""}`);
+      } else if (url.hostname === "127.0.0.1") {
+        expanded.add(`${url.protocol}//localhost${url.port ? `:${url.port}` : ""}`);
+      }
+    } catch {
+      // Ignore invalid origin entries; startup validation handles env quality elsewhere.
+    }
+  }
+
+  return [...expanded];
 }
 
 /**

@@ -81,7 +81,7 @@ function syncLegacyPricing(order) {
     deliveryFee: breakdown.deliveryFeeCharged || order.pricing?.deliveryFee || 0,
     platformFee: breakdown.handlingFeeCharged || order.pricing?.platformFee || 0,
     gst: breakdown.taxTotal || order.pricing?.gst || 0,
-    tip: order.pricing?.tip || 0,
+    tip: breakdown.tipTotal || order.pricing?.tip || 0,
     discount: breakdown.discountTotal || order.pricing?.discount || 0,
     total: breakdown.grandTotal || order.pricing?.total || 0,
     walletAmount: breakdown.walletAmount || order.pricing?.walletAmount || 0,

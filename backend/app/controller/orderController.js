@@ -164,6 +164,7 @@ export const placeOrder = async (req, res) => {
         inferPaymentMode(payment) ||
         "COD",
       timeSlot: timeSlot || "now",
+      tipAmount: Number(req.body?.tipAmount || 0),
     });
 
     const idempotencyKey = String(req.headers?.["idempotency-key"] || "").trim() || null;

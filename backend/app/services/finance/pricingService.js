@@ -378,6 +378,7 @@ export async function generateOrderPaymentBreakdown({
   distanceKm = 0,
   discountTotal = 0,
   taxTotal = 0,
+  tipTotal = 0,
   deliverySettings,
   handlingFeeStrategy,
   session = null,
@@ -451,17 +452,29 @@ export async function generateOrderPaymentBreakdown({
 
   const normalizedDiscount = roundCurrency(discountTotal || 0);
   const normalizedTax = roundCurrency(taxTotal || 0);
+  const normalizedTip = roundCurrency(tipTotal || 0);
 
   const grandTotal = roundCurrency(
     productSubtotal +
       delivery.deliveryFeeCharged +
       handling.handlingFeeCharged -
       normalizedDiscount +
-      normalizedTax,
+      normalizedTax +
+      normalizedTip,
+  );
+
+  const riderTipAmount = normalizedTip;
+  const riderPayoutTotal = roundCurrency(
+    rider.riderPayoutBase +
+      rider.riderPayoutDistance +
+      rider.riderPayoutBonus +
+      riderTipAmount,
   );
 
   const platformLogisticsMargin = roundCurrency(
-    delivery.deliveryFeeCharged + handling.handlingFeeCharged - rider.riderPayoutTotal,
+    delivery.deliveryFeeCharged +
+      handling.handlingFeeCharged -
+      (rider.riderPayoutBase + rider.riderPayoutDistance + rider.riderPayoutBonus),
   );
   const platformTotalEarning = roundCurrency(
     adminProductCommissionTotal + platformLogisticsMargin,
@@ -494,6 +507,7 @@ export async function generateOrderPaymentBreakdown({
     productSubtotal,
     deliveryFeeCharged: delivery.deliveryFeeCharged,
     handlingFeeCharged: handling.handlingFeeCharged,
+    tipTotal: normalizedTip,
     discountTotal: normalizedDiscount,
     taxTotal: normalizedTax,
     grandTotal,
@@ -502,7 +516,8 @@ export async function generateOrderPaymentBreakdown({
     riderPayoutBase: rider.riderPayoutBase,
     riderPayoutDistance: rider.riderPayoutDistance,
     riderPayoutBonus: rider.riderPayoutBonus,
-    riderPayoutTotal: rider.riderPayoutTotal,
+    riderTipAmount,
+    riderPayoutTotal,
     platformLogisticsMargin,
     platformTotalEarning,
     codCollectedAmount: 0,

@@ -1,9 +1,10 @@
 import axios from 'axios';
+import { resolveApiBaseUrl } from './resolveApiBaseUrl';
 
 const ROLE_STORAGE_KEYS = ['auth_seller', 'auth_admin', 'auth_delivery', 'auth_customer'];
 
 const axiosInstance = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:7000/api',
+    baseURL: resolveApiBaseUrl(),
     headers: {
         'Content-Type': 'application/json',
     },
