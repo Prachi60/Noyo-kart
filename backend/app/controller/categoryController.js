@@ -5,9 +5,14 @@ import { buildKey, getOrSet, getTTL, invalidate } from "../services/cacheService
 import { uploadToCloudinary } from "../services/mediaService.js";
 
 function normalizeUrl(value) {
-  const normalized = String(value || "").trim();
+  if (!value || typeof value !== "string") {
+    return "";
+  }
+  const normalized = value.trim();
   if (!normalized) return "";
-  if (!/^https?:\/\//i.test(normalized)) return "";
+  if (!/^https?:\/\//i.test(normalized)) {
+    return "";
+  }
   return normalized;
 }
 
@@ -107,19 +112,34 @@ export const getCategories = async (req, res) => {
 export const createCategory = async (req, res) => {
   try {
     const categoryData = { ...req.body };
-    
+
     if (req.file) {
       try {
         const url = await uploadToCloudinary(req.file.buffer, "categories");
         categoryData.image = url;
       } catch (err) {
         console.error("Cloudinary upload failed for category:", err);
+        return handleResponse(res, 400, `Image upload failed: ${err.message}`);
       }
     }
 
-    const imageUrl = normalizeUrl(categoryData.image || categoryData.imageUrl);
+    // Determine final image URL
+    // Priority: 1. Newly uploaded image (categoryData.image) 
+    //           2. Sent imageUrl in body (categoryData.imageUrl)
+    //           3. Existing image in body (categoryData.image - if strings was sent)
+    const providedImage = categoryData.image || categoryData.imageUrl;
+    const imageUrl = normalizeUrl(providedImage);
+
     if (imageUrl) {
       categoryData.image = imageUrl;
+    } else if (categoryData.image === "" || categoryData.imageUrl === "") {
+      // Explicitly clearing the image if an empty string was sent
+      categoryData.image = null;
+    } else {
+      // If no valid image URL was provided and it's not being explicitly cleared,
+      // we remove the keys to avoid overwriting existing data with empty values.
+      delete categoryData.image;
+      delete categoryData.imageUrl;
     }
 
     if (
@@ -156,12 +176,21 @@ export const updateCategory = async (req, res) => {
         categoryData.image = url;
       } catch (err) {
         console.error("Cloudinary upload failed for category update:", err);
+        return handleResponse(res, 400, `Image update failed: ${err.message}`);
       }
     }
 
-    const imageUrl = normalizeUrl(categoryData.image || categoryData.imageUrl);
+    const providedImage = categoryData.image || categoryData.imageUrl;
+    const imageUrl = normalizeUrl(providedImage);
+
     if (imageUrl) {
       categoryData.image = imageUrl;
+    } else if (categoryData.image === "" || categoryData.imageUrl === "") {
+      categoryData.image = null;
+    } else {
+      // Preserve existing image if no new one provided
+      delete categoryData.image;
+      delete categoryData.imageUrl;
     }
 
     if (

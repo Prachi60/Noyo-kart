@@ -300,8 +300,12 @@ const AdminDashboard = () => {
                             {topProducts.length > 0 ? topProducts.map((product, i) => (
                                 <div key={i} className="flex items-center justify-between p-3 rounded-2xl hover:bg-gray-50 transition-all border border-transparent hover:border-gray-100 group">
                                     <div className="flex items-center space-x-3">
-                                        <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center text-2xl shadow-sm group-hover:scale-110 transition-transform", product.color)}>
-                                            {product.icon}
+                                        <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform overflow-hidden", !product.image ? (product.color + " text-2xl") : "bg-gray-50")}>
+                                            {product.image ? (
+                                                <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
+                                            ) : (
+                                                <span>{product.icon}</span>
+                                            )}
                                         </div>
                                         <div>
                                             <p className="text-sm font-bold text-gray-900 leading-none">{product.name}</p>
