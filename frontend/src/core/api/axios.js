@@ -5,9 +5,6 @@ const ROLE_STORAGE_KEYS = ['auth_seller', 'auth_admin', 'auth_delivery', 'auth_c
 
 const axiosInstance = axios.create({
     baseURL: resolveApiBaseUrl(),
-    headers: {
-        'Content-Type': 'application/json',
-    },
 });
 
 // Request interceptor for API calls
@@ -16,6 +13,17 @@ axiosInstance.interceptors.request.use(
         let token = null;
         const url = config.url;
         const pagePath = window.location.pathname;
+        const isMultipartRequest =
+            typeof FormData !== 'undefined' && config.data instanceof FormData;
+
+        if (isMultipartRequest) {
+            // Let the browser set the multipart boundary for FormData uploads.
+            if (typeof config.headers?.delete === 'function') {
+                config.headers.delete('Content-Type');
+            } else if (config.headers) {
+                delete config.headers['Content-Type'];
+            }
+        }
 
         // Determination strategy: 
         // 1. If we are on a module-specific page (e.g. /seller/dashboard), prioritize that module's token
