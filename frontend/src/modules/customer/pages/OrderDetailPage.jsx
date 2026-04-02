@@ -6,6 +6,7 @@ import HelpModal from "../components/order/HelpModal";
 import LiveTrackingMap from "../components/order/LiveTrackingMap";
 import DeliveryOtpDisplay from "../components/DeliveryOtpDisplay";
 import OrderProgressTracker from "../components/order/OrderProgressTracker";
+import ReturnProgressTracker from "../components/order/ReturnProgressTracker";
 import {
   ChevronLeft,
   Package,
@@ -156,6 +157,10 @@ const OrderDetailPage = () => {
   const extraRoomRef = useRef("");
 
   const navigate = useNavigate();
+<<<<<<< HEAD
+  const resolveOrderLookupId = (ord) =>
+    String(ord?.orderId || ord?.checkoutGroupId || orderId || "").trim();
+=======
   const handleBack = () => {
     const idx = window?.history?.state?.idx;
     if (typeof idx === "number" && idx > 0) {
@@ -164,6 +169,7 @@ const OrderDetailPage = () => {
     }
     navigate("/orders");
   };
+>>>>>>> ee5eb4f6aca2f95b08035edf2b4813d1bb914ff0
 
   // Scroll to top on load
   useEffect(() => {
@@ -186,7 +192,7 @@ const OrderDetailPage = () => {
         setOrder(ord);
 
         try {
-          const retRes = await customerApi.getReturnDetails(orderId);
+          const retRes = await customerApi.getReturnDetails(resolveOrderLookupId(ord));
           setReturnDetails(retRes.data.result);
         } catch {
           setReturnDetails(null);
@@ -219,7 +225,16 @@ const OrderDetailPage = () => {
       refreshRef.current.inFlight = true;
       customerApi
         .getOrderDetails(orderId)
-        .then((r) => setOrder(r.data.result))
+        .then(async (r) => {
+          const ord = r.data.result;
+          setOrder(ord);
+          try {
+            const retRes = await customerApi.getReturnDetails(resolveOrderLookupId(ord));
+            setReturnDetails(retRes.data.result);
+          } catch {
+            setReturnDetails(null);
+          }
+        })
         .catch(() => {})
         .finally(() => {
           refreshRef.current.inFlight = false;
@@ -568,7 +583,7 @@ const OrderDetailPage = () => {
 
       const [orderRes, retRes] = await Promise.all([
         customerApi.getOrderDetails(orderId),
-        customerApi.getReturnDetails(orderId),
+        customerApi.getReturnDetails(resolveOrderLookupId(order)),
       ]);
       setOrder(orderRes.data.result);
       setReturnDetails(retRes.data.result);
@@ -946,12 +961,7 @@ const OrderDetailPage = () => {
             returnDetails.returnStatus &&
             returnDetails.returnStatus !== "none" ? (
               <div className="space-y-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <span className="text-slate-500 font-medium">Status:</span>
-                  <span className="uppercase text-[10px] font-black px-2.5 py-1 rounded-lg bg-slate-900 text-white tracking-wider">
-                    {returnDetails.returnStatus.replace(/_/g, " ")}
-                  </span>
-                </div>
+                <ReturnProgressTracker returnStatus={returnDetails.returnStatus} />
 
                 {/* Return OTP Display for Customer if pickup is assigned */}
                 {returnDetails.returnStatus === "return_pickup_assigned" && (

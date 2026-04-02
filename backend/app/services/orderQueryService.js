@@ -174,6 +174,23 @@ export async function fetchAvailableOrdersForDelivery({
   userId,
   requestedLimit,
 }) {
+  const limit = parseAvailableOrdersLimit(requestedLimit);
+  const assignedReturnPickupsRaw = await Order.find({
+    returnStatus: "return_pickup_assigned",
+    returnDeliveryBoy: userId,
+    skippedBy: { $nin: [userId] },
+  })
+    .sort({ createdAt: -1, _id: -1 })
+    .limit(limit)
+    .populate("customer", "name phone")
+    .populate("seller", "shopName address name location")
+    .lean();
+
+  const assignedReturnPickups = assignedReturnPickupsRaw.map((rp) => ({
+    ...rp,
+    isReturnPickup: true,
+  }));
+
   const deliveryPartner = await Delivery.findById(userId);
   if (
     !deliveryPartner ||
@@ -181,14 +198,13 @@ export async function fetchAvailableOrdersForDelivery({
     !Array.isArray(deliveryPartner.location.coordinates)
   ) {
     return {
-      requiresLocation: true,
-      orders: [],
-      limit: parseAvailableOrdersLimit(requestedLimit),
+      requiresLocation: assignedReturnPickups.length === 0,
+      orders: assignedReturnPickups,
+      limit,
     };
   }
 
   const { sellerIds } = await resolveNearbySellerIds(deliveryPartner, userId);
-  const limit = parseAvailableOrdersLimit(requestedLimit);
 
   const v2OrdersRaw = await Order.find({
     workflowVersion: { $gte: 2 },
@@ -223,9 +239,16 @@ export async function fetchAvailableOrdersForDelivery({
 
   const returnPickupsRaw = await Order.find({
     returnStatus: "return_pickup_assigned",
-    returnDeliveryBoy: null,
-    seller: { $in: sellerIds },
     skippedBy: { $nin: [userId] },
+    $or: [
+      {
+        returnDeliveryBoy: null,
+        seller: { $in: sellerIds },
+      },
+      {
+        returnDeliveryBoy: userId,
+      },
+    ],
   })
     .sort({ createdAt: -1, _id: -1 })
     .limit(limit)
@@ -234,7 +257,10 @@ export async function fetchAvailableOrdersForDelivery({
     .lean();
 
   // Mark return pickups so frontend can distinguish
-  const returnPickups = returnPickupsRaw.map(rp => ({ ...rp, isReturnPickup: true }));
+  const returnPickups = returnPickupsRaw.map((rp) => ({
+    ...rp,
+    isReturnPickup: true,
+  }));
 
   const orders = mergeAvailableOrders(v2Orders, legacyOrders, returnPickups, limit);
   return {

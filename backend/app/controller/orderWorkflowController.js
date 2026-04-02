@@ -152,7 +152,7 @@ export const getOrderRoute = async (req, res) => {
 export const requestReturnPickupOtp = async (req, res) => {
   try {
     const { orderId } = req.params;
-    const result = await generateReturnPickupOtp(orderId);
+    const result = await generateReturnPickupOtp(orderId, req.user);
     if (!result.success) {
       return handleResponse(res, 400, result.error);
     }
@@ -165,8 +165,9 @@ export const requestReturnPickupOtp = async (req, res) => {
 export const verifyReturnPickupOtp = async (req, res) => {
   try {
     const { orderId } = req.params;
-    const { code } = req.body || {};
-    const validation = await validateReturnPickupOtp(orderId, code);
+    const { code, otp } = req.body || {};
+    const enteredCode = String(code || otp || "").trim();
+    const validation = await validateReturnPickupOtp(orderId, enteredCode);
 
     if (!validation.valid) {
       return handleResponse(res, 400, validation.message);

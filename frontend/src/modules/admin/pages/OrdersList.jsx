@@ -53,7 +53,7 @@ const OrdersList = () => {
                 const payload = response.data.result || {};
                 const dbOrders = Array.isArray(payload.items) ? payload.items : (response.data.results || []);
                 const formatted = dbOrders.map(o => ({
-                    id: o.orderId,
+                    id: o.orderId || 'UNSET',
                     _id: o._id,
                     customer: o.customer?.name || 'Unknown',
                     seller: o.seller?.shopName || 'Unknown',
@@ -124,9 +124,9 @@ const OrdersList = () => {
     const filteredOrders = useMemo(() => {
         return safeOrders.filter(order => {
             const matchesSearch =
-                order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                order.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                order.seller.toLowerCase().includes(searchTerm.toLowerCase());
+                (order.id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (order.customer || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (order.seller || '').toLowerCase().includes(searchTerm.toLowerCase());
 
             const matchesStatus = adminRouteMatchesOrder(status, order);
 
