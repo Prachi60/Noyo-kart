@@ -148,11 +148,8 @@ const OrderDetail = () => {
                         <Printer className="h-4 w-4 text-slate-400" />
                         Print Invoice
                     </button>
-                    <button className="flex items-center gap-2 px-5 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl active:scale-95">
-                        <Download className="h-4 w-4 text-brand-400" />
-                        Export Intelligence
-                    </button>
                 </div>
+
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

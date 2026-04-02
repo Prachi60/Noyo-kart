@@ -452,6 +452,7 @@ const CouponManagement = () => {
                             <input
                                 required
                                 type="number"
+                                onWheel={(e) => e.target.blur()}
                                 value={formData.discountValue}
                                 onChange={(e) => setFormData({ ...formData, discountValue: e.target.value })}
                                 className="w-full px-4 py-3 bg-slate-50 border-none rounded-2xl text-xs font-black outline-none"
@@ -462,6 +463,7 @@ const CouponManagement = () => {
                             <input
                                 required
                                 type="number"
+                                onWheel={(e) => e.target.blur()}
                                 value={formData.minOrderValue}
                                 onChange={(e) => setFormData({ ...formData, minOrderValue: e.target.value })}
                                 className="w-full px-4 py-3 bg-slate-50 border-none rounded-2xl text-xs font-black outline-none"
@@ -474,6 +476,7 @@ const CouponManagement = () => {
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Max Discount (optional)</label>
                             <input
                                 type="number"
+                                onWheel={(e) => e.target.blur()}
                                 value={formData.maxDiscount}
                                 onChange={(e) => setFormData({ ...formData, maxDiscount: e.target.value })}
                                 className="w-full px-4 py-3 bg-slate-50 border-none rounded-2xl text-xs font-black outline-none"
@@ -483,6 +486,7 @@ const CouponManagement = () => {
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Uses (optional)</label>
                             <input
                                 type="number"
+                                onWheel={(e) => e.target.blur()}
                                 value={formData.usageLimit}
                                 onChange={(e) => setFormData({ ...formData, usageLimit: e.target.value })}
                                 className="w-full px-4 py-3 bg-slate-50 border-none rounded-2xl text-xs font-black outline-none"
@@ -496,6 +500,7 @@ const CouponManagement = () => {
                             <input
                                 type="number"
                                 min={1}
+                                onWheel={(e) => e.target.blur()}
                                 value={formData.perUserLimit}
                                 onChange={(e) => setFormData({ ...formData, perUserLimit: e.target.value })}
                                 className="w-full px-4 py-3 bg-slate-50 border-none rounded-2xl text-xs font-black outline-none"
