@@ -12,15 +12,15 @@ const OTP_EXPIRY_MINUTES = () =>
 const OTP_RESEND_COOLDOWN_SECONDS = () =>
   parseInt(
     process.env.SELLER_OTP_RESEND_COOLDOWN_SECONDS ||
-      process.env.OTP_RESEND_COOLDOWN_SECONDS ||
-      "60",
+    process.env.OTP_RESEND_COOLDOWN_SECONDS ||
+    "60",
     10,
   );
 const OTP_MAX_FAILED_ATTEMPTS = () =>
   parseInt(
     process.env.SELLER_OTP_MAX_FAILED_ATTEMPTS ||
-      process.env.OTP_MAX_FAILED_ATTEMPTS ||
-      "5",
+    process.env.OTP_MAX_FAILED_ATTEMPTS ||
+    "5",
     10,
   );
 const OTP_SEND_LIMIT_WINDOW_SECONDS = () =>

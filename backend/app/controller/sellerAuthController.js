@@ -2,9 +2,9 @@ import Seller from "../models/seller.js";
 import jwt from "jsonwebtoken";
 import handleResponse from "../utils/helper.js";
 import {
-  issueSellerVerificationOtp,
-  verifySellerOtpCode,
-  verifySellerVerificationToken,
+    issueSellerVerificationOtp,
+    verifySellerOtpCode,
+    verifySellerVerificationToken,
 } from "../services/sellerVerificationService.js";
 import { uploadToCloudinary } from "../services/mediaService.js";
 
@@ -13,66 +13,66 @@ import { uploadToCloudinary } from "../services/mediaService.js";
 ================================ */
 
 const generateToken = (seller) =>
-  jwt.sign({ id: seller._id, role: "seller" }, process.env.JWT_SECRET, {
-    expiresIn: "7d",
-  });
+    jwt.sign({ id: seller._id, role: "seller" }, process.env.JWT_SECRET, {
+        expiresIn: "7d",
+    });
 
 const SELLER_DOCUMENT_FIELDS = {
-  tradeLicense: "Trade License",
-  gstCertificate: "GST Certificate",
-  idProof: "ID Proof",
+    tradeLicense: "Trade License",
+    gstCertificate: "GST Certificate",
+    idProof: "ID Proof",
 };
 
 const REQUIRED_SELLER_DOCUMENT_FIELDS = Object.keys(SELLER_DOCUMENT_FIELDS);
 
 const parseDocumentsPayload = (documents) => {
-  if (!documents) {
-    return {};
-  }
-
-  if (typeof documents === "string") {
-    try {
-      return JSON.parse(documents);
-    } catch {
-      return {};
+    if (!documents) {
+        return {};
     }
-  }
 
-  if (typeof documents === "object") {
-    return documents;
-  }
+    if (typeof documents === "string") {
+        try {
+            return JSON.parse(documents);
+        } catch {
+            return {};
+        }
+    }
 
-  return {};
+    if (typeof documents === "object") {
+        return documents;
+    }
+
+    return {};
 };
 
 const isValidUploadedDocumentReference = (value) => {
-  const normalized = String(value || "").trim();
-  return /^https?:\/\//i.test(normalized);
+    const normalized = String(value || "").trim();
+    return /^https?:\/\//i.test(normalized);
 };
 
 const resolveSellerDocuments = (body = {}, parsedDocuments = {}) => {
-  const resolved = { ...(parsedDocuments || {}) };
+    const resolved = { ...(parsedDocuments || {}) };
 
-  const directFields = {
-    tradeLicense: body.tradeLicenseUrl || body.tradeLicense,
-    gstCertificate: body.gstCertificateUrl || body.gstCertificate,
-    idProof: body.idProofUrl || body.idProof,
-  };
+    const directFields = {
+        tradeLicense: body.tradeLicenseUrl || body.tradeLicense,
+        gstCertificate: body.gstCertificateUrl || body.gstCertificate,
+        idProof: body.idProofUrl || body.idProof,
+    };
 
-  for (const [field, candidate] of Object.entries(directFields)) {
-    const normalized = String(candidate || "").trim();
-    if (normalized && /^https?:\/\//i.test(normalized)) {
-      resolved[field] = normalized;
+    for (const [field, candidate] of Object.entries(directFields)) {
+        const normalized = String(candidate || "").trim();
+        if (normalized && /^https?:\/\//i.test(normalized)) {
+            resolved[field] = normalized;
+        }
     }
-  }
 
-  return resolved;
+    return resolved;
 };
 
 const getMissingRequiredSellerDocuments = (documents = {}) =>
-  REQUIRED_SELLER_DOCUMENT_FIELDS.filter(
-    (fieldName) => !isValidUploadedDocumentReference(documents[fieldName]),
-  );
+    REQUIRED_SELLER_DOCUMENT_FIELDS.filter(
+        (fieldName) => !isValidUploadedDocumentReference(documents[fieldName]),
+    );
 
 /* ===============================
    SELLER SIGNUP
@@ -103,7 +103,7 @@ export const signupSeller = async (req, res) => {
         // 1. Handle file uploads if they exist in req.files (multipart form)
         const documentFiles = req.files || [];
         const uploadedDocs = {};
-        
+
         if (Array.isArray(documentFiles) && documentFiles.length > 0) {
             for (const file of documentFiles) {
                 try {
@@ -119,9 +119,9 @@ export const signupSeller = async (req, res) => {
         }
 
         // Merge uploaded document URLs into body for resolveSellerDocuments
-        const augmentedBody = { 
-            ...req.body, 
-            ...uploadedDocs 
+        const augmentedBody = {
+            ...req.body,
+            ...uploadedDocs
         };
 
         const parsedLat = lat !== undefined ? Number(lat) : undefined;

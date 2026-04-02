@@ -115,9 +115,6 @@ const AdminDashboard = () => {
                         <Badge variant="outline" className="ds-badge ds-badge-gray">
                             Last Update: Today, 12:45 PM
                         </Badge>
-                        <button className="ds-btn ds-btn-md bg-primary text-white shadow-lg shadow-primary/20 hover:scale-105 active:scale-95">
-                            Download Report
-                        </button>
                     </>
                 }
             />

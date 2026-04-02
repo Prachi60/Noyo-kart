@@ -41,7 +41,11 @@ const DeliveryFunds = () => {
     const fetchTransactions = async (requestedPage = 1) => {
         setIsLoading(true);
         try {
-            const response = await adminApi.getDeliveryTransactions({ page: requestedPage, limit: pageSize });
+            const params = { page: requestedPage, limit: pageSize };
+            if (searchTerm.trim()) params.search = searchTerm.trim();
+            if (filterStatus !== 'all') params.status = filterStatus;
+            
+            const response = await adminApi.getDeliveryTransactions(params);
             const payload = response.data.result || {};
             const data = Array.isArray(payload.items) ? payload.items : (response.data.results || []);
 
@@ -71,9 +75,12 @@ const DeliveryFunds = () => {
     };
 
     useEffect(() => {
-        fetchTransactions(1);
+        const timer = setTimeout(() => {
+            fetchTransactions(1);
+        }, 500);
+        return () => clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [pageSize]);
+    }, [pageSize, searchTerm, filterStatus]);
 
     const handleBulkSettle = async () => {
         if (!window.confirm("Are you sure you want to settle all pending transactions?")) return;

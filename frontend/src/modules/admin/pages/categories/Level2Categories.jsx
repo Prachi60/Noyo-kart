@@ -150,7 +150,7 @@ const Level2Categories = () => {
     try {
       const data = new FormData();
       data.append("type", "category");
-      
+
       // Only append fields that have actual values to avoid sending empty objects/junk
       Object.keys(formData).forEach((key) => {
         const val = formData[key];

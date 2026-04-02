@@ -88,12 +88,19 @@ export const getCategories = async (req, res) => {
         query.type = type;
       }
       const search = (req.query.search || "").trim();
+      const parentId = req.query.parentId || req.query.parentId; // Support both naming variants
+
       if (search) {
         query.$or = [
           { name: { $regex: search, $options: "i" } },
           { slug: { $regex: search, $options: "i" } },
         ];
       }
+      
+      if (parentId && parentId !== "all") {
+        query.parentId = parentId;
+      }
+
       const [items, total] = await Promise.all([
         Category.find(query).sort({ name: 1 }).skip(skip).limit(limit).lean(),
         Category.countDocuments(query),

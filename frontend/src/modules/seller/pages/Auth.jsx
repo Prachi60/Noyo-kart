@@ -22,6 +22,8 @@ import {
   CheckCircle,
   Navigation,
   Loader2,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { toast } from "sonner";
 import Lottie from "lottie-react";
@@ -48,6 +50,7 @@ const REQUIRED_DOCUMENT_CONFIG = [
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [signupStep, setSignupStep] = useState(1);
   const [isMapOpen, setIsMapOpen] = useState(false);
   const { login } = useAuth();
@@ -327,34 +330,34 @@ const Auth = () => {
 
       const response = isLogin
         ? await sellerApi.login({
-            email: formData.email,
-            password: formData.password,
-          })
+          email: formData.email,
+          password: formData.password,
+        })
         : await (() => {
-            const signupPayload = new FormData();
+          const signupPayload = new FormData();
 
-            Object.entries({
-              ...formData,
-              address,
-              lat: formData.lat,
-              lng: formData.lng,
-              radius: formData.radius,
-              emailVerificationToken: verifications.email.token,
-              phoneVerificationToken: verifications.phone.token,
-            }).forEach(([key, value]) => {
-              if (value !== null && value !== undefined && value !== "") {
-                signupPayload.append(key, value);
-              }
-            });
+          Object.entries({
+            ...formData,
+            address,
+            lat: formData.lat,
+            lng: formData.lng,
+            radius: formData.radius,
+            emailVerificationToken: verifications.email.token,
+            phoneVerificationToken: verifications.phone.token,
+          }).forEach(([key, value]) => {
+            if (value !== null && value !== undefined && value !== "") {
+              signupPayload.append(key, value);
+            }
+          });
 
-            Object.entries(documents).forEach(([key, file]) => {
-              if (file) {
-                signupPayload.append(key, file);
-              }
-            });
+          Object.entries(documents).forEach(([key, file]) => {
+            if (file) {
+              signupPayload.append(key, file);
+            }
+          });
 
-            return sellerApi.signup(signupPayload);
-          })();
+          return sellerApi.signup(signupPayload);
+        })();
 
       if (isLogin) {
         const { token, seller } = response.data.result;
@@ -581,11 +584,10 @@ const Auth = () => {
                             verifications.email.status === "verified" ||
                             !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email || "")
                           }
-                          className={`absolute right-3 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-wider transition-all ${
-                            verifications.email.status === "verified"
-                              ? "bg-brand-100 text-brand-700 cursor-default"
-                              : "bg-slate-900 text-white hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed"
-                          }`}>
+                          className={`absolute right-3 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-wider transition-all ${verifications.email.status === "verified"
+                            ? "bg-brand-100 text-brand-700 cursor-default"
+                            : "bg-slate-900 text-white hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed"
+                            }`}>
                           {verifications.email.isSending ? (
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
                           ) : verifications.email.status === "verified" ? (
@@ -653,11 +655,10 @@ const Auth = () => {
                               verifications.phone.status === "verified" ||
                               !/^[0-9]{10}$/.test(formData.phone || "")
                             }
-                            className={`absolute right-3 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-wider transition-all ${
-                              verifications.phone.status === "verified"
-                                ? "bg-brand-100 text-brand-700 cursor-default"
-                                : "bg-slate-900 text-white hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed"
-                            }`}>
+                            className={`absolute right-3 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-wider transition-all ${verifications.phone.status === "verified"
+                              ? "bg-brand-100 text-brand-700 cursor-default"
+                              : "bg-slate-900 text-white hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed"
+                              }`}>
                             {verifications.phone.isSending ? (
                               <Loader2 className="h-3.5 w-3.5 animate-spin" />
                             ) : verifications.phone.status === "verified" ? (
@@ -708,16 +709,23 @@ const Auth = () => {
                         <Lock size={18} />
                       </div>
                       <input
-                        type="password"
+                        type={showPassword ? "text" : "password"}
                         name="password"
                         required
                         minLength={6}
                         autoComplete="current-password"
                         placeholder="Enter your password"
-                        className="w-full pl-12 pr-6 py-4 bg-slate-50 border-2 border-transparent rounded-lg text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-200 transition-all placeholder:text-slate-300"
+                        className="w-full pl-12 pr-14 py-4 bg-slate-50 border-2 border-transparent rounded-lg text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-200 transition-all placeholder:text-slate-300"
                         value={formData.password}
                         onChange={handleChange}
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-600 transition-colors px-2"
+                        tabIndex="-1">
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
                     </div>
                   </>
                 )}
@@ -732,11 +740,10 @@ const Auth = () => {
                       <button
                         type="button"
                         onClick={() => setIsMapOpen(true)}
-                        className={`w-full flex items-center justify-between p-4 rounded-lg border-2 border-dashed transition-all cursor-pointer ${
-                          formData.lat
-                            ? "border-brand-200 bg-brand-50/50"
-                            : "border-slate-200 bg-slate-50 hover:border-slate-300"
-                        }`}>
+                        className={`w-full flex items-center justify-between p-4 rounded-lg border-2 border-dashed transition-all cursor-pointer ${formData.lat
+                          ? "border-brand-200 bg-brand-50/50"
+                          : "border-slate-200 bg-slate-50 hover:border-slate-300"
+                          }`}>
                         <div className="flex items-center gap-3">
                           <div
                             className={`p-2 rounded-md ${formData.lat ? "bg-brand-100 text-brand-600" : "bg-white text-slate-600 shadow-sm"}`}>
@@ -863,11 +870,10 @@ const Auth = () => {
                             />
                             <label
                               htmlFor={doc.id}
-                              className={`flex items-center justify-between p-3.5 rounded-lg border-2 border-dashed transition-all cursor-pointer ${
-                                documents[doc.id]
-                                  ? "border-brand-200 bg-brand-50/50"
-                                  : "border-slate-200 bg-slate-50 hover:border-slate-300"
-                              }`}>
+                              className={`flex items-center justify-between p-3.5 rounded-lg border-2 border-dashed transition-all cursor-pointer ${documents[doc.id]
+                                ? "border-brand-200 bg-brand-50/50"
+                                : "border-slate-200 bg-slate-50 hover:border-slate-300"
+                                }`}>
                               <div className="flex items-center gap-3">
                                 <div
                                   className={`p-2 rounded-md ${documents[doc.id] ? "bg-brand-100 text-brand-600" : "bg-white text-slate-600 shadow-sm"}`}>

@@ -13,6 +13,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import Button from "@/shared/components/ui/Button";
 import Card from "@/shared/components/ui/Card";
 
@@ -145,39 +146,77 @@ const Dashboard = () => {
 
       {/* Online/Offline Toggle */}
       <div className="px-6 py-6">
-        <motion.div
-          onClick={handleOnlineToggle}
-          className={`relative w-full h-16 rounded-full flex items-center p-1 cursor-pointer shadow-inner transition-colors duration-500 ${
-            isOnline
-              ? "bg-brand-500/10 border border-brand-200"
-              : "bg-red-500/10 border border-red-200"
-          }`}
-          whileTap={{ scale: 0.98 }}>
-          <div
-            className={`w-1/2 h-full flex items-center justify-center font-bold tracking-wide z-10 transition-all duration-300 ${isOnline ? "text-brand-700" : "text-gray-400 opacity-50"}`}>
-            ONLINE
+        <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 group">
+          <div className="flex items-center justify-between mb-3 px-1">
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Service Status</span>
+            <div className="flex items-center gap-1.5">
+              <div className={cn(
+                "w-1.5 h-1.5 rounded-full animate-pulse",
+                isOnline ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]"
+              )} />
+              <span className={cn(
+                "text-[11px] font-bold uppercase tracking-wider",
+                isOnline ? "text-emerald-600" : "text-rose-600"
+              )}>
+                {isOnline ? "Receiving Orders" : "Currently Offline"}
+              </span>
+            </div>
           </div>
+
           <div
-            className={`w-1/2 h-full flex items-center justify-center font-bold tracking-wide z-10 transition-all duration-300 ${!isOnline ? "text-red-600" : "text-gray-400 opacity-50"}`}>
-            OFFLINE
-          </div>
-          <motion.div
-            className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full shadow-lg flex items-center justify-center border transition-colors duration-300 ${
-              isOnline
-                ? "bg-brand-500 border-brand-400"
-                : "bg-red-500 border-red-400"
-            }`}
-            animate={{ x: isOnline ? "100%" : "0%" }}
-            transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            style={{ x: isOnline ? "2px" : "0" }} // Offset adjustment
+            className="relative w-full h-14 bg-gray-100/80 rounded-2xl flex items-center p-1.5 cursor-pointer shadow-inner overflow-hidden border border-gray-200/50"
+            onClick={handleOnlineToggle}
           >
-            {isOnline ? (
-              <CheckCircle className="text-white" size={24} />
-            ) : (
-              <XCircle className="text-white" size={24} />
-            )}
-          </motion.div>
-        </motion.div>
+            {/* Background Labels */}
+            <div className="absolute inset-0 flex w-full">
+              <div className="w-1/2 flex items-center justify-center">
+                <span className={cn(
+                  "text-[10px] font-black tracking-widest transition-opacity duration-300",
+                  isOnline ? "opacity-0" : "opacity-40 text-gray-500"
+                )}>SLIDE TO GO ONLINE</span>
+              </div>
+              <div className="w-1/2 flex items-center justify-center">
+                <span className={cn(
+                  "text-[10px] font-black tracking-widest transition-opacity duration-300",
+                  !isOnline ? "opacity-0" : "opacity-40 text-gray-500"
+                )}>SLIDE TO GO OFFLINE</span>
+              </div>
+            </div>
+
+            <motion.div
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }} // We will use dragElastic for feel, but onDragEnd for logic
+              dragElastic={0.1}
+              onDragEnd={(_, info) => {
+                const swipePower = info.offset.x;
+                if (swipePower > 50 && !isOnline) {
+                  handleOnlineToggle();
+                } else if (swipePower < -50 && isOnline) {
+                  handleOnlineToggle();
+                }
+              }}
+              whileTap={{ scale: 0.98 }}
+              className={cn(
+                "w-1/2 h-full rounded-xl shadow-md flex items-center justify-center gap-2 z-10 border transition-all duration-500 cursor-grab active:cursor-grabbing",
+                isOnline 
+                  ? "bg-gradient-to-r from-[#45B0E2] to-[#38bdf8] border-[#389ecb] text-white" 
+                  : "bg-gradient-to-r from-slate-700 to-slate-800 border-slate-900 text-white"
+              )}
+              animate={{ x: isOnline ? "100%" : "0%" }}
+              transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            >
+              <motion.div
+                initial={false}
+                animate={{ rotate: isOnline ? 0 : 0 }}
+              >
+                {isOnline ? <CheckCircle size={18} strokeWidth={3} /> : <XCircle size={18} strokeWidth={3} />}
+              </motion.div>
+              <span className="text-xs font-black uppercase tracking-widest select-none">
+                {isOnline ? "ONLINE" : "OFFLINE"}
+              </span>
+            </motion.div>
+          </div>
+        </div>
       </div>
 
       {/* Main Content */}

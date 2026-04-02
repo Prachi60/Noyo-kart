@@ -47,9 +47,12 @@ const CashCollection = () => {
     const fetchData = async (cashPage = 1, histPage = 1) => {
         try {
             setLoading(true);
+            const commonParams = { page: 1, limit: pageSize };
+            if (searchTerm.trim()) commonParams.search = searchTerm.trim();
+
             const [cashRes, historyRes] = await Promise.all([
-                adminApi.getDeliveryCashBalances({ page: cashPage, limit: pageSize }),
-                adminApi.getCashSettlementHistory({ page: histPage, limit: pageSize })
+                adminApi.getDeliveryCashBalances({ ...commonParams, page: cashPage }),
+                adminApi.getCashSettlementHistory({ ...commonParams, page: histPage })
             ]);
 
             if (cashRes.data.success) {
@@ -75,11 +78,12 @@ const CashCollection = () => {
     };
 
     useEffect(() => {
-        setRidersPage(1);
-        setHistoryPage(1);
-        fetchData(1, 1);
+        const timer = setTimeout(() => {
+            fetchData(1, 1);
+        }, 500);
+        return () => clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [pageSize]);
+    }, [pageSize, searchTerm]);
 
     const fetchRidersPage = (p) => {
         setRidersPage(p);
@@ -159,7 +163,7 @@ const CashCollection = () => {
     };
 
     return (
-        <div className="ds-section-spacing animate-in fade-in slide-in-from-bottom-4 duration-700 pb-12">
+        <div className="ds-section-spacing animate-in fade-in slide-in-from-bottom-4 duration-700 pb-12 pt-6 relative z-10">
             {/* Header Section */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 px-1">
                 <div>
@@ -176,8 +180,8 @@ const CashCollection = () => {
                         <Download className="h-4 w-4" />
                         EXPORT LEDGER
                     </button>
-                    <button className="flex items-center gap-2 px-5 py-3 bg-brand-600 text-white rounded-2xl text-xs font-bold hover:bg-brand-700 transition-all shadow-lg active:scale-95 shadow-brand-200">
-                        <CheckCircle2 className="h-4 w-4" />
+                    <button className="flex items-center gap-2 px-5 py-3 bg-slate-900 text-white rounded-2xl text-xs font-bold hover:bg-slate-800 transition-all shadow-lg active:scale-95 shadow-slate-200">
+                        <CheckCircle2 className="h-4 w-4 text-slate-100" />
                         BULK SETTLE ALL
                     </button>
                 </div>
@@ -263,7 +267,11 @@ const CashCollection = () => {
                                         <td className="px-6 py-6 pl-8">
                                             <div className="flex items-center gap-4">
                                                 <div className="relative">
-                                                    <img src={rider.avatar} alt="" className="h-12 w-12 rounded-2xl ring-2 ring-white shadow-md bg-slate-100" />
+                                                    <img
+                                                        src={rider.avatar && !rider.avatar.includes('emoji') && !rider.avatar.includes('avatar') && !rider.avatar.includes('dicebear') ? rider.avatar : "https://cdn-icons-png.flaticon.com/512/149/149071.png"}
+                                                        alt=""
+                                                        className="h-12 w-12 rounded-lg ring-2 ring-white shadow-sm object-cover bg-slate-100"
+                                                    />
                                                     <div className={cn(
                                                         "absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-white",
                                                         rider.status === 'safe' ? "bg-brand-500" : rider.status === 'warning' ? "bg-amber-500" : "bg-rose-500"
@@ -394,7 +402,11 @@ const CashCollection = () => {
                 {selectedRider && (
                     <div className="ds-section-spacing">
                         <div className="flex items-center gap-6 p-6 bg-slate-50 rounded-xl border border-slate-100 mt-4">
-                            <img src={selectedRider.avatar} alt="" className="h-20 w-20 rounded-xl shadow-xl ring-4 ring-white" />
+                            <img
+                                src={selectedRider.avatar && !selectedRider.avatar.includes('emoji') && !selectedRider.avatar.includes('avatar') && !selectedRider.avatar.includes('dicebear') ? selectedRider.avatar : "https://cdn-icons-png.flaticon.com/512/149/149071.png"}
+                                alt=""
+                                className="h-20 w-20 rounded-xl shadow-xl ring-4 ring-white object-cover bg-gray-100"
+                            />
                             <div>
                                 <h3 className="text-2xl font-black text-slate-900 tracking-tight">{selectedRider.name}</h3>
                                 <div className="flex items-center gap-2 mt-2">

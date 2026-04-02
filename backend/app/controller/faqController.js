@@ -4,10 +4,17 @@ import getPagination from '../utils/pagination.js';
 
 export const getFAQs = async (req, res) => {
     try {
-        const { category, status } = req.query;
+        const { category, status, search } = req.query;
         const query = {};
-        if (category) query.category = category;
+        if (category && category !== 'All') query.category = category;
         if (status) query.status = status;
+
+        if (search && search.trim()) {
+            query.$or = [
+                { question: { $regex: search.trim(), $options: 'i' } },
+                { answer: { $regex: search.trim(), $options: 'i' } }
+            ];
+        }
 
         const { page, limit, skip } = getPagination(req, { defaultLimit: 25, maxLimit: 200 });
 
