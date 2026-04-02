@@ -236,12 +236,9 @@ const CustomerManagement = () => {
                                         <td className="ds-table-cell">
                                             <div className="flex items-center gap-3">
                                                 <img
-                                                    src={cust.avatar}
+                                                    src="https://cdn-icons-png.flaticon.com/512/149/149071.png"
                                                     alt=""
-                                                    className="h-10 w-10 rounded-lg bg-gray-100 ring-2 ring-white shadow-sm"
-                                                    onError={(e) => {
-                                                        e.target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${cust.name}`;
-                                                    }}
+                                                    className="h-10 w-10 rounded-lg bg-gray-100 ring-2 ring-white shadow-sm object-cover"
                                                 />
                                                 <div>
                                                     <p

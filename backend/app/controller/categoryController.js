@@ -9,7 +9,9 @@ function normalizeUrl(value) {
   if (!value || typeof value !== "string") return "";
   const normalized = value.trim();
   if (!normalized) return "";
-  if (!/^https?:\/\//i.test(normalized)) return "";
+  if (!/^https?:\/\//i.test(normalized)) {
+    return "";
+  }
   return normalized;
 }
 
@@ -228,6 +230,7 @@ export const updateCategory = async (req, res) => {
         categoryData.image = url;
       } catch (err) {
         console.error("Cloudinary upload failed for category update:", err);
+        return handleResponse(res, 400, `Image update failed: ${err.message}`);
       }
     } else if (typeof req.body.image === 'string' && req.body.image.startsWith('http')) {
       categoryData.image = req.body.image;

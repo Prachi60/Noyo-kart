@@ -335,9 +335,11 @@ const OrderDetail = () => {
                             Customer Node Information
                         </h4>
                         <div className="flex items-center gap-4">
-                            <div className="h-16 w-16 bg-indigo-50 rounded-2xl flex items-center justify-center ds-h2 font-black text-indigo-600 uppercase">
-                                {order.customer?.name?.split(" ").map((n) => n[0]).join("") || "C"}
-                            </div>
+                            <img 
+                                src="https://cdn-icons-png.flaticon.com/512/149/149071.png" 
+                                alt="" 
+                                className="h-16 w-16 rounded-2xl bg-slate-50 ring-2 ring-white shadow-sm object-cover" 
+                            />
                             <div className="text-left">
                                 <h3 className="text-lg font-black text-slate-900 leading-tight">
                                     {order.customer?.name}
