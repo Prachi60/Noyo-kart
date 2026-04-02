@@ -43,7 +43,11 @@ import { placeOrderAtomic } from "../services/orderPlacementService.js";
 import { emitNotificationEvent } from "../modules/notifications/notification.emitter.js";
 import { NOTIFICATION_EVENTS } from "../modules/notifications/notification.constants.js";
 import { getDeliveryPartnerIdsWithinSellerRadius } from "../services/deliveryNearbyService.js";
-import { emitDeliveryBroadcastForSeller } from "../services/orderSocketEmitter.js";
+import {
+  emitDeliveryBroadcastForSeller,
+  emitToSeller,
+  emitToDelivery,
+} from "../services/orderSocketEmitter.js";
 import * as walletService from "../services/finance/walletService.js";
 import { OWNER_TYPE } from "../constants/finance.js";
 
@@ -611,6 +615,15 @@ export const requestReturn = async (req, res) => {
         reason: order.returnReason,
       },
     });
+    emitToSeller(order.seller?.toString(), {
+      event: "return:requested",
+      payload: {
+        orderId: order.orderId,
+        returnStatus: order.returnStatus,
+        returnReason: order.returnReason,
+        returnRequestedAt: order.returnRequestedAt,
+      },
+    });
 
     return handleResponse(
       res,
@@ -1028,10 +1041,6 @@ export const assignReturnDelivery = async (req, res) => {
     const { id: userId, role } = req.user;
     const { deliveryBoyId } = req.body || {};
 
-    if (!deliveryBoyId) {
-      return handleResponse(res, 400, "deliveryBoyId is required.");
-    }
-
     const orderKey = orderMatchQueryFromRouteParam(orderId);
     if (!orderKey) {
       return handleResponse(res, 404, "Order not found");
@@ -1061,7 +1070,10 @@ export const assignReturnDelivery = async (req, res) => {
       );
     }
 
-    let riderId = deliveryBoyId;
+    const riderId =
+      typeof deliveryBoyId === "string" && deliveryBoyId.trim().length > 0
+        ? deliveryBoyId.trim()
+        : null;
     
     // If Admin/Seller manually specified a rider
     if (riderId) {
@@ -1086,9 +1098,22 @@ export const assignReturnDelivery = async (req, res) => {
         sellerId: order.seller,
         customerId: order.customer,
       });
+      emitToDelivery(riderId, {
+        event: "delivery:broadcast",
+        payload: {
+          orderId: order.orderId,
+          type: "RETURN_PICKUP",
+          preview: {
+            pickup: "Customer Address",
+            drop: "Seller Store",
+            total: order.pricing?.total || 0,
+          },
+          deliverySearchExpiresAt: new Date(Date.now() + 60 * 1000).toISOString(),
+          at: new Date().toISOString(),
+        },
+      });
     } else {
       // Trigger broadcast for nearby riders
-      const previewText = `Return Pickup: ${order.orderId}`;
       const payload = {
         orderId: order.orderId,
         type: "RETURN_PICKUP",

@@ -89,7 +89,8 @@ export const customerApi = {
     axiosInstance.put(`/orders/cancel/${orderId}`, data),
   requestReturn: (orderId, data) =>
     axiosInstance.post(`/orders/${orderId}/returns`, data),
-  getReturnDetails: (orderId) => getWithDedupe(`/orders/${orderId}/returns`),
+  getReturnDetails: (orderId) =>
+    axiosInstance.get(`/orders/${encodeURIComponent(String(orderId ?? "").trim())}/returns`),
 
   // Payments
   createPaymentOrder: (data) =>

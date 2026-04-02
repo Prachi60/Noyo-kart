@@ -67,6 +67,13 @@ export function emitToSeller(sellerId, { event, payload }) {
   s.to(`seller:${sellerId}`).emit(event, payload);
 }
 
+export function emitToDelivery(deliveryId, { event, payload }) {
+  const s = getIo();
+  const id = normalizeDeliveryId(deliveryId);
+  if (!s || !id) return;
+  s.to(`delivery:${id}`).emit(event, payload);
+}
+
 /**
  * Notify only delivery partners whose live location is within the seller's
  * service radius (see Delivery model location + Seller.serviceRadius).

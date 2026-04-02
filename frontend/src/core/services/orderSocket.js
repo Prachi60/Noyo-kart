@@ -124,6 +124,13 @@ export function onSellerOrderNew(getToken, handler) {
   return () => s.off("order:new", handler);
 }
 
+export function onSellerReturnRequested(getToken, handler) {
+  const s = getOrderSocket(getToken);
+  if (!s || typeof handler !== "function") return () => {};
+  s.on("return:requested", handler);
+  return () => s.off("return:requested", handler);
+}
+
 export function onCustomerOtp(getToken, handler) {
   const s = getOrderSocket(getToken);
   if (!s || typeof handler !== "function") return () => {};

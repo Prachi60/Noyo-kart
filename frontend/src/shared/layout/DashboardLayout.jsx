@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
@@ -12,7 +12,11 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import SellerOrdersContext from '@/modules/seller/context/SellerOrdersContext';
 import SellerEarningsContext, { defaultEarnings } from '@/modules/seller/context/SellerEarningsContext';
-import { getOrderSocket, onSellerOrderNew } from '@/core/services/orderSocket';
+import {
+    getOrderSocket,
+    onSellerOrderNew,
+    onSellerReturnRequested,
+} from '@/core/services/orderSocket';
 
 const POLL_INTERVAL_MS = 15000;
 
@@ -28,15 +32,23 @@ function secondsLeftUntilSellerExpiry(order) {
 const isEarningsRoute = (path) =>
     path.includes('earnings') || path.includes('withdrawals') || path.includes('transactions');
 
+function playAlertSound() {
+    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+    audio.play().catch(() => {});
+}
+
 const DashboardLayout = ({ children, navItems, title }) => {
     const [newOrderAlert, setNewOrderAlert] = useState(null);
+    const [newReturnAlert, setNewReturnAlert] = useState(null);
     const [shownOrderIds, setShownOrderIds] = useState(() => new Set());
+    const [shownReturnOrderIds, setShownReturnOrderIds] = useState(() => new Set());
     const [timeLeft, setTimeLeft] = useState(0);
     /** Total seconds in this acceptance window (for progress bar), set when modal opens */
     const acceptWindowTotalRef = useRef(60);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const { user, logout, role } = useAuth();
     const location = useLocation();
+    const navigate = useNavigate();
 
     // Shared data for seller – single source, avoids duplicate API calls
     const [sellerOrders, setSellerOrders] = useState([]);
@@ -45,8 +57,10 @@ const DashboardLayout = ({ children, navItems, title }) => {
     const [earningsLoading, setEarningsLoading] = useState(false);
 
     const shownOrderIdsRef = useRef(new Set());
+    const shownReturnOrderIdsRef = useRef(new Set());
     const isFirstLoadRef = useRef(true);
     const newOrderAlertRef = useRef(null);
+    const newReturnAlertRef = useRef(null);
     const fetchOrdersRef = useRef(null);
     const earningsFetchedRef = useRef(false);
 
@@ -54,8 +68,14 @@ const DashboardLayout = ({ children, navItems, title }) => {
         shownOrderIdsRef.current = shownOrderIds;
     }, [shownOrderIds]);
     useEffect(() => {
+        shownReturnOrderIdsRef.current = shownReturnOrderIds;
+    }, [shownReturnOrderIds]);
+    useEffect(() => {
         newOrderAlertRef.current = newOrderAlert;
     }, [newOrderAlert]);
+    useEffect(() => {
+        newReturnAlertRef.current = newReturnAlert;
+    }, [newReturnAlert]);
 
     useEffect(() => {
         if (role !== 'seller') {
@@ -99,8 +119,7 @@ const DashboardLayout = ({ children, navItems, title }) => {
                 shownOrderIdsRef.current = new Set(shownOrderIdsRef.current).add(newOrder.orderId);
                 newOrderAlertRef.current = newOrder;
 
-                const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-                audio.play().catch(() => {});
+                playAlertSound();
             } catch (error) {
                 console.error("Polling Error:", error);
             } finally {
@@ -117,9 +136,29 @@ const DashboardLayout = ({ children, navItems, title }) => {
         if (role !== 'seller') return undefined;
         const getToken = () => localStorage.getItem('auth_seller');
         getOrderSocket(getToken);
-        return onSellerOrderNew(getToken, () => {
+        const offOrderNew = onSellerOrderNew(getToken, () => {
             if (fetchOrdersRef.current) fetchOrdersRef.current();
         });
+        const offReturnRequested = onSellerReturnRequested(getToken, (payload) => {
+            const orderId = String(payload?.orderId || '').trim();
+            if (!orderId) return;
+            if (shownReturnOrderIdsRef.current.has(orderId)) return;
+            if (newReturnAlertRef.current) return;
+
+            setShownReturnOrderIds((prev) => new Set(prev).add(orderId));
+            shownReturnOrderIdsRef.current = new Set(shownReturnOrderIdsRef.current).add(orderId);
+
+            setNewReturnAlert({
+                orderId,
+                reason: payload?.returnReason || '',
+                at: payload?.returnRequestedAt || new Date().toISOString(),
+            });
+            playAlertSound();
+        });
+        return () => {
+            offOrderNew();
+            offReturnRequested();
+        };
     }, [role]);
 
     // Single earnings fetch when seller is on earnings/withdrawals/transactions – no duplicate calls
@@ -319,6 +358,56 @@ const DashboardLayout = ({ children, navItems, title }) => {
                                     >
                                         <Check className="h-5 w-5" />
                                         Accept
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Global Return Alert Modal */}
+            <AnimatePresence>
+                {newReturnAlert && (
+                    <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                            className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl border border-slate-100"
+                        >
+                            <div className="flex flex-col items-center text-center">
+                                <div className="h-20 w-20 bg-orange-100 rounded-full flex items-center justify-center mb-6 animate-bounce">
+                                    <BellRing className="h-10 w-10 text-orange-600" />
+                                </div>
+
+                                <h2 className="text-2xl font-black text-slate-900 mb-2">New Return Request</h2>
+                                <p className="text-slate-600 font-medium mb-2">
+                                    Order <span className="text-orange-600 font-bold">#{newReturnAlert.orderId}</span> has a new return request.
+                                </p>
+                                {newReturnAlert.reason ? (
+                                    <p className="text-sm text-slate-500 bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 mb-6 w-full">
+                                        Reason: {newReturnAlert.reason}
+                                    </p>
+                                ) : (
+                                    <div className="mb-6" />
+                                )}
+
+                                <div className="grid grid-cols-2 gap-4 w-full">
+                                    <button
+                                        onClick={() => setNewReturnAlert(null)}
+                                        className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition-colors"
+                                    >
+                                        Dismiss
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setNewReturnAlert(null);
+                                            navigate('/seller/returns');
+                                        }}
+                                        className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-orange-600 text-white font-bold hover:bg-orange-500 shadow-xl shadow-orange-600/20 transition-all active:scale-95"
+                                    >
+                                        View Return
                                     </button>
                                 </div>
                             </div>

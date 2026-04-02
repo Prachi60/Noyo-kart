@@ -142,8 +142,13 @@ const Level2Categories = () => {
     try {
       const data = new FormData();
       data.append("type", "category");
+      
+      // Only append fields that have actual values to avoid sending empty objects/junk
       Object.keys(formData).forEach((key) => {
-        if (key !== "type") data.append(key, formData[key]);
+        const val = formData[key];
+        if (key !== "type" && val !== undefined && val !== null && val !== "") {
+          data.append(key, val);
+        }
       });
 
       if (imageFile) {
@@ -162,7 +167,8 @@ const Level2Categories = () => {
       fetchCategories();
     } catch (error) {
       console.error(error);
-      toast.error(editingItem ? "Failed to update" : "Failed to create");
+      const errorMsg = error.response?.data?.message || (editingItem ? "Failed to update" : "Failed to create");
+      toast.error(errorMsg);
     } finally {
       setIsSaving(false);
     }
