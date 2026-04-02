@@ -157,10 +157,9 @@ const OrderDetailPage = () => {
   const extraRoomRef = useRef("");
 
   const navigate = useNavigate();
-<<<<<<< HEAD
   const resolveOrderLookupId = (ord) =>
     String(ord?.orderId || ord?.checkoutGroupId || orderId || "").trim();
-=======
+
   const handleBack = () => {
     const idx = window?.history?.state?.idx;
     if (typeof idx === "number" && idx > 0) {
@@ -169,7 +168,6 @@ const OrderDetailPage = () => {
     }
     navigate("/orders");
   };
->>>>>>> ee5eb4f6aca2f95b08035edf2b4813d1bb914ff0
 
   // Scroll to top on load
   useEffect(() => {
