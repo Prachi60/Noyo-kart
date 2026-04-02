@@ -9,12 +9,12 @@ const categorySchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: true,
+      required: [true, "Category name is required"],
       trim: true,
     },
     slug: {
       type: String,
-      required: true,
+      required: [true, "URL slug is required"],
       unique: true,
       trim: true,
       lowercase: true,
@@ -38,7 +38,7 @@ const categorySchema = new mongoose.Schema(
     type: {
       type: String,
       enum: ["header", "category", "subcategory"],
-      required: true,
+      required: [true, "Category type is required"],
     },
     parentId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -92,7 +92,7 @@ const categorySchema = new mongoose.Schema(
 
 function normalizeNonNegativeNumber(value) {
   const num = Number(value);
-  if (!Number.isFinite(num)) return 0;
+  if (isNaN(num) || !Number.isFinite(num)) return 0;
   return Math.max(num, 0);
 }
 
@@ -205,11 +205,11 @@ categorySchema.pre("findOneAndUpdate", function syncLegacyFinanceFieldsOnUpdate(
     }
 
     // Normalize "none" semantics even for update queries (save hooks won't run).
-    if (set.handlingFeeType === "none") {
+    if (hasOwn(set, "handlingFeeType") && set.handlingFeeType === "none") {
       set.handlingFees = 0;
       set.handlingFeeValue = 0;
     }
-    if (set.adminCommissionType && set.adminCommissionType !== "percentage") {
+    if (hasOwn(set, "adminCommissionType") && set.adminCommissionType !== "percentage") {
       set.adminCommission = 0;
     }
 
@@ -224,6 +224,7 @@ categorySchema.pre("findOneAndUpdate", function syncLegacyFinanceFieldsOnUpdate(
 categorySchema.index({ type: 1, status: 1 });
 categorySchema.index({ parentId: 1, status: 1 });
 categorySchema.index({ name: 1 });
+categorySchema.index({ slug: 1 }, { unique: true });
 
 // Virtual for children categories
 categorySchema.virtual("children", {

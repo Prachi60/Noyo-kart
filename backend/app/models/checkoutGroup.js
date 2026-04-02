@@ -86,6 +86,10 @@ const checkoutGroupSchema = new mongoose.Schema(
         type: Number,
         default: 0,
       },
+      tipTotal: {
+        type: Number,
+        default: 0,
+      },
       discountTotal: {
         type: Number,
         default: 0,
@@ -111,6 +115,10 @@ const checkoutGroupSchema = new mongoose.Schema(
         default: 0,
       },
       riderPayoutTotal: {
+        type: Number,
+        default: 0,
+      },
+      riderTipAmount: {
         type: Number,
         default: 0,
       },
@@ -152,6 +160,10 @@ const checkoutGroupSchema = new mongoose.Schema(
           default: 0,
         },
         sellerPayout: {
+          type: Number,
+          default: 0,
+        },
+        riderTipAmount: {
           type: Number,
           default: 0,
         },

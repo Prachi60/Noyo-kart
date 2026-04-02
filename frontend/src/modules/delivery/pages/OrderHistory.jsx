@@ -2,14 +2,12 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Search,
-  Filter,
   Calendar,
   MapPin,
   Clock,
   ChevronRight,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import Button from "@/shared/components/ui/Button";
 import Card from "@/shared/components/ui/Card";
 import { deliveryApi } from "../services/deliveryApi";
 import { toast } from "sonner";
@@ -155,8 +153,8 @@ const OrderHistory = () => {
         <h1 className="ds-h2 text-gray-900 mb-4">Order History</h1>
 
         {/* Search & Filter */}
-        <div className="flex space-x-3 mb-4">
-          <div className="relative flex-1">
+        <div className="mb-4">
+          <div className="relative flex-1 min-w-0">
             <Search
               className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
               size={18}
@@ -169,24 +167,19 @@ const OrderHistory = () => {
               className="w-full pl-10 pr-4 py-2.5 bg-gray-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all border border-transparent focus:border-primary/20"
             />
           </div>
-          <Button
-            variant="outline"
-            size="icon"
-            className="bg-gray-100 border-transparent hover:bg-gray-200">
-            <Filter size={20} className="text-gray-600" />
-          </Button>
         </div>
 
         {/* Status Filters */}
-        <div className="flex space-x-2 overflow-x-auto pb-2 no-scrollbar">
+        <div className="-mx-4 px-4 flex gap-2 overflow-x-auto pb-2 no-scrollbar snap-x snap-mandatory">
           {["All", "Delivered", "Cancelled", "Returns"].map((status) => (
             <button
               key={status}
               onClick={() => setFilter(status.toLowerCase())}
-              className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all ${filter === status.toLowerCase()
-                ? "bg-primary text-white shadow-lg shadow-primary/30 scale-105"
-                : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
-                }`}>
+              className={`snap-start h-9 px-4 rounded-full text-xs font-bold whitespace-nowrap transition-all border ${filter === status.toLowerCase()
+                ? "bg-primary text-white border-transparent shadow-lg shadow-primary/25"
+                : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
+                }`}
+            >
               {status}
             </button>
           ))}
@@ -227,10 +220,10 @@ const OrderHistory = () => {
                   }}
                   className="hover:shadow-md transition-shadow cursor-pointer group">
                   <div className="p-4">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <div className="flex items-center space-x-2 mb-1">
-                          <span className="font-bold text-gray-900 text-sm group-hover:text-primary transition-colors">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-start mb-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 mb-1 min-w-0 flex-wrap">
+                          <span className="font-bold text-gray-900 text-sm group-hover:text-primary transition-colors break-all">
                             #{order.orderId}
                           </span>
                           <span
@@ -248,8 +241,8 @@ const OrderHistory = () => {
                           {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}, {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </div>
                       </div>
-                      <div className="text-right">
-                        <span className="block font-bold text-lg text-brand-600">
+                      <div className="text-left sm:text-right shrink-0">
+                        <span className="block font-bold text-lg text-brand-600 whitespace-nowrap">
                           ₹{Math.round((order.pricing?.total || 0) * 0.1)}
                         </span>
                         <span className="ds-caption text-gray-400">Earnings</span>
@@ -279,8 +272,8 @@ const OrderHistory = () => {
                       </div>
                     </div>
 
-                    <div className="flex justify-between items-center text-xs text-gray-500">
-                      <div className="flex items-center space-x-3">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center text-xs text-gray-500">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="flex items-center bg-gray-50 px-2 py-1 rounded border border-gray-100">
                           <MapPin size={12} className="mr-1 text-gray-400" />{" "}
                           2.4 km {/* Mock for now */}
@@ -290,7 +283,7 @@ const OrderHistory = () => {
                           min
                         </span>
                       </div>
-                      <div className="flex items-center text-primary font-bold group-hover:underline">
+                      <div className="flex items-center text-primary font-bold group-hover:underline self-end sm:self-auto">
                         View Details <ChevronRight size={14} className="ml-0.5" />
                       </div>
                     </div>

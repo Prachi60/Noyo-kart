@@ -14,12 +14,16 @@ import { customerApi } from '../services/customerApi';
 import MiniCart from '../components/shared/MiniCart';
 import SectionRenderer from "../components/experience/SectionRenderer";
 import { useLocation as useAppLocation } from '../context/LocationContext';
+import { useSettings } from '@core/context/SettingsContext';
+import Lottie from 'lottie-react';
+import noServiceAnimation from '@/assets/lottie/animation.json';
 
 const CategoryProductsPage = () => {
     const { categoryName: catId } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
     const { currentLocation } = useAppLocation();
+    const { settings } = useSettings();
     const initialSubcategoryId = location.state?.activeSubcategoryId || 'all';
     const { isOpen: isProductDetailOpen } = useProductDetail();
     const [selectedSubCategory, setSelectedSubCategory] = useState(initialSubcategoryId);
@@ -141,48 +145,65 @@ const CategoryProductsPage = () => {
             </header>
 
             <div className="flex flex-1 relative items-start">
-                {/* Sidebar */}
-                <aside className="w-[70px] border-r border-gray-50 flex flex-col bg-white overflow-y-auto hide-scrollbar sticky top-[60px] h-[calc(100vh-60px)] pb-32 flex-shrink-0">
-                    {subCategories.map((cat) => (
-                        <button
-                            key={cat.id}
-                            onClick={() => setSelectedSubCategory(cat.id)}
-                            className={cn(
-                                "flex flex-col items-center py-4 px-1 gap-2 transition-all relative border-l-4",
-                                selectedSubCategory === cat.id
-                                    ? "bg-[#F7FCF5] border-[#61dafbaa]"
-                                    : "border-transparent hover:bg-gray-50"
-                            )}
+                {(safeProducts.length === 0 && !isLoading) ? (
+                    <div className="w-full flex-1 py-20 px-8 flex flex-col items-center justify-center text-center">
+                        <div className="w-64 h-64 mb-6">
+                            <Lottie animationData={noServiceAnimation} loop={true} />
+                        </div>
+                        <h3 className="text-3xl font-[1000] text-slate-800 tracking-tighter mb-4 uppercase">
+                            Service <span className="text-[#45B0E2]">Unavailable</span>
+                        </h3>
+                        <p className="text-slate-500 font-bold text-sm max-w-[280px] mb-8 leading-relaxed">
+                            {settings?.appName || 'Our service'} is not available in your area yet. We're expanding fast!
+                        </p>
+                        <button 
+                            onClick={fetchData}
+                            className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-800 active:scale-95 transition-all shadow-xl shadow-black/10"
                         >
-                            <div className={cn(
-                                "w-14 h-14 rounded-2xl flex items-center justify-center p-1.5 transition-all duration-300",
-                                selectedSubCategory === cat.id ? "scale-110" : "opacity-100"
-                            )}>
-                                <img src={cat.icon} alt={cat.name} className="w-full h-full object-contain" />
-                            </div>
-                            <span className={cn(
-                                "text-[10px] text-center font-bold font-sans leading-tight px-1",
-                                selectedSubCategory === cat.id ? "text-[#61dafbaa]" : "text-gray-600"
-                            )}>
-                                {cat.name}
-                            </span>
+                            Try Refreshing
                         </button>
-                    ))}
-                </aside>
-
-                {/* Content */}
-                <main className="flex-1 p-2 pb-24 bg-white space-y-4 overflow-x-hidden">
-                    <div className="grid grid-cols-2 gap-x-2 gap-y-3">
-                        {filteredProducts.map((product) => (
-                            <ProductCard key={product.id} product={product} compact={true} />
-                        ))}
-                        {filteredProducts.length === 0 && !isLoading && (
-                            <div className="col-span-2 py-20 text-center">
-                                <p className="text-gray-400 font-bold italic">No products found in this category</p>
-                            </div>
-                        )}
                     </div>
-                </main>
+                ) : (
+                    <>
+                        {/* Sidebar */}
+                        <aside className="w-[70px] border-r border-gray-50 flex flex-col bg-white overflow-y-auto hide-scrollbar sticky top-[60px] h-[calc(100vh-60px)] pb-32 flex-shrink-0">
+                            {subCategories.map((cat) => (
+                                <button
+                                    key={cat.id}
+                                    onClick={() => setSelectedSubCategory(cat.id)}
+                                    className={cn(
+                                        "flex flex-col items-center py-4 px-1 gap-2 transition-all relative border-l-4",
+                                        selectedSubCategory === cat.id
+                                            ? "bg-[#F7FCF5] border-[#45B0E2]"
+                                            : "border-transparent hover:bg-gray-50"
+                                    )}
+                                >
+                                    <div className={cn(
+                                        "w-14 h-14 rounded-2xl flex items-center justify-center p-1.5 transition-all duration-300",
+                                        selectedSubCategory === cat.id ? "scale-110" : "opacity-100"
+                                    )}>
+                                        <img src={cat.icon} alt={cat.name} className="w-full h-full object-contain" />
+                                    </div>
+                                    <span className={cn(
+                                        "text-[10px] text-center font-bold font-sans leading-tight px-1",
+                                        selectedSubCategory === cat.id ? "text-[#45B0E2]" : "text-gray-600"
+                                    )}>
+                                        {cat.name}
+                                    </span>
+                                </button>
+                            ))}
+                        </aside>
+
+                        {/* Content */}
+                        <main className="flex-1 p-2 pb-24 bg-white space-y-4 overflow-x-hidden">
+                            <div className="grid grid-cols-2 gap-x-2 gap-y-3">
+                                {filteredProducts.map((product) => (
+                                    <ProductCard key={product.id} product={product} compact={true} />
+                                ))}
+                            </div>
+                        </main>
+                    </>
+                )}
             </div>
 
             <MiniCart />

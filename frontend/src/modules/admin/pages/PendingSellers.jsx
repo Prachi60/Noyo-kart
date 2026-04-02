@@ -196,7 +196,7 @@ const PendingSellers = () => {
                                 <th className="ds-table-header-cell px-6">Applicant Store</th>
                                 <th className="ds-table-header-cell px-6">Documentation</th>
                                 <th className="ds-table-header-cell px-6">Applied On</th>
-                                <th className="ds-table-header-cell px-6 text-right">Actions</th>
+                                <th className="ds-table-header-cell px-6 !text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
@@ -211,7 +211,7 @@ const PendingSellers = () => {
                                 </tr>
                             ) : filteredSellers.length > 0 ? filteredSellers.map((s) => (
                                 <tr key={s.id} className="hover:bg-slate-50/30 transition-colors group">
-                                    <td className="px-6 py-4">
+                                    <td className="px-6 py-5 align-middle">
                                         <div
                                             className="flex items-center gap-4 cursor-pointer group/name"
                                             onClick={() => navigate(`/admin/sellers/active/${s.id}`)}
@@ -227,27 +227,44 @@ const PendingSellers = () => {
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex flex-wrap gap-1.5">
+                                    <td className="px-6 py-5 align-middle">
+                                        <div className="flex flex-wrap gap-1.5 items-center">
                                             {(s.documents || []).map((doc, idx) => (
                                                 <span key={idx} className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[8px] font-bold rounded-full ring-1 ring-blue-100 uppercase">{doc}</span>
                                             ))}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex flex-col">
+                                    <td className="px-6 py-5 align-middle">
+                                        <div className="flex flex-col justify-center">
                                             <span className="text-xs font-bold text-slate-700">{s.applicationDate}</span>
-                                            <span className="text-[9px] font-medium text-slate-400">Received 10:30 AM</span>
+                                            <span className="text-[9px] font-medium text-slate-400">Received {s.receivedAt || 'Recently'}</span>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <div className="flex items-center justify-end gap-2">
+                                    <td className="px-6 py-5 text-right align-middle">
+                                        <div className="flex items-center justify-end gap-3 h-full">
+                                            {s.documents && s.documents.length > 0 && (
+                                                <button
+                                                    onClick={() => handleApprove(s.id)}
+                                                    className="h-8 w-8 flex items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all ring-1 ring-emerald-100"
+                                                    title="Quick Approve"
+                                                >
+                                                    <HiOutlineCheckCircle className="h-5 w-5" />
+                                                </button>
+                                            )}
+                                            <button
+                                                onClick={() => handleReject(s.id)}
+                                                className="h-8 w-8 flex items-center justify-center rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-all ring-1 ring-rose-100"
+                                                title="Quick Reject"
+                                            >
+                                                <HiOutlineXCircle className="h-5 w-5" />
+                                            </button>
+                                            <div className="w-[1px] h-4 bg-slate-200 mx-1" />
                                             <button
                                                 onClick={() => { setViewingSeller(s); setIsReviewModalOpen(true); }}
-                                                className="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-bold hover:bg-slate-800 transition-all shadow-lg hover:-translate-y-0.5 flex items-center gap-2"
+                                                className="h-9 px-4 bg-indigo-600 text-white rounded-xl text-[10px] font-bold hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100 hover:-translate-y-0.5 flex items-center gap-2"
                                             >
-                                                <HiOutlineEye className="h-3.5 w-3.5" />
-                                                VIEW APPLICATION
+                                                <HiOutlineEye className="h-4 w-4" />
+                                                REVIEW
                                             </button>
                                         </div>
                                     </td>
@@ -430,23 +447,25 @@ const PendingSellers = () => {
                                                 >
                                                     REJECT APPLICATION
                                                 </button>
-                                                <button
-                                                    disabled={isProcessing}
-                                                    onClick={() => handleApprove(viewingSeller.id)}
-                                                    className="flex-[2] py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-bold tracking-widest shadow-2xl hover:bg-slate-800 transition-all transform active:scale-[0.98] uppercase flex items-center justify-center gap-2"
-                                                >
-                                                    {isProcessing ? (
-                                                        <>
-                                                            <HiOutlineArrowPath className="h-4 w-4 animate-spin" />
-                                                            <span>FINALIZING...</span>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <HiOutlineCheckCircle className="h-4 w-4" />
-                                                            <span>APPROVE SELLER</span>
-                                                        </>
-                                                    )}
-                                                </button>
+                                                {reviewDocuments.length > 0 && (
+                                                    <button
+                                                        disabled={isProcessing}
+                                                        onClick={() => handleApprove(viewingSeller.id)}
+                                                        className="flex-[2] py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-bold tracking-widest shadow-2xl hover:bg-slate-800 transition-all transform active:scale-[0.98] uppercase flex items-center justify-center gap-2"
+                                                    >
+                                                        {isProcessing ? (
+                                                            <>
+                                                                <HiOutlineArrowPath className="h-4 w-4 animate-spin" />
+                                                                <span>FINALIZING...</span>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <HiOutlineCheckCircle className="h-4 w-4" />
+                                                                <span>APPROVE SELLER</span>
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     </div>

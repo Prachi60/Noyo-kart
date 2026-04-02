@@ -1,6 +1,7 @@
 import { io } from "socket.io-client";
+import { resolveSocketBaseUrl } from "@core/api/resolveApiBaseUrl";
 
-const SOCKET_URL = import.meta.env.VITE_API_URL || "http://localhost:7000";
+const SOCKET_URL = resolveSocketBaseUrl();
 
 class SocketService {
     socket = null;

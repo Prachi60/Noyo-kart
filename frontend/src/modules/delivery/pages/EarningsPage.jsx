@@ -16,6 +16,13 @@ import { deliveryApi } from "../services/deliveryApi";
 
 const RUPEE = "\u20B9";
 const DOT = "\u2022";
+const resolveTipAmount = (txn) =>
+  Number(
+    txn?.meta?.tipAmount ??
+      txn?.order?.paymentBreakdown?.riderTipAmount ??
+      txn?.order?.pricing?.tip ??
+      0,
+  );
 
 const EarningsPage = () => {
   const [activeTab, setActiveTab] = useState("weekly");
@@ -24,6 +31,7 @@ const EarningsPage = () => {
     totalEarnings: 0,
     incentives: 0,
     bonuses: 0,
+    tipsReceived: 0,
     chartData: [],
     recentTransactions: [],
   });
@@ -38,6 +46,7 @@ const EarningsPage = () => {
           totalEarnings: result.totalEarnings || 0,
           incentives: result.incentives || 0,
           bonuses: result.bonuses || 0,
+          tipsReceived: result.tipsReceived || 0,
           chartData: result.chartData || [],
           recentTransactions: result.transactions || result.recentTransactions || [],
         });
@@ -129,10 +138,10 @@ const EarningsPage = () => {
                 </p>
               </div>
               <div>
-                <p className="text-blue-100 text-xs mb-1">Bonuses</p>
+                <p className="text-blue-100 text-xs mb-1">Tips</p>
                 <p className="font-bold text-lg">
                   +{RUPEE}
-                  {Number(earningsData.bonuses || 0).toLocaleString()}
+                  {Number(earningsData.tipsReceived || 0).toLocaleString()}
                 </p>
               </div>
             </div>
@@ -140,7 +149,7 @@ const EarningsPage = () => {
         </motion.div>
 
         <motion.div variants={itemVariants}>
-          <Card className="p-6 h-80">
+          <Card className="p-6">
             <div className="flex justify-between items-center mb-6">
               <h3 className="font-bold text-gray-800 flex items-center">
                 <TrendingUp size={20} className="mr-2 text-brand-500" />
@@ -150,35 +159,37 @@ const EarningsPage = () => {
                 Last 7 Days
               </Button>
             </div>
-            <ResponsiveContainer width="100%" height="85%">
-              <BarChart data={earningsData.chartData} barSize={20}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                <XAxis
-                  dataKey="name"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 10, fill: "#9ca3af" }}
-                  dy={10}
-                />
-                <Tooltip
-                  cursor={{ fill: "#f9fafb" }}
-                  contentStyle={{
-                    borderRadius: "12px",
-                    border: "none",
-                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-                  }}
-                />
-                <Bar dataKey="earnings" fill="var(--primary)" radius={[4, 4, 0, 0]} stackId="a" />
-                <Bar dataKey="incentives" fill="#93c5fd" radius={[4, 4, 0, 0]} stackId="a" />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={earningsData.chartData} barSize={20} margin={{ bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 10, fill: "#9ca3af" }}
+                    dy={10}
+                  />
+                  <Tooltip
+                    cursor={{ fill: "#f9fafb" }}
+                    contentStyle={{
+                      borderRadius: "12px",
+                      border: "none",
+                      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                    }}
+                  />
+                  <Bar dataKey="earnings" fill="var(--primary)" radius={[4, 4, 0, 0]} stackId="a" />
+                  <Bar dataKey="incentives" fill="#93c5fd" radius={[4, 4, 0, 0]} stackId="a" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </Card>
         </motion.div>
 
         <motion.div variants={itemVariants}>
           <Card className="overflow-hidden">
             <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-              <h3 className="font-bold text-gray-800">Recent Withdrawals</h3>
+              <h3 className="font-bold text-gray-800">Recent Earnings</h3>
               <Button variant="link" className="text-primary text-xs font-bold h-auto p-0">
                 View All
               </Button>
@@ -212,6 +223,11 @@ const EarningsPage = () => {
                           {txn.id ||
                             (txn._id ? txn._id.toString().slice(-6).toUpperCase() : "N/A")}
                         </p>
+                        {resolveTipAmount(txn) > 0 && (
+                          <p className="text-[11px] font-bold text-pink-600">
+                            Includes tip: {RUPEE}{resolveTipAmount(txn).toLocaleString()}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className="text-right">

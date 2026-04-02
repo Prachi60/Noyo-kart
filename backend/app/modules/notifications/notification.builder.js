@@ -111,6 +111,16 @@ function eventDefinition(eventType) {
             ? `New order #${payload.orderId} received.`
             : "You have received a new order.",
       };
+    case NOTIFICATION_EVENTS.RETURN_REQUESTED:
+      return {
+        role: NOTIFICATION_ROLES.SELLER,
+        recipientIds: (payload) => normalizeIdList(payload.sellerId),
+        title: () => "Return Requested",
+        body: (payload) =>
+          payload.orderId
+            ? `Return request received for order #${payload.orderId}.`
+            : "You have received a new return request.",
+      };
     case NOTIFICATION_EVENTS.DELIVERY_ASSIGNED:
       return {
         role: NOTIFICATION_ROLES.DELIVERY,
@@ -130,6 +140,16 @@ function eventDefinition(eventType) {
           payload.orderId
             ? `Order #${payload.orderId} is ready for pickup.`
             : "An order is ready for pickup.",
+      };
+    case NOTIFICATION_EVENTS.RETURN_PICKUP_ASSIGNED:
+      return {
+        role: NOTIFICATION_ROLES.DELIVERY,
+        recipientIds: (payload) => normalizeIdList(payload.deliveryId),
+        title: () => "Return Pickup Assigned",
+        body: (payload) =>
+          payload.orderId
+            ? `Return pickup assigned for order #${payload.orderId}.`
+            : "A return pickup has been assigned to you.",
       };
     default:
       return null;

@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import Button from "@/shared/components/ui/Button";
 import Card from "@/shared/components/ui/Card";
 
-import { useAuth } from "@/core/context/AuthContext";
+import { useAuth } from "@core/context/AuthContext";
 import { deliveryApi } from "../services/deliveryApi";
 
 const Dashboard = () => {
@@ -82,11 +82,6 @@ const Dashboard = () => {
     fetchStats();
     fetchNotifications();
     if (isOnline) fetchAvailableOrders();
-    const interval = setInterval(() => {
-      fetchNotifications();
-      if (isOnline) fetchAvailableOrders();
-    }, 30000);
-    return () => clearInterval(interval);
   }, [isOnline]);
 
   const handleOnlineToggle = async () => {

@@ -12,7 +12,7 @@ import {
     X
 } from 'lucide-react';
 
-import { useAuth } from '@/core/context/AuthContext';
+import { useAuth } from '@core/context/AuthContext';
 
 const BottomNav = ({ navItems }) => {
     const { role } = useAuth();

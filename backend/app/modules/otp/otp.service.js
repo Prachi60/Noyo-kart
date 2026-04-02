@@ -1,4 +1,3 @@
-import axios from "axios";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import OtpSession from "./otp.model.js";
@@ -8,17 +7,17 @@ import Customer from "../../models/customer.js";
 import Delivery from "../../models/delivery.js";
 import logger from "../../services/logger.js";
 import {
-  buildMessage,
+  __testables as smsIndiaTestables,
+  sendSmsIndiaHubOtp,
+} from "../../services/smsIndiaHubService.js";
+import {
   generateOTP,
   getOtpLength,
   normalizeMobile,
-  toIndianNumber,
 } from "../../utils/smsHelpers.js";
 
 const SUPPORTED_USER_TYPES = ["Admin", "Seller", "Customer", "Delivery"];
 const SUPPORTED_PURPOSES = ["LOGIN", "SIGNUP", "PASSWORD_RESET"];
-const SMS_INDIA_SUCCESS_CODE = "000";
-
 const USER_TYPE_CONFIG = {
   Admin: { model: Admin, tokenRole: "admin" },
   Seller: { model: Seller, tokenRole: "seller" },
@@ -64,18 +63,6 @@ function getExpiryMinutes() {
 function getMaxAttempts() {
   const parsed = parseInt(process.env.OTP_MAX_FAILED_ATTEMPTS || "5", 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 5;
-}
-
-function getSmsIndiaConfig() {
-  return {
-    apiKey: process.env.SMS_INDIA_HUB_API_KEY,
-    senderId: process.env.SMS_INDIA_HUB_SENDER_ID,
-    dltTemplateId: process.env.SMS_INDIA_HUB_DLT_TEMPLATE_ID,
-    gatewayId: process.env.SMS_INDIA_HUB_GWID || "2",
-    url:
-      process.env.SMS_INDIA_HUB_URL ||
-      "http://cloud.smsindiahub.in/vendorsms/pushsms.aspx",
-  };
 }
 
 function assertSupportedEnums({ userType, purpose }) {
@@ -128,118 +115,8 @@ function assertPurposeEligibility({ purpose, account, userType }) {
   }
 }
 
-function normalizeProviderPayload(payload) {
-  return typeof payload === "string" ? payload : JSON.stringify(payload || {});
-}
-
-function parseSmsIndiaResponse(payload) {
-  const raw = normalizeProviderPayload(payload);
-  const trimmed = raw.trim();
-  const lower = trimmed.toLowerCase();
-
-  const directCode = trimmed.slice(0, 3);
-  if (/^\d{3}$/.test(directCode)) {
-    return { code: directCode, raw };
-  }
-
-  const xmlStatusMatch = trimmed.match(/<status>\s*([^<]+)\s*<\/status>/i);
-  if (xmlStatusMatch) {
-    const statusValue = String(xmlStatusMatch[1] || "").trim();
-    if (/^\d{3}$/.test(statusValue)) {
-      return { code: statusValue, raw };
-    }
-    if (["success", "ok", "done", "submitted"].includes(statusValue.toLowerCase())) {
-      return { code: "000", raw };
-    }
-  }
-
-  const jsonStatusMatch = trimmed.match(/"status"\s*:\s*"?(success|ok|done|submitted|000)"?/i);
-  if (jsonStatusMatch) {
-    return { code: "000", raw };
-  }
-
-  const matched = trimmed.match(/\b(\d{3})\b/);
-  if (matched) {
-    return { code: matched[1], raw };
-  }
-
-  if (
-    lower === "success" ||
-    lower === "ok" ||
-    lower === "done" ||
-    lower.startsWith("success#") ||
-    lower.startsWith("done#") ||
-    lower.includes("message submitted")
-  ) {
-    return { code: "000", raw };
-  }
-
-  return { code: null, raw };
-}
-
-function providerSnippet(raw) {
-  return String(raw || "").replace(/\s+/g, " ").trim().slice(0, 180);
-}
-
-function mapSmsIndiaError(code) {
-  const messages = {
-    "001": "SMS India HUB configuration issue",
-    "006": "SMS India HUB DLT template mismatch",
-    "007": "SMS India HUB API key is invalid",
-    "021": "SMS India HUB credits exhausted",
-  };
-  const error = new Error(messages[code] || "SMS India HUB request failed");
-  error.statusCode = code === "001" || code === "006" || code === "007" ? 500 : 502;
-  error.providerCode = code;
-  return error;
-}
-
 async function sendSmsViaSmsIndiaHub({ mobile, otp }) {
-  const config = getSmsIndiaConfig();
-  const requiredConfig = {
-    apiKey: config.apiKey,
-    senderId: config.senderId,
-    url: config.url,
-  };
-  const missing = Object.entries(requiredConfig)
-    .filter(([, value]) => !value)
-    .map(([key]) => key);
-
-  if (missing.length > 0) {
-    const error = new Error(`Missing SMS India HUB config: ${missing.join(", ")}`);
-    error.statusCode = 500;
-    throw error;
-  }
-
-  const response = await axios.get(config.url, {
-    params: {
-      APIKey: config.apiKey,
-      msisdn: toIndianNumber(mobile),
-      sid: config.senderId,
-      msg: buildMessage(otp),
-      fl: "0",
-      gwid: String(config.gatewayId || "2"),
-      ...(config.dltTemplateId ? { DLT_TE_ID: config.dltTemplateId } : {}),
-    },
-    timeout: parseInt(process.env.SMS_INDIA_HUB_TIMEOUT_MS || "10000", 10),
-  });
-
-  const body = response.data;
-  const inlineErrorCode = body && typeof body === "object" ? body.ErrorCode : null;
-  const { code: providerCode, raw } = parseSmsIndiaResponse(body);
-  const effectiveCode = inlineErrorCode || providerCode;
-  if (effectiveCode !== SMS_INDIA_SUCCESS_CODE) {
-    const error = mapSmsIndiaError(effectiveCode);
-    error.message = `${error.message}${raw ? `: ${providerSnippet(raw)}` : ""}`;
-    error.providerRaw = raw;
-    throw error;
-  }
-
-  return {
-    provider: "sms_india_hub",
-    providerCode,
-    rawResponse: response.data,
-  };
+  return sendSmsIndiaHubOtp({ phone: mobile, otp });
 }
 
 function buildToken(account, userType) {
@@ -437,7 +314,7 @@ export const __testables = {
   getPhoneCandidates,
   hashOtp,
   isMockOtpEnabled,
-  mapSmsIndiaError,
-  parseSmsIndiaResponse,
+  mapSmsIndiaError: smsIndiaTestables.mapSmsIndiaError,
+  parseSmsIndiaResponse: smsIndiaTestables.parseSmsIndiaResponse,
   sanitizeAccount,
 };

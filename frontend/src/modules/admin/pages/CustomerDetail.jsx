@@ -193,7 +193,11 @@ const CustomerDetail = () => {
                 <Card className="lg:col-span-2 bg-white rounded-xl p-4 border-none shadow-xl ring-1 ring-slate-100 overflow-hidden relative">
                     <div className="flex flex-col md:flex-row items-center md:items-start gap-4 relative z-10">
                         <div className="relative shrink-0">
-                            <img src={customer.avatar} alt="" className="h-32 w-32 rounded-xl ring-4 ring-slate-50 shadow-lg bg-slate-100" />
+                            <img 
+                                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=BaseUser&backgroundColor=f1f5f9`} 
+                                alt="" 
+                                className="h-32 w-32 rounded-xl ring-4 ring-slate-50 shadow-lg bg-slate-100" 
+                            />
                             <div className={cn(
                                 "absolute -bottom-1 -right-1 h-5 w-5 rounded-full ring-4 ring-white shadow-sm",
                                 customer.status === 'active' ? "bg-brand-500" : "bg-rose-500"

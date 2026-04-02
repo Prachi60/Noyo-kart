@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import Order from '../models/order.js';
 import OrderOtp from '../models/orderOtp.js';
 import { checkProximity } from './proximityService.js';
+import { emitToCustomer, emitOrderStatusUpdate } from './orderSocketEmitter.js';
 
 function isFiniteNumber(value) {
   return typeof value === "number" && Number.isFinite(value);
@@ -314,7 +315,7 @@ export async function validateDeliveryOtp(orderId, enteredOtp) {
  * @param {string} orderId
  * @returns {Promise<Object>}
  */
-export async function generateReturnPickupOtp(orderId) {
+export async function generateReturnPickupOtp(orderId, requester = {}) {
   try {
     const order = await Order.findOne({ orderId });
     if (!order) {
@@ -323,6 +324,17 @@ export async function generateReturnPickupOtp(orderId) {
 
     if (order.returnStatus !== 'return_pickup_assigned') {
       return { success: false, error: 'Return is not in pickup assigned status.' };
+    }
+
+    const requesterId = requester?.id || requester?._id || null;
+    const requesterRole = String(requester?.role || '').toLowerCase();
+    if (
+      requesterRole === 'delivery' &&
+      requesterId &&
+      order.returnDeliveryBoy &&
+      String(order.returnDeliveryBoy) !== String(requesterId)
+    ) {
+      return { success: false, error: 'This return pickup is assigned to another delivery partner.' };
     }
 
     // Generate secure 4-digit OTP using crypto.randomInt
@@ -347,6 +359,31 @@ export async function generateReturnPickupOtp(orderId) {
       maxAttempts: 3,
       lastGeneratedAt: new Date()
     });
+
+    // Keep payload shape consistent with customer-side listeners.
+    if (order.customer) {
+      const customerId = String(order.customer);
+      emitToCustomer(customerId, {
+        event: 'order:otp',
+        payload: {
+          orderId,
+          code: otp,
+          expiresAt,
+          type: 'return_pickup',
+        },
+      });
+      emitToCustomer(customerId, {
+        event: 'delivery:otp:generated',
+        payload: {
+          orderId,
+          otp,
+          expiresAt,
+          deliveryPersonNearby: true,
+          type: 'return_pickup',
+        },
+      });
+      emitOrderStatusUpdate(orderId, { returnOtpSent: true }, order.customer);
+    }
 
     return { success: true, otp, expiresAt };
   } catch (error) {

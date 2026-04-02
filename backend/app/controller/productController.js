@@ -11,6 +11,7 @@ import {
   enqueueProductRemoval,
 } from "../services/searchSyncService.js";
 import { buildKey, getOrSet, getTTL, invalidate } from "../services/cacheService.js";
+import { uploadToCloudinary } from "../services/mediaService.js";
 
 function isCustomerVisibilityRequest(req) {
   const role = String(req.user?.role || "").toLowerCase();
@@ -85,6 +86,8 @@ function applyMediaFields(productData) {
   } else if (mergedGallery.length > 0) {
     productData.mainImage = mergedGallery[0];
     mergedGallery.shift();
+  } else {
+    delete productData.mainImage;
   }
 
   if (mergedGallery.length > 0) {
@@ -325,6 +328,48 @@ export const createProduct = async (req, res) => {
     const productData = { ...req.body };
     productData.sellerId = req.user.id;
 
+    // Handle multipart files (mainImage and galleryImages)
+    const files = req.files || [];
+    if (files.length > 0) {
+      const galleryUrls = [];
+      for (const file of files) {
+        try {
+          if (file.fieldname === "mainImage") {
+            const url = await uploadToCloudinary(file.buffer, "products");
+            productData.mainImage = url;
+          } else if (file.fieldname === "galleryImages") {
+            const url = await uploadToCloudinary(file.buffer, "products");
+            galleryUrls.push(url);
+          }
+        } catch (err) {
+          console.error("Cloudinary upload failed:", err);
+        }
+      }
+      if (galleryUrls.length > 0) {
+        productData.galleryImages = galleryUrls;
+      }
+    }
+
+    // Parse JSON fields if they come as strings from FormData
+    if (typeof productData.variants === "string") {
+      try {
+        productData.variants = JSON.parse(productData.variants);
+      } catch (e) {
+        console.error("Failed to parse variants JSON:", e);
+      }
+    }
+    if (typeof productData.tags === "string" && productData.tags.startsWith("[")) {
+      try {
+        productData.tags = JSON.parse(productData.tags);
+      } catch (e) {
+        // Not JSON, keep as is
+      }
+    }
+
+    if (!productData.name) {
+      return handleResponse(res, 400, "Product name is required");
+    }
+    
     // Auto-generate slug
     if (!productData.slug || productData.slug.trim() === "") {
       productData.slug = slugify(productData.name);
@@ -370,9 +415,11 @@ export const createProduct = async (req, res) => {
 
     const product = await Product.create(productData);
     
-    // Enqueue search indexing asynchronously
-    await enqueueProductIndex(product._id.toString());
-    await invalidate(`cache:catalog:product:${product._id.toString()}`);
+    if (product && product._id) {
+      // Enqueue search indexing asynchronously
+      await enqueueProductIndex(product._id.toString());
+      await invalidate(`cache:catalog:product:${product._id.toString()}`);
+    }
     
     return handleResponse(res, 201, "Product created successfully", product);
   } catch (error) {
@@ -393,6 +440,44 @@ export const updateProduct = async (req, res) => {
     const sellerId = req.user.id;
     const role = req.user.role;
     const productData = { ...req.body };
+
+    // Handle multipart files (mainImage and galleryImages)
+    const files = req.files || [];
+    if (files.length > 0) {
+      const galleryUrls = [];
+      for (const file of files) {
+        try {
+          if (file.fieldname === "mainImage") {
+            const url = await uploadToCloudinary(file.buffer, "products");
+            productData.mainImage = url;
+          } else if (file.fieldname === "galleryImages") {
+            const url = await uploadToCloudinary(file.buffer, "products");
+            galleryUrls.push(url);
+          }
+        } catch (err) {
+          console.error("Cloudinary upload failed during update:", err);
+        }
+      }
+      if (galleryUrls.length > 0) {
+        productData.galleryImages = galleryUrls;
+      }
+    }
+
+    // Parse JSON fields
+    if (typeof productData.variants === "string") {
+      try {
+        productData.variants = JSON.parse(productData.variants);
+      } catch (e) {
+        console.error("Failed to parse variants JSON during update:", e);
+      }
+    }
+    if (typeof productData.tags === "string" && productData.tags.startsWith("[")) {
+      try {
+        productData.tags = JSON.parse(productData.tags);
+      } catch (e) {
+        // Not JSON, keep as is
+      }
+    }
 
     // Admin bypasses sellerId check
     const query = role === "admin" ? { _id: id } : { _id: id, sellerId };

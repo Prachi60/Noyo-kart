@@ -6,6 +6,7 @@ import HelpModal from "../components/order/HelpModal";
 import LiveTrackingMap from "../components/order/LiveTrackingMap";
 import DeliveryOtpDisplay from "../components/DeliveryOtpDisplay";
 import OrderProgressTracker from "../components/order/OrderProgressTracker";
+import ReturnProgressTracker from "../components/order/ReturnProgressTracker";
 import {
   ChevronLeft,
   Package,
@@ -114,6 +115,15 @@ const getTrackingRoutePhase = (order) => {
   return isDeliveryPhase ? "delivery" : "pickup";
 };
 
+const matchesOrderIdentifier = (payloadOrderId, identifiers = []) => {
+  const normalizedPayloadId = String(payloadOrderId || "").trim();
+  if (!normalizedPayloadId) return false;
+  return identifiers
+    .map((value) => String(value || "").trim())
+    .filter(Boolean)
+    .includes(normalizedPayloadId);
+};
+
 const OrderDetailPage = () => {
   const { orderId } = useParams();
   const [showInvoice, setShowInvoice] = useState(false);
@@ -131,11 +141,33 @@ const OrderDetailPage = () => {
   const [routePolyline, setRoutePolyline] = useState(null);
   const [handoffOtp, setHandoffOtp] = useState(null);
   const [clockTick, setClockTick] = useState(Date.now());
+  const parsedReturnWindowMinutes = parseInt(
+    import.meta.env.VITE_RETURN_WINDOW_MINUTES || "2",
+    10,
+  );
+  const returnWindowMinutes =
+    Number.isFinite(parsedReturnWindowMinutes) && parsedReturnWindowMinutes > 0
+      ? parsedReturnWindowMinutes
+      : 2;
   const routeOriginRef = useRef(null);
   const routeRequestRef = useRef({ phase: "", startedAt: 0 });
   const [returnCountdown, setReturnCountdown] = useState(null);
+  const refreshRef = useRef({ inFlight: false, lastAt: 0 });
+  const identifiersRef = useRef([]);
+  const extraRoomRef = useRef("");
 
   const navigate = useNavigate();
+  const resolveOrderLookupId = (ord) =>
+    String(ord?.orderId || ord?.checkoutGroupId || orderId || "").trim();
+
+  const handleBack = () => {
+    const idx = window?.history?.state?.idx;
+    if (typeof idx === "number" && idx > 0) {
+      navigate(-1);
+      return;
+    }
+    navigate("/orders");
+  };
 
   // Scroll to top on load
   useEffect(() => {
@@ -152,12 +184,13 @@ const OrderDetailPage = () => {
 
     const fetchOrderDetails = async () => {
       try {
+        refreshRef.current.inFlight = true;
         const response = await customerApi.getOrderDetails(orderId);
         const ord = response.data.result;
         setOrder(ord);
 
         try {
-          const retRes = await customerApi.getReturnDetails(orderId);
+          const retRes = await customerApi.getReturnDetails(resolveOrderLookupId(ord));
           setReturnDetails(retRes.data.result);
         } catch {
           setReturnDetails(null);
@@ -166,6 +199,7 @@ const OrderDetailPage = () => {
         console.error("Failed to fetch order details:", error);
         toast.error("Failed to load order details");
       } finally {
+        refreshRef.current.inFlight = false;
         setLoading(false);
       }
     };
@@ -177,28 +211,39 @@ const OrderDetailPage = () => {
 
   useEffect(() => {
     if (!orderId) return undefined;
-    const iv = setInterval(() => {
-      customerApi
-        .getOrderDetails(orderId)
-        .then((r) => setOrder(r.data.result))
-        .catch(() => {});
-    }, 12000);
-    return () => clearInterval(iv);
-  }, [orderId]);
-
-  useEffect(() => {
-    if (!orderId) return undefined;
     const getToken = () => localStorage.getItem("auth_customer");
     getOrderSocket(getToken);
     joinOrderRoom(orderId, getToken);
-    const offStatus = onOrderStatusUpdate(getToken, () => {
+
+    const refresh = () => {
+      const now = Date.now();
+      if (refreshRef.current.inFlight) return;
+      if (now - refreshRef.current.lastAt < 2000) return;
+      refreshRef.current.lastAt = now;
+      refreshRef.current.inFlight = true;
       customerApi
         .getOrderDetails(orderId)
-        .then((r) => setOrder(r.data.result))
-        .catch(() => {});
+        .then(async (r) => {
+          const ord = r.data.result;
+          setOrder(ord);
+          try {
+            const retRes = await customerApi.getReturnDetails(resolveOrderLookupId(ord));
+            setReturnDetails(retRes.data.result);
+          } catch {
+            setReturnDetails(null);
+          }
+        })
+        .catch(() => {})
+        .finally(() => {
+          refreshRef.current.inFlight = false;
+        });
+    };
+
+    const offStatus = onOrderStatusUpdate(getToken, () => {
+      refresh();
     });
     const offOtp = onCustomerOtp(getToken, (payload) => {
-      if (payload?.orderId === orderId && payload?.code) {
+      if (matchesOrderIdentifier(payload?.orderId, identifiersRef.current) && payload?.code) {
         setHandoffOtp(payload.code);
         toast.info("Delivery OTP received — share with rider if asked.");
       }
@@ -209,6 +254,37 @@ const OrderDetailPage = () => {
       leaveOrderRoom(orderId, getToken);
     };
   }, [orderId]);
+
+  useEffect(() => {
+    identifiersRef.current = [orderId, order?.orderId, order?.checkoutGroupId]
+      .map((value) => String(value || "").trim())
+      .filter(Boolean);
+  }, [orderId, order?.orderId, order?.checkoutGroupId]);
+
+  useEffect(() => {
+    if (!orderId) return undefined;
+    const getToken = () => localStorage.getItem("auth_customer");
+
+    const nextExtraRoom =
+      order?.orderId && order.orderId !== orderId ? String(order.orderId) : "";
+
+    if (extraRoomRef.current && extraRoomRef.current !== nextExtraRoom) {
+      leaveOrderRoom(extraRoomRef.current, getToken);
+      extraRoomRef.current = "";
+    }
+
+    if (nextExtraRoom && extraRoomRef.current !== nextExtraRoom) {
+      joinOrderRoom(nextExtraRoom, getToken);
+      extraRoomRef.current = nextExtraRoom;
+    }
+
+    return () => {
+      if (extraRoomRef.current) {
+        leaveOrderRoom(extraRoomRef.current, getToken);
+        extraRoomRef.current = "";
+      }
+    };
+  }, [orderId, order?.orderId]);
 
   // Subscribe to live tracking from Firebase (if available)
   useEffect(() => {
@@ -248,10 +324,14 @@ const OrderDetailPage = () => {
     }
 
     const calculateCountdown = () => {
-      const placedAt = new Date(order.createdAt).getTime();
+      if (order.status !== "delivered") {
+        setReturnCountdown(null);
+        return;
+      }
+      const windowStart = new Date(order.deliveredAt || order.createdAt).getTime();
       const now = Date.now();
-      const windowMs = (parseInt(import.meta.env.VITE_RETURN_WINDOW_MINUTES || "2", 10)) * 60 * 1000;
-      const remaining = Math.max(0, (placedAt + windowMs) - now);
+      const windowMs = returnWindowMinutes * 60 * 1000;
+      const remaining = Math.max(0, (windowStart + windowMs) - now);
 
       if (remaining <= 0) {
         setReturnCountdown(0);
@@ -266,7 +346,7 @@ const OrderDetailPage = () => {
     calculateCountdown();
     const iv = setInterval(calculateCountdown, 1000);
     return () => clearInterval(iv);
-  }, [order]);
+  }, [order, returnWindowMinutes]);
 
   const handleOpenInMaps = () => {
     const loc = order?.address?.location;
@@ -442,6 +522,7 @@ const OrderDetailPage = () => {
   const canRequestReturn = () => {
     if (!order) return false;
     if (order.status === "cancelled") return false;
+    if (order.status !== "delivered") return false;
     if (
       returnDetails &&
       returnDetails.returnStatus &&
@@ -451,11 +532,10 @@ const OrderDetailPage = () => {
       return false;
     }
     
-    // Check 2-minute window
-    const placedAt = new Date(order.createdAt).getTime();
+    const windowStart = new Date(order.deliveredAt || order.createdAt).getTime();
     const now = Date.now();
-    const windowMs = (parseInt(import.meta.env.VITE_RETURN_WINDOW_MINUTES || "2", 10)) * 60 * 1000;
-    return (now - placedAt) <= windowMs;
+    const windowMs = returnWindowMinutes * 60 * 1000;
+    return now - windowStart <= windowMs;
   };
 
   const toggleItemSelection = (index) => {
@@ -501,7 +581,7 @@ const OrderDetailPage = () => {
 
       const [orderRes, retRes] = await Promise.all([
         customerApi.getOrderDetails(orderId),
-        customerApi.getReturnDetails(orderId),
+        customerApi.getReturnDetails(resolveOrderLookupId(order)),
       ]);
       setOrder(orderRes.data.result);
       setReturnDetails(retRes.data.result);
@@ -512,6 +592,25 @@ const OrderDetailPage = () => {
       );
     } finally {
       setRequestingReturn(false);
+    }
+  };
+
+  const handleRetryPayment = async () => {
+    try {
+      if (!order) return;
+      const paymentRef = order.checkoutGroupId || order.orderId;
+      const response = await customerApi.createPaymentOrder({
+        orderRef: paymentRef,
+        orderId: order.orderId
+      });
+      if (response.data.success && response.data.result?.redirectUrl) {
+        window.location.href = response.data.result.redirectUrl;
+      } else {
+        toast.error(response.data.message || "Failed to initiate payment");
+      }
+    } catch (err) {
+      console.error("[OrderDetailPage] Retry payment error:", err);
+      toast.error("Unable to start payment. Please try again later.");
     }
   };
 
@@ -531,11 +630,13 @@ const OrderDetailPage = () => {
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white pb-24 font-sans">
       {/* Minimal Header */}
       <div className="bg-white/80 backdrop-blur-md sticky top-0 z-30 px-4 py-3 flex items-center justify-between border-b border-slate-100">
-        <Link
-          to="/orders"
-          className="p-2 -ml-2 rounded-full hover:bg-slate-100 transition-colors">
+        <button
+          type="button"
+          onClick={handleBack}
+          className="p-2 -ml-2 rounded-full hover:bg-slate-100 transition-colors"
+        >
           <ChevronLeft size={24} className="text-slate-800" />
-        </Link>
+        </button>
         <div className="flex-1 text-center">
           <h1 className="text-base font-bold text-slate-800">Order</h1>
           <p className="text-xs text-slate-500 font-medium">#{order.orderId.slice(-8)}</p>
@@ -544,6 +645,36 @@ const OrderDetailPage = () => {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
+        {/* Payment Required Card - Only for Online Pending Orders */}
+        {order.paymentMode === "ONLINE" && order.paymentStatus !== "PAID" && status !== "cancelled" && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-brand-50 rounded-3xl p-5 shadow-sm border border-brand-100 relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 p-4 opacity-10">
+              <CreditCard size={64} className="text-brand-600" />
+            </div>
+            <div className="relative z-10 flex items-center justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse" />
+                  <h3 className="text-sm font-black text-brand-900 uppercase tracking-tight">Payment Required</h3>
+                </div>
+                <p className="text-xs text-brand-700 font-medium leading-relaxed">
+                  Complete your payment of <span className="font-bold">₹{order.pricing.total}</span> to proceed with this order.
+                </p>
+              </div>
+              <button 
+                onClick={handleRetryPayment}
+                className="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl text-xs font-black shadow-lg shadow-brand-200 transition-all active:scale-95 flex items-center gap-2 uppercase tracking-wide shrink-0"
+              >
+                Pay Now <ArrowRight size={14} />
+              </button>
+            </div>
+          </motion.div>
+        )}
+
         {/* Enhanced Map with Cleaner Design - Hide when delivered or cancelled */}
         {status !== "delivered" && status !== "cancelled" && (
           <motion.div 
@@ -574,7 +705,10 @@ const OrderDetailPage = () => {
         />
 
         {/* Proximity-based Delivery OTP Display */}
-        <DeliveryOtpDisplay orderId={orderId} />
+        <DeliveryOtpDisplay
+          orderId={order?.orderId || orderId}
+          checkoutGroupId={order?.checkoutGroupId || orderId}
+        />
 
         {/* Delivery Partner Card - Redesigned */}
         {order.deliveryBoy && status !== "delivered" && status !== "cancelled" && (
@@ -825,12 +959,7 @@ const OrderDetailPage = () => {
             returnDetails.returnStatus &&
             returnDetails.returnStatus !== "none" ? (
               <div className="space-y-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <span className="text-slate-500 font-medium">Status:</span>
-                  <span className="uppercase text-[10px] font-black px-2.5 py-1 rounded-lg bg-slate-900 text-white tracking-wider">
-                    {returnDetails.returnStatus.replace(/_/g, " ")}
-                  </span>
-                </div>
+                <ReturnProgressTracker returnStatus={returnDetails.returnStatus} />
 
                 {/* Return OTP Display for Customer if pickup is assigned */}
                 {returnDetails.returnStatus === "return_pickup_assigned" && (
@@ -878,7 +1007,7 @@ const OrderDetailPage = () => {
               </div>
             ) : (
               <p className="text-sm text-slate-500 mb-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                You can request a return within the first {import.meta.env.VITE_RETURN_WINDOW_MINUTES || 2} minutes of placing your order.
+                You can request a return within the first {returnWindowMinutes} minutes after delivery.
               </p>
             )}
             

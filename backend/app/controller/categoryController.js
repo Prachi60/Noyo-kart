@@ -2,11 +2,16 @@ import Category from "../models/category.js";
 import handleResponse from "../utils/helper.js";
 import getPagination from "../utils/pagination.js";
 import { buildKey, getOrSet, getTTL, invalidate } from "../services/cacheService.js";
+import { uploadToCloudinary } from "../services/mediaService.js";
+import mongoose from "mongoose";
 
 function normalizeUrl(value) {
-  const normalized = String(value || "").trim();
+  if (!value || typeof value !== "string") return "";
+  const normalized = value.trim();
   if (!normalized) return "";
-  if (!/^https?:\/\//i.test(normalized)) return "";
+  if (!/^https?:\/\//i.test(normalized)) {
+    return "";
+  }
   return normalized;
 }
 
@@ -14,14 +19,39 @@ function categoryCacheKey({ tree = false, type = "all" } = {}) {
   return buildKey("catalog", "categories", `${tree ? "tree" : "flat"}:${type || "all"}`);
 }
 
+function normalizeParentId(parentId) {
+  if (!parentId) return null;
+  const raw = String(parentId).trim();
+  if (!raw || raw === "null" || raw === "undefined") return null;
+  if (!mongoose.Types.ObjectId.isValid(raw)) return "__INVALID__";
+  return raw;
+}
+
+async function validateParentForType(type, parentId) {
+  if (type === "header") return true;
+  if (!parentId) return false;
+
+  try {
+    const parent = await Category.findById(parentId).select("type").lean();
+    if (!parent) return false;
+    
+    // Strict hierarchy check
+    if (type === "category" && parent.type !== "header") return false;
+    if (type === "subcategory" && parent.type !== "category") return false;
+    
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
+
 /* ===============================
    GET ALL CATEGORIES (Hierarchy)
-================================ */
+ ================================ */
 export const getCategories = async (req, res) => {
   try {
     const { flat, tree, type } = req.query;
 
-    // If tree structure is requested (for hierarchy explorer / public navigation)
     if (tree === "true") {
       const cacheKey = categoryCacheKey({ tree: true, type: "header" });
       const categories = await getOrSet(
@@ -46,7 +76,6 @@ export const getCategories = async (req, res) => {
       return handleResponse(res, 200, "Category tree fetched", categories);
     }
 
-    // Paginated flat list (for table views)
     const pageParam = req.query.page;
     const limitParam = req.query.limit;
     if (pageParam != null || limitParam != null) {
@@ -78,7 +107,6 @@ export const getCategories = async (req, res) => {
       });
     }
 
-    // Default flat: return all categories (no pagination)
     const query = {};
     if (type === "header" || type === "category" || type === "subcategory") {
       query.type = type;
@@ -102,55 +130,133 @@ export const getCategories = async (req, res) => {
 
 /* ===============================
    CREATE CATEGORY
-================================ */
+ ================================ */
 export const createCategory = async (req, res) => {
   try {
-    const categoryData = { ...req.body };
-
-    const imageUrl = normalizeUrl(categoryData.image || categoryData.imageUrl);
-    if (imageUrl) {
-      categoryData.image = imageUrl;
+    const categoryData = {};
+    const allowedKeys = ["name", "slug", "description", "type", "parentId", "status", "headerColor", "adminCommission", "adminCommissionType", "adminCommissionValue", "handlingFees", "handlingFeeType", "handlingFeeValue"];
+    
+    // Strict Whitelisting and Sanitization
+    for (const key of allowedKeys) {
+      if (Object.prototype.hasOwnProperty.call(req.body, key)) {
+        const val = req.body[key];
+        // Stripping objects {} that could cause cast errors in Mongoose
+        if (val !== null && typeof val === "object" && !Array.isArray(val) && !(val instanceof mongoose.Types.ObjectId)) {
+           continue;
+        }
+        categoryData[key] = val;
+      }
+    }
+    
+    // Handle Images
+    if (req.file) {
+      try {
+        const url = await uploadToCloudinary(req.file.buffer, "categories");
+        categoryData.image = url;
+      } catch (err) {
+        console.error("Cloudinary upload failed for category:", err);
+      }
+    } else if (typeof req.body.image === 'string' && req.body.image.startsWith('http')) {
+      categoryData.image = req.body.image;
+    } else {
+       // FORCED FIX: Ensure no phantom object remains
+       delete categoryData.image; 
     }
 
-    if (
-      categoryData.parentId === "" ||
-      categoryData.parentId === "null" ||
-      !categoryData.parentId
-    ) {
-      categoryData.parentId = null;
+    // Explicitly validate Parent ID hierarchy
+    const normalizedParentId = normalizeParentId(categoryData.parentId);
+    if (normalizedParentId === "__INVALID__") {
+      return handleResponse(res, 400, "The Parent ID format is invalid");
+    }
+    categoryData.parentId = normalizedParentId;
+
+    const type = String(categoryData.type || "").trim();
+    if (!["header", "category", "subcategory"].includes(type)) {
+      return handleResponse(res, 400, `The category type is invalid: ${type}`);
+    }
+
+    const parentOk = await validateParentForType(type, categoryData.parentId);
+    if (!parentOk) {
+      if (type === "category") return handleResponse(res, 400, "Level 2 Category must be linked to a Level 1 Header category");
+      if (type === "subcategory") return handleResponse(res, 400, "Level 3 Subcategory must be linked to a Level 2 Category");
+    }
+
+    // Final sanity check for unique slug to prevent catch block late failure
+    const existing = await Category.findOne({ slug: categoryData.slug }).lean();
+    if (existing) {
+        return handleResponse(res, 400, "The URL Slug already exists; please use a unique name");
     }
 
     const category = await Category.create(categoryData);
-    await invalidate("cache:catalog:categories:*");
+    
+    invalidate("cache:catalog:categories:*").catch(err => {
+      console.warn("[Category] Cache invalidation failed:", err.message);
+    });
+
     return handleResponse(res, 201, "Category created successfully", category);
   } catch (error) {
-    console.error("Create Category Error:", error);
-    if (error.code === 11000) {
-      return handleResponse(res, 400, "Slug already exists");
-    }
-    return handleResponse(res, 500, error.message);
+    if (error.code === 11000) return handleResponse(res, 400, "Duplicate record found; Slug must be unique");
+    if (error?.name === "ValidationError" || error?.name === "CastError") return handleResponse(res, 400, error.message);
+    return handleResponse(res, 500, `Category operation failed: ${error.message}`);
   }
 };
 
 /* ===============================
    UPDATE CATEGORY
-================================ */
+ ================================ */
 export const updateCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const categoryData = { ...req.body };
-
-    const imageUrl = normalizeUrl(categoryData.image || categoryData.imageUrl);
-    if (imageUrl) {
-      categoryData.image = imageUrl;
+    if (!mongoose.Types.ObjectId.isValid(String(id || ""))) {
+      return handleResponse(res, 400, "Invalid category ID");
     }
 
-    if (
-      categoryData.parentId === "" ||
-      categoryData.parentId === "null" ||
-      !categoryData.parentId
-    ) {
-      categoryData.parentId = null;
+    const categoryData = {};
+    const allowedKeys = ["name", "slug", "description", "type", "parentId", "status", "headerColor", "adminCommission", "adminCommissionType", "adminCommissionValue", "handlingFees", "handlingFeeType", "handlingFeeValue"];
+    
+    for (const key of allowedKeys) {
+      if (Object.prototype.hasOwnProperty.call(req.body, key)) {
+        const val = req.body[key];
+        if (val !== null && typeof val === "object" && !Array.isArray(val) && !(val instanceof mongoose.Types.ObjectId)) {
+           continue;
+        }
+        categoryData[key] = val;
+      }
+    }
+
+    if (req.file) {
+      try {
+        const url = await uploadToCloudinary(req.file.buffer, "categories");
+        categoryData.image = url;
+      } catch (err) {
+        console.error("Cloudinary upload failed for category update:", err);
+        return handleResponse(res, 400, `Image update failed: ${err.message}`);
+      }
+    } else if (typeof req.body.image === 'string' && req.body.image.startsWith('http')) {
+      categoryData.image = req.body.image;
+    } else if (req.body.image === "") {
+        categoryData.image = "";
+    } else {
+        if (req.body.image && typeof req.body.image === 'object') delete categoryData.image;
+    }
+
+    const existing = await Category.findById(id).select("type parentId").lean();
+    if (!existing) return handleResponse(res, 404, "Category not found");
+
+    const hasParentId = Object.prototype.hasOwnProperty.call(categoryData, "parentId");
+    if (hasParentId) {
+      const normalizedParentId = normalizeParentId(categoryData.parentId);
+      if (normalizedParentId === "__INVALID__") return handleResponse(res, 400, "Invalid parentId format");
+      categoryData.parentId = normalizedParentId;
+    }
+
+    const type = String(categoryData.type || existing.type || "").trim();
+    const parentToValidate = hasParentId ? categoryData.parentId : existing.parentId;
+    
+    const parentOk = await validateParentForType(type, parentToValidate);
+    if (!parentOk) {
+      if (type === "category") return handleResponse(res, 400, "Level 2 Category must be linked to a Level 1 Header category");
+      if (type === "subcategory") return handleResponse(res, 400, "Level 3 Subcategory must be linked to a Level 2 Category");
     }
 
     const updatedCategory = await Category.findByIdAndUpdate(
@@ -159,33 +265,26 @@ export const updateCategory = async (req, res) => {
       { new: true, runValidators: true },
     );
 
-    if (!updatedCategory) {
-      return handleResponse(res, 404, "Category not found");
-    }
+    if (!updatedCategory) return handleResponse(res, 404, "Category not found");
 
-    await invalidate("cache:catalog:categories:*");
+    invalidate("cache:catalog:categories:*").catch(err => {
+      console.warn("[Category] Cache invalidation failed:", err.message);
+    });
 
-    return handleResponse(
-      res,
-      200,
-      "Category updated successfully",
-      updatedCategory,
-    );
+    return handleResponse(res, 200, "Category updated successfully", updatedCategory);
   } catch (error) {
-    return handleResponse(res, 500, error.message);
+    if (error.code === 11000) return handleResponse(res, 400, "Slug already exists");
+    if (error?.name === "ValidationError" || error?.name === "CastError") return handleResponse(res, 400, error.message);
+    return handleResponse(res, 500, `Category operation failed: ${error.message}`);
   }
 };
 
 /* ===============================
    DELETE CATEGORY
-================================ */
+ ================================ */
 export const deleteCategory = async (req, res) => {
   try {
     const { id } = req.params;
-
-    // Find all descendants recursively might be complex with simple parentId
-    // For simplicity, we delete the item. User mentioned "Destroy linked" in frontend.
-    // A more robust implementation would delete children too.
 
     const deleteWithChildren = async (parentId) => {
       const children = await Category.find({ parentId });
@@ -196,7 +295,10 @@ export const deleteCategory = async (req, res) => {
     };
 
     await deleteWithChildren(id);
-    await invalidate("cache:catalog:categories:*");
+    
+    invalidate("cache:catalog:categories:*").catch(err => {
+      console.warn("[Category] Cache invalidation failed:", err.message);
+    });
 
     return handleResponse(res, 200, "Category and all descendants deleted");
   } catch (error) {

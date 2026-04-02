@@ -93,6 +93,7 @@ export async function getAdminDashboardStats() {
         name: "$product.name",
         sales: 1,
         rev: "$revenue",
+        image: "$product.mainImage",
       },
     },
   ]);
@@ -128,7 +129,8 @@ export async function getAdminDashboardStats() {
       rev: `\u20B9${product.rev.toFixed(2)}`,
       trend: "+5%",
       cat: "Product",
-      icon: "\u{1F4E6}",
+      image: product.image,
+      icon: "\u{1F4E6}", // Fallback package icon
       color: "bg-blue-50 text-blue-600",
     })),
   };

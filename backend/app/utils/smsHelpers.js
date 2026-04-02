@@ -29,13 +29,40 @@ export function buildMessage(otp) {
     process.env.SMS_INDIA_HUB_TEMPLATE_TEXT ||
       "Your OTP is {{OTP}}. Valid for {{MINUTES}} minutes.",
   );
-  const appName = String(process.env.APP_NAME || "").trim();
+  const appName = String(process.env.APP_NAME || "Noyo").trim();
 
-  return template
+  // Primary replacements for common tags
+  let msg = template
     .replace(/\{\{OTP\}\}/g, String(otp))
     .replace(/\{\{MINUTES\}\}/g, String(minutes))
     .replace(/\{\{APP_NAME\}\}/g, appName)
     .replace(/\$\{otp\}/g, String(otp))
     .replace(/\$\{minutes\}/g, String(minutes))
     .replace(/\$\{appName\}/g, appName);
+
+  // DLT templates often use generic variable tokens. Replace them in a stable order
+  // so the generated content always matches the approved template wording.
+  const genericPlaceholders = [
+    "##var##",
+    "{#var#}",
+    "{#VAR#}",
+    "{#var1#}",
+    "{#var2#}",
+    "{#var3#}",
+  ];
+  const replacementOrder = [appName, String(otp), String(minutes)];
+
+  genericPlaceholders.forEach((placeholder) => {
+    let occurrence = 0;
+    while (msg.includes(placeholder)) {
+      const replacement =
+        replacementOrder[Math.min(occurrence, replacementOrder.length - 1)];
+      msg = msg.replace(placeholder, replacement);
+      occurrence += 1;
+    }
+  });
+
+  return msg;
 }
+
+

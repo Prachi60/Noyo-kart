@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { CheckCircle, Clock, MapPin, Shield } from "lucide-react";
 import {
   getOrderSocket,
+  onCustomerOtp,
   onDeliveryOtpGenerated,
   onDeliveryOtpValidated,
 } from "@/core/services/orderSocket";
@@ -21,7 +22,16 @@ import {
  * 
  * Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 7.5, 9.4
  */
-const DeliveryOtpDisplay = ({ orderId }) => {
+const matchesOrderIdentifier = (payloadOrderId, identifiers = []) => {
+  const normalizedPayloadId = String(payloadOrderId || "").trim();
+  if (!normalizedPayloadId) return false;
+  return identifiers
+    .map((value) => String(value || "").trim())
+    .filter(Boolean)
+    .includes(normalizedPayloadId);
+};
+
+const DeliveryOtpDisplay = ({ orderId, checkoutGroupId = null }) => {
   const [otpData, setOtpData] = useState(null);
   const [isDelivered, setIsDelivered] = useState(false);
   const [remainingSeconds, setRemainingSeconds] = useState(0);
@@ -67,13 +77,12 @@ const DeliveryOtpDisplay = ({ orderId }) => {
     
     console.log(`[DeliveryOtpDisplay] Socket connection status:`, socket?.connected);
     console.log(`[DeliveryOtpDisplay] Socket ID:`, socket?.id);
+    const acceptedOrderIds = [orderId, checkoutGroupId];
 
     // Listen for OTP generation event
-    // Requirement 4.1: Receive notification to display OTP
     const offGenerated = onDeliveryOtpGenerated(getToken, (payload) => {
       console.log(`[DeliveryOtpDisplay] Received delivery:otp:generated event:`, payload);
-      if (payload?.orderId === orderId) {
-        console.log(`[DeliveryOtpDisplay] OTP matches current order, displaying OTP:`, payload.otp);
+      if (matchesOrderIdentifier(payload?.orderId, acceptedOrderIds)) {
         setOtpData({
           otp: payload.otp,
           expiresAt: payload.expiresAt,
@@ -81,28 +90,39 @@ const DeliveryOtpDisplay = ({ orderId }) => {
         });
         setIsDelivered(false);
         setRemainingSeconds(calculateRemainingTime(payload.expiresAt));
-      } else {
-        console.log(`[DeliveryOtpDisplay] OTP for different order. Expected: ${orderId}, Got: ${payload?.orderId}`);
+      }
+    });
+
+    // Support legacy/workflow event name consistency
+    const offCustomerOtp = onCustomerOtp(getToken, (payload) => {
+      console.log(`[DeliveryOtpDisplay] Received order:otp event:`, payload);
+      if (matchesOrderIdentifier(payload?.orderId, acceptedOrderIds) && (payload?.code || payload?.otp)) {
+        const otpValue = payload.otp || payload.code;
+        setOtpData({
+          otp: otpValue,
+          expiresAt: payload.expiresAt || new Date(Date.now() + 600000).toISOString(),
+          deliveryPersonNearby: true,
+        });
+        setIsDelivered(false);
+        setRemainingSeconds(calculateRemainingTime(payload.expiresAt || new Date(Date.now() + 600000).toISOString()));
       }
     });
 
     // Listen for OTP validation event
-    // Requirement 4.1: Show delivery confirmation
     const offValidated = onDeliveryOtpValidated(getToken, (payload) => {
       console.log(`[DeliveryOtpDisplay] Received delivery:otp:validated event:`, payload);
-      if (payload?.orderId === orderId) {
-        console.log(`[DeliveryOtpDisplay] OTP validated for current order, showing delivery confirmation`);
+      if (matchesOrderIdentifier(payload?.orderId, acceptedOrderIds)) {
         setIsDelivered(true);
         setOtpData(null);
       }
     });
 
     return () => {
-      console.log(`[DeliveryOtpDisplay] Cleaning up Socket.IO listeners for order ${orderId}`);
       offGenerated();
+      offCustomerOtp();
       offValidated();
     };
-  }, [orderId]);
+  }, [orderId, checkoutGroupId]);
 
   // Countdown timer
   // Requirement 7.5: Display countdown timer showing remaining validity

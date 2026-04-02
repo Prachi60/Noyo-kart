@@ -1,5 +1,6 @@
 export const PAYMENT_GATEWAY = {
   RAZORPAY: "RAZORPAY",
+  PHONEPE: "PHONEPE",
 };
 
 export const PAYMENT_STATUS = {

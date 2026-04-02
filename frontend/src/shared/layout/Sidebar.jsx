@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { useAuth } from "@/core/context/AuthContext";
-import { useSettings } from "@/core/context/SettingsContext";
+import { useAuth } from "@core/context/AuthContext";
+import { useSettings } from "@core/context/SettingsContext";
 import { cn } from "@/lib/utils";
 import { HiChevronDown } from "react-icons/hi2";
 import { motion, AnimatePresence } from "framer-motion";

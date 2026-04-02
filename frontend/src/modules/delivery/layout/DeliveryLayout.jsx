@@ -6,7 +6,7 @@ import { Toaster, toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { BellRing, MapPin } from "lucide-react";
 import { deliveryApi } from "../services/deliveryApi";
-import { useAuth } from "@/core/context/AuthContext";
+import { useAuth } from "@core/context/AuthContext";
 import {
   getOrderSocket,
   onDeliveryBroadcast,
@@ -39,6 +39,12 @@ const DeliveryLayout = () => {
   const [availableOrdersCount, setAvailableOrdersCount] = useState(0);
   const [isAcceptingOrder, setIsAcceptingOrder] = useState(false);
   const acceptInFlightRef = useRef(false);
+  const didInitialAvailableFetchRef = useRef(false);
+  const didInitialNotificationsPollRef = useRef(false);
+  const didInitialLocationSendRef = useRef(false);
+  const availableOrdersRequestRef = useRef({ inFlight: false, controller: null });
+  const notificationsRequestRef = useRef({ inFlight: false, controller: null });
+  const locationRequestRef = useRef({ inFlight: false, controller: null });
 
   useEffect(() => {
     activeOrderRef.current = activeOrder;
@@ -137,6 +143,96 @@ const DeliveryLayout = () => {
     location.pathname.includes(route),
   );
 
+  const fetchAvailableOrders = useCallback(async () => {
+    if (availableOrdersRequestRef.current.inFlight) return null;
+    availableOrdersRequestRef.current.inFlight = true;
+
+    if (availableOrdersRequestRef.current.controller) {
+      availableOrdersRequestRef.current.controller.abort();
+    }
+    const controller = new AbortController();
+    availableOrdersRequestRef.current.controller = controller;
+
+    try {
+      return await deliveryApi.getAvailableOrders({
+        signal: controller.signal,
+        timeout: 15000,
+      });
+    } catch (error) {
+      if (
+        error?.code === "ERR_CANCELED" ||
+        error?.name === "CanceledError" ||
+        error?.name === "AbortError"
+      ) {
+        return null;
+      }
+      throw error;
+    } finally {
+      if (availableOrdersRequestRef.current.controller === controller) {
+        availableOrdersRequestRef.current.controller = null;
+        availableOrdersRequestRef.current.inFlight = false;
+      }
+    }
+  }, []);
+
+  const fetchNotifications = useCallback(async () => {
+    if (notificationsRequestRef.current.inFlight) return null;
+    notificationsRequestRef.current.inFlight = true;
+
+    if (notificationsRequestRef.current.controller) {
+      notificationsRequestRef.current.controller.abort();
+    }
+    const controller = new AbortController();
+    notificationsRequestRef.current.controller = controller;
+
+    try {
+      return await deliveryApi.getNotifications({
+        signal: controller.signal,
+        timeout: 15000,
+      });
+    } catch (error) {
+      if (
+        error?.code === "ERR_CANCELED" ||
+        error?.name === "CanceledError" ||
+        error?.name === "AbortError"
+      ) {
+        return null;
+      }
+      throw error;
+    } finally {
+      if (notificationsRequestRef.current.controller === controller) {
+        notificationsRequestRef.current.controller = null;
+        notificationsRequestRef.current.inFlight = false;
+      }
+    }
+  }, []);
+
+  const postLocationOnce = useCallback(async (lat, lng) => {
+    if (locationRequestRef.current.inFlight) return;
+    locationRequestRef.current.inFlight = true;
+
+    if (locationRequestRef.current.controller) {
+      locationRequestRef.current.controller.abort();
+    }
+    const controller = new AbortController();
+    locationRequestRef.current.controller = controller;
+
+    try {
+      saveDeliveryPartnerLocation(lat, lng);
+      await deliveryApi.postLocation(
+        { lat, lng },
+        { signal: controller.signal, timeout: 10000 },
+      );
+    } catch {
+      /* ignore */
+    } finally {
+      if (locationRequestRef.current.controller === controller) {
+        locationRequestRef.current.controller = null;
+        locationRequestRef.current.inFlight = false;
+      }
+    }
+  }, []);
+
   // Polling for available orders
   useEffect(() => {
     const fetchOrders = async () => {
@@ -144,69 +240,74 @@ const DeliveryLayout = () => {
       if (!user?.isOnline || activeOrder || suppressIncomingModal) return;
 
       try {
-        console.group("Delivery Polling Log");
-        console.log("UserID:", user?._id || user?.id);
-        const res = await deliveryApi.getAvailableOrders();
+        const res = await fetchAvailableOrders();
+        if (!res) return;
         if (res.data.success) {
           const availableOrders = res.data.results || res.data.result || [];
-          console.log(`Available orders in range: ${availableOrders.length}`);
-          const before = shownOrderIdsRef.current.size;
           applyAvailableOrdersList(availableOrders);
-          if (availableOrders.length > 0 && shownOrderIdsRef.current.size === before) {
-            console.log("Orders found but already shown:", availableOrders.map((o) => o.orderId));
-          }
         }
-        console.groupEnd();
       } catch (error) {
-        console.error("Delivery Polling Error:", error);
+        // Silently handle aborted requests to reduce log noise
+        if (error.name !== 'CanceledError' && error.name !== 'AbortError') {
+          console.error("Delivery Polling Error:", error);
+        }
       } finally {
         if (isFirstLoad) setIsFirstLoad(false);
       }
     };
 
-    if (user?.isOnline) {
-      fetchOrders(); // Initial fetch when going online
-      const interval = setInterval(fetchOrders, 5000);
-      return () => clearInterval(interval);
+    if (!user?.isOnline) {
+      didInitialAvailableFetchRef.current = false;
+      if (availableOrdersRequestRef.current.controller) {
+        availableOrdersRequestRef.current.controller.abort();
+      }
+      return undefined;
     }
-  }, [user?.isOnline, activeOrder, applyAvailableOrdersList, suppressIncomingModal]);
+
+    if (didInitialAvailableFetchRef.current) return undefined;
+    didInitialAvailableFetchRef.current = true;
+
+    fetchOrders(); // single fetch when going online
+    return () => {
+      if (availableOrdersRequestRef.current.controller) {
+        availableOrdersRequestRef.current.controller.abort();
+      }
+    };
+  }, [
+    user?.isOnline,
+    activeOrder,
+    applyAvailableOrdersList,
+    suppressIncomingModal,
+    fetchAvailableOrders,
+  ]);
 
   // Real-time location while online — required for seller service-radius matching on new orders
   useEffect(() => {
     if (!user?.isOnline || typeof navigator === "undefined" || !navigator.geolocation) {
+      didInitialLocationSendRef.current = false;
+      if (locationRequestRef.current.controller) {
+        locationRequestRef.current.controller.abort();
+      }
       return undefined;
     }
 
-    const send = (lat, lng) => {
-      saveDeliveryPartnerLocation(lat, lng);
-      deliveryApi.postLocation({ lat, lng }).catch(() => {});
-    };
+    if (didInitialLocationSendRef.current) return undefined;
+    didInitialLocationSendRef.current = true;
 
-    const watchId = navigator.geolocation.watchPosition(
+    navigator.geolocation.getCurrentPosition(
       (pos) => {
-        send(pos.coords.latitude, pos.coords.longitude);
+        postLocationOnce(pos.coords.latitude, pos.coords.longitude);
       },
       () => {},
-      {
-        enableHighAccuracy: true,
-        maximumAge: 15000,
-        timeout: 30000,
-      },
+      { enableHighAccuracy: false, maximumAge: 30000, timeout: 20000 },
     );
 
-    const iv = setInterval(() => {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => send(pos.coords.latitude, pos.coords.longitude),
-        () => {},
-        { enableHighAccuracy: false, maximumAge: 30000, timeout: 20000 },
-      );
-    }, 20000);
-
     return () => {
-      navigator.geolocation.clearWatch(watchId);
-      clearInterval(iv);
+      if (locationRequestRef.current.controller) {
+        locationRequestRef.current.controller.abort();
+      }
     };
-  }, [user?.isOnline]);
+  }, [user?.isOnline, postLocationOnce]);
 
   useEffect(() => {
     if (!user?.isOnline) return undefined;
@@ -216,17 +317,21 @@ const DeliveryLayout = () => {
       if (activeOrderRef.current || suppressIncomingModal) return;
       const opened = applyFromBroadcastPayload(payload);
       if (opened) return;
-      deliveryApi
-        .getAvailableOrders()
+      fetchAvailableOrders()
         .then((res) => {
-          if (res.data.success) {
-            const list = res.data.results || res.data.result || [];
-            applyAvailableOrdersList(list);
-          }
+          if (!res?.data?.success) return;
+          const list = res.data.results || res.data.result || [];
+          applyAvailableOrdersList(list);
         })
         .catch(() => {});
     });
-  }, [user?.isOnline, applyAvailableOrdersList, applyFromBroadcastPayload, suppressIncomingModal]);
+  }, [
+    user?.isOnline,
+    applyAvailableOrdersList,
+    applyFromBroadcastPayload,
+    suppressIncomingModal,
+    fetchAvailableOrders,
+  ]);
 
   useEffect(() => {
     if (!user?.isOnline) return undefined;
@@ -249,16 +354,28 @@ const DeliveryLayout = () => {
 
   // When a new DB notification arrives (same row as bell list), open the same popup if socket was missed
   useEffect(() => {
-    if (!user?.isOnline) return undefined;
+    if (!user?.isOnline) {
+      didInitialNotificationsPollRef.current = false;
+      if (notificationsRequestRef.current.controller) {
+        notificationsRequestRef.current.controller.abort();
+      }
+      return undefined;
+    }
+
+    if (didInitialNotificationsPollRef.current) return undefined;
+    didInitialNotificationsPollRef.current = true;
+
     const poll = async () => {
       try {
-        const res = await deliveryApi.getNotifications();
-        if (!res.data?.success) return;
+        const res = await fetchNotifications();
+        if (!res?.data?.success) return;
         const result = res.data.result || res.data.data;
         const notifications = result?.notifications || [];
         if (activeOrderRef.current) return;
         for (const n of notifications) {
-          if (n.type !== "order" || n.isRead || !n.data?.orderId) continue;
+          const isIncomingOrderType =
+            n.type === "order" || n.type === "RETURN_PICKUP_ASSIGNED";
+          if (!isIncomingOrderType || n.isRead || !n.data?.orderId) continue;
           const oid = n.data.orderId;
           if (shownOrderIdsRef.current.has(oid)) continue;
           const fromStored = applyFromBroadcastPayload({
@@ -268,11 +385,10 @@ const DeliveryLayout = () => {
             type: n.data.type || (n.data.preview?.type), 
           });
           if (fromStored) return;
-          const r2 = await deliveryApi.getAvailableOrders();
-          if (r2.data.success) {
-            const list = r2.data.results || r2.data.result || [];
-            applyAvailableOrdersList(list);
-          }
+          const r2 = await fetchAvailableOrders();
+          if (!r2?.data?.success) return;
+          const list = r2.data.results || r2.data.result || [];
+          applyAvailableOrdersList(list);
           return;
         }
       } catch {
@@ -280,9 +396,19 @@ const DeliveryLayout = () => {
       }
     };
     poll();
-    const iv = setInterval(poll, 12000);
-    return () => clearInterval(iv);
-  }, [user?.isOnline, applyFromBroadcastPayload, applyAvailableOrdersList, suppressIncomingModal]);
+    return () => {
+      if (notificationsRequestRef.current.controller) {
+        notificationsRequestRef.current.controller.abort();
+      }
+    };
+  }, [
+    user?.isOnline,
+    applyFromBroadcastPayload,
+    applyAvailableOrdersList,
+    suppressIncomingModal,
+    fetchNotifications,
+    fetchAvailableOrders,
+  ]);
 
   const skipOrder = useCallback(async () => {
     const current = activeOrderRef.current;

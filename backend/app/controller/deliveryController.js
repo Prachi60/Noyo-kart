@@ -104,7 +104,7 @@ export const getDeliveryEarnings = async (req, res) => {
         const deliveryBoyId = new mongoose.Types.ObjectId(req.user.id);
         const transactions = await Transaction.find({ user: deliveryBoyId, userModel: 'Delivery' })
             .sort({ createdAt: -1 })
-            .populate("order", "orderId pricing");
+            .populate("order", "orderId pricing paymentBreakdown");
         const wallet = await Wallet.findOne({
             ownerType: "DELIVERY_PARTNER",
             ownerId: deliveryBoyId,
@@ -115,6 +115,20 @@ export const getDeliveryEarnings = async (req, res) => {
         const totalEarnings = transactions
             .filter(t => t.status === 'Settled' && (t.type === 'Delivery Earning' || t.type === 'Incentive' || t.type === 'Bonus'))
             .reduce((acc, t) => acc + t.amount, 0);
+
+        const tipsReceived = transactions
+            .filter(t => t.type === 'Delivery Earning' && t.status === 'Settled')
+            .reduce(
+                (acc, t) =>
+                    acc +
+                    Number(
+                        t?.meta?.tipAmount ??
+                        t?.order?.paymentBreakdown?.riderTipAmount ??
+                        t?.order?.pricing?.tip ??
+                        0,
+                    ),
+                0,
+            );
 
         const onlinePay = transactions
             .filter(t => t.type === 'Delivery Earning' && t.status === 'Settled')
@@ -167,6 +181,7 @@ export const getDeliveryEarnings = async (req, res) => {
             totalEarnings,
             onlinePay,
             incentives,
+            tipsReceived,
             cashCollected,
             chartData,
             transactions: transactions.slice(0, 20)
@@ -781,38 +796,43 @@ export const generateDeliveryOtp = async (req, res) => {
             });
         }
 
-        // Emit Socket.IO event to customer
+        // Emit Socket.IO event to customer using standardized emitter
         try {
-            const { getIO } = await import('../socket/socketManager.js');
-            const io = getIO();
+            const { emitToCustomer } = await import('../services/orderSocketEmitter.js');
             
             const otpPayload = {
                 orderId: order.orderId,
                 otp: result.otp,
+                code: result.otp, // Legacy support
                 expiresAt: result.expiresAt,
                 deliveryPersonNearby: true
             };
 
-            console.log('[generateDeliveryOtp] Emitting delivery:otp:generated event:', otpPayload);
-            console.log('[generateDeliveryOtp] Customer ID:', order.customer?._id);
-            console.log('[generateDeliveryOtp] Order ID:', order.orderId);
-            
-            // Emit to customer's room
-            if (order.customer?._id) {
-                const customerRoom = `customer:${order.customer._id}`;
-                console.log('[generateDeliveryOtp] Emitting to customer room:', customerRoom);
-                io.to(customerRoom).emit('delivery:otp:generated', otpPayload);
+            const customerId = order.customer?._id || order.customer;
+            if (customerId) {
+                console.log('[generateDeliveryOtp] Emitting OTP events to customer:', customerId);
+                
+                // Emit both events for maximum frontend compatibility (Toast + Display Component)
+                emitToCustomer(customerId, {
+                    event: 'order:otp',
+                    payload: otpPayload
+                });
+                
+                emitToCustomer(customerId, {
+                    event: 'delivery:otp:generated',
+                    payload: otpPayload
+                });
             }
-
-            // Also emit to order room in case customer is listening there
-            const orderRoom = `order:${order.orderId}`;
-            console.log('[generateDeliveryOtp] Emitting to order room:', orderRoom);
-            io.to(orderRoom).emit('delivery:otp:generated', otpPayload);
             
-            console.log('[generateDeliveryOtp] Socket.IO events emitted successfully');
+            // Also emit to order-specific room for clients that joined via join_order
+            const { getIO } = await import('../socket/socketManager.js');
+            const io = getIO();
+            io.to(`order:${order.orderId}`).emit('delivery:otp:generated', otpPayload);
+            io.to(`order:${order.orderId}`).emit('order:otp', otpPayload);
+
+            console.log('[generateDeliveryOtp] All Socket.IO events emitted successfully');
         } catch (socketError) {
             console.error('[generateDeliveryOtp] Error emitting Socket.IO event:', socketError);
-            // Don't fail the request if socket emission fails
         }
 
         return handleResponse(res, 200, "OTP generated and sent to customer", {

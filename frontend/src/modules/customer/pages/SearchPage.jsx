@@ -8,6 +8,8 @@ import { useProductDetail } from '../context/ProductDetailContext';
 import { useSettings } from '@core/context/SettingsContext';
 import { cn } from '@/lib/utils';
 import { useLocation as useAppLocation } from '../context/LocationContext';
+import Lottie from 'lottie-react';
+import noServiceAnimation from '@/assets/lottie/animation.json';
 
 const SearchPage = () => {
     const navigate = useNavigate();
@@ -201,7 +203,7 @@ const SearchPage = () => {
         <div className="min-h-screen bg-white font-outfit">
             {/* Header / Search Input */}
             <div className={cn(
-                "sticky top-0 z-50 bg-linear-to-r from-[#61dafbaa] to-[#38bdf8] shadow-[0_4px_20px_rgba(0,0,0,0.12)] relative overflow-hidden",
+                "sticky top-0 z-50 bg-linear-to-r from-[#45B0E2] to-[#38bdf8] shadow-[0_4px_20px_rgba(0,0,0,0.12)] relative overflow-hidden",
                 isProductDetailOpen && "hidden md:block"
             )}>
                 {/* Decorative background elements */}
@@ -245,7 +247,7 @@ const SearchPage = () => {
                                     onClick={handleVoiceSearch}
                                     className={cn(
                                         "p-2 transition-all rounded-full relative",
-                                        isListening ? "text-red-500 bg-red-50 scale-110" : "text-slate-400 hover:text-[#61dafbaa] hover:bg-slate-50"
+                                        isListening ? "text-red-500 bg-red-50 scale-110" : "text-slate-400 hover:text-[#45B0E2] hover:bg-slate-50"
                                     )}
                                 >
                                     <Mic size={20} strokeWidth={2.5} className={cn(isListening && "animate-pulse")} />
@@ -279,11 +281,11 @@ const SearchPage = () => {
                             </div>
                         ) : (
                             <div className="py-16 flex flex-col items-center text-center">
-                                <div className="h-20 w-20 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                                    <Search size={32} className="text-slate-300" />
+                                <div className="w-48 h-48 md:w-64 md:h-64 mb-6">
+                                    <Lottie animationData={noServiceAnimation} loop={true} />
                                 </div>
-                                <h3 className="text-lg font-bold text-slate-800 mb-1">No products found</h3>
-                                <p className="text-slate-400 text-sm">Try different keywords or check spelling.</p>
+                                <h3 className="text-xl font-black text-slate-800 tracking-tight mb-2">No items found</h3>
+                                <p className="text-slate-500 font-medium max-w-xs">We couldn't find anything for "{query}". Try different keywords!</p>
                             </div>
                         )}
                     </section>

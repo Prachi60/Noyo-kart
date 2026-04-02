@@ -7,6 +7,7 @@ import Seller from "../models/seller.js";
 import Delivery from "../models/delivery.js";
 import Setting from "../models/setting.js";
 import User from "../models/customer.js";
+import CheckoutGroup from "../models/checkoutGroup.js";
 import handleResponse from "../utils/helper.js";
 import getPagination from "../utils/pagination.js";
 import { WORKFLOW_STATUS, DEFAULT_SELLER_TIMEOUT_MS } from "../constants/orderWorkflow.js";
@@ -42,7 +43,11 @@ import { placeOrderAtomic } from "../services/orderPlacementService.js";
 import { emitNotificationEvent } from "../modules/notifications/notification.emitter.js";
 import { NOTIFICATION_EVENTS } from "../modules/notifications/notification.constants.js";
 import { getDeliveryPartnerIdsWithinSellerRadius } from "../services/deliveryNearbyService.js";
-import { emitDeliveryBroadcastForSeller } from "../services/orderSocketEmitter.js";
+import {
+  emitDeliveryBroadcastForSeller,
+  emitToSeller,
+  emitToDelivery,
+} from "../services/orderSocketEmitter.js";
 import * as walletService from "../services/finance/walletService.js";
 import { OWNER_TYPE } from "../constants/finance.js";
 
@@ -163,6 +168,7 @@ export const placeOrder = async (req, res) => {
         inferPaymentMode(payment) ||
         "COD",
       timeSlot: timeSlot || "now",
+      tipAmount: Number(req.body?.tipAmount || 0),
     });
 
     const idempotencyKey = String(req.headers?.["idempotency-key"] || "").trim() || null;
@@ -311,7 +317,7 @@ export const getOrderDetails = async (req, res) => {
       return handleResponse(res, 404, "Order not found");
     }
 
-    const order = await Order.findOne(orderKey)
+    let order = await Order.findOne(orderKey)
       .populate("customer", "name email phone")
       .populate("items.product", "name mainImage price salePrice")
       .populate("deliveryBoy", "name phone")
@@ -320,6 +326,31 @@ export const getOrderDetails = async (req, res) => {
       .lean();
 
     if (!order) {
+      if (orderId && orderId.startsWith("CHK-")) {
+        const group = await CheckoutGroup.findOne({ checkoutGroupId: orderId }).lean();
+        if (group) {
+          // Construct virtual summary from snapshots
+          const virtualSummary = {
+            orderId: group.checkoutGroupId,
+            status: group.status?.toLowerCase() || "pending",
+            orderStatus: group.status?.toLowerCase() || "pending",
+            paymentStatus: group.paymentStatus === "CAPTURED" ? "PAID" : (group.paymentStatus || "CREATED"),
+            workflowStatus: group.status || "CREATED",
+            pricing: {
+              subtotal: group.pricingSummary?.subtotal || 0,
+              deliveryFee: group.pricingSummary?.deliveryFee || 0,
+              platformFee: group.pricingSummary?.platformFee || 0,
+              total: group.pricingSummary?.totalAmount || 0,
+            },
+            address: group.addressSnapshot || {},
+            items: [], // Snapshots can be complex; return empty for now to avoid display errors
+            createdAt: group.createdAt,
+            isGroupSummary: true,
+            isFragmented: true, // Indicates this is a summary of potentially multiple orders
+          };
+          return handleResponse(res, 200, "Group summary retrieved", virtualSummary);
+        }
+      }
       return handleResponse(res, 404, "Order not found");
     }
 
@@ -522,16 +553,17 @@ export const requestReturn = async (req, res) => {
       );
     }
 
-    const returnWindowMinutes = parseInt(process.env.RETURN_WINDOW_MINUTES || "2", 10);
+    const parsedWindow = parseInt(process.env.RETURN_WINDOW_MINUTES || "2", 10);
+    const returnWindowMinutes = Number.isFinite(parsedWindow) && parsedWindow > 0 ? parsedWindow : 2;
     const now = new Date();
-    const placedAt = order.createdAt;
-    const deadline = new Date(placedAt.getTime() + returnWindowMinutes * 60 * 1000);
+    const returnWindowStart = order.deliveredAt || order.createdAt;
+    const deadline = new Date(returnWindowStart.getTime() + returnWindowMinutes * 60 * 1000);
 
     if (now > deadline) {
       return handleResponse(
         res,
         400,
-        `Return window has expired. You can only request a return within ${returnWindowMinutes} minutes of placing the order.`,
+        `Return window has expired. You can only request a return within ${returnWindowMinutes} minutes of delivery.`,
       );
     }
 
@@ -581,6 +613,15 @@ export const requestReturn = async (req, res) => {
       sellerId: order.seller,
       data: {
         reason: order.returnReason,
+      },
+    });
+    emitToSeller(order.seller?.toString(), {
+      event: "return:requested",
+      payload: {
+        orderId: order.orderId,
+        returnStatus: order.returnStatus,
+        returnReason: order.returnReason,
+        returnRequestedAt: order.returnRequestedAt,
       },
     });
 
@@ -1000,10 +1041,6 @@ export const assignReturnDelivery = async (req, res) => {
     const { id: userId, role } = req.user;
     const { deliveryBoyId } = req.body || {};
 
-    if (!deliveryBoyId) {
-      return handleResponse(res, 400, "deliveryBoyId is required.");
-    }
-
     const orderKey = orderMatchQueryFromRouteParam(orderId);
     if (!orderKey) {
       return handleResponse(res, 404, "Order not found");
@@ -1033,7 +1070,10 @@ export const assignReturnDelivery = async (req, res) => {
       );
     }
 
-    let riderId = deliveryBoyId;
+    const riderId =
+      typeof deliveryBoyId === "string" && deliveryBoyId.trim().length > 0
+        ? deliveryBoyId.trim()
+        : null;
     
     // If Admin/Seller manually specified a rider
     if (riderId) {
@@ -1058,9 +1098,22 @@ export const assignReturnDelivery = async (req, res) => {
         sellerId: order.seller,
         customerId: order.customer,
       });
+      emitToDelivery(riderId, {
+        event: "delivery:broadcast",
+        payload: {
+          orderId: order.orderId,
+          type: "RETURN_PICKUP",
+          preview: {
+            pickup: "Customer Address",
+            drop: "Seller Store",
+            total: order.pricing?.total || 0,
+          },
+          deliverySearchExpiresAt: new Date(Date.now() + 60 * 1000).toISOString(),
+          at: new Date().toISOString(),
+        },
+      });
     } else {
       // Trigger broadcast for nearby riders
-      const previewText = `Return Pickup: ${order.orderId}`;
       const payload = {
         orderId: order.orderId,
         type: "RETURN_PICKUP",

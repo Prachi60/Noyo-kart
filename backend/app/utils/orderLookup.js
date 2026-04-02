@@ -43,7 +43,12 @@ export function orderMatchQueryFlexible(routeParam) {
   }
   const esc = escapeRegex(raw);
   return {
-    $or: [{ orderId: raw }, { orderId: new RegExp(`^${esc}$`, "i") }],
+    $or: [
+      { orderId: raw },
+      { orderId: new RegExp(`^${esc}$`, "i") },
+      { checkoutGroupId: raw },
+      { checkoutGroupId: new RegExp(`^${esc}$`, "i") },
+    ],
   };
 }
 

@@ -1,12 +1,11 @@
 import { io } from "socket.io-client";
+import { resolveSocketBaseUrl } from "@core/api/resolveApiBaseUrl";
 
 let socket = null;
+let socketUrl = "";
 
 function socketBaseUrl() {
-  const env = import.meta.env.VITE_SOCKET_URL;
-  if (env) return env.replace(/\/$/, "");
-  const api = import.meta.env.VITE_API_URL || "http://localhost:7000/api";
-  return api.replace(/\/api\/?$/, "");
+  return resolveSocketBaseUrl();
 }
 
 /**
@@ -19,28 +18,54 @@ export function getOrderSocket(getToken) {
     return null;
   }
 
-  if (!socket || !socket.connected) {
-    console.log('[orderSocket] Creating new Socket.IO connection to:', socketBaseUrl());
-    socket = io(socketBaseUrl(), {
+  const url = socketBaseUrl();
+
+  // If base URL changes (env switch), recreate the client.
+  if (socket && socketUrl && socketUrl !== url) {
+    try {
+      socket.removeAllListeners();
+      socket.disconnect();
+    } catch {
+      /* ignore */
+    }
+    socket = null;
+  }
+
+  if (!socket) {
+    socketUrl = url;
+    console.log('[orderSocket] Creating new Socket.IO connection to:', url);
+
+    // Important: capture the instance so logs don't reference a later-overwritten module variable.
+    const s = io(url, {
+      autoConnect: false,
       auth: { token },
       transports: ["websocket", "polling"],
       reconnection: true,
       reconnectionDelay: 1000,
     });
 
-    socket.on('connect', () => {
-      console.log('[orderSocket] Socket connected, ID:', socket.id);
+    s.on("connect", () => {
+      console.log("[orderSocket] Socket connected, ID:", s.id);
     });
 
-    socket.on('disconnect', (reason) => {
-      console.log('[orderSocket] Socket disconnected, reason:', reason);
+    s.on("disconnect", (reason) => {
+      console.log("[orderSocket] Socket disconnected, reason:", reason);
     });
 
-    socket.on('connect_error', (error) => {
-      console.error('[orderSocket] Socket connection error:', error);
+    s.on("connect_error", (error) => {
+      console.error("[orderSocket] Socket connection error:", error);
     });
-  } else {
-    console.log('[orderSocket] Reusing existing socket connection, ID:', socket.id);
+
+    socket = s;
+    s.connect();
+    return socket;
+  }
+
+  // Refresh auth token and ensure we're connected, but never recreate the socket just because
+  // `connected` is currently false (prevents repeated connections during rapid calls / StrictMode).
+  socket.auth = { token };
+  if (socket.disconnected) {
+    socket.connect();
   }
   
   return socket;
@@ -48,8 +73,14 @@ export function getOrderSocket(getToken) {
 
 export function disconnectOrderSocket() {
   if (socket) {
+    try {
+      socket.removeAllListeners();
+    } catch {
+      /* ignore */
+    }
     socket.disconnect();
     socket = null;
+    socketUrl = "";
   }
 }
 
@@ -91,6 +122,13 @@ export function onSellerOrderNew(getToken, handler) {
   if (!s || typeof handler !== "function") return () => {};
   s.on("order:new", handler);
   return () => s.off("order:new", handler);
+}
+
+export function onSellerReturnRequested(getToken, handler) {
+  const s = getOrderSocket(getToken);
+  if (!s || typeof handler !== "function") return () => {};
+  s.on("return:requested", handler);
+  return () => s.off("return:requested", handler);
 }
 
 export function onCustomerOtp(getToken, handler) {

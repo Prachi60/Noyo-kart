@@ -20,6 +20,14 @@ const ProfilePage = () => {
     const appName = settings?.appName || 'App';
     const [isTestingPush, setIsTestingPush] = React.useState(false);
 
+    const formatIndiaPhone = (value) => {
+        const raw = String(value || '').trim();
+        if (!raw) return '';
+        if (raw.startsWith('+91')) return raw.replace(/^\+91[\s-]*/, '');
+        if (raw.startsWith('91') && raw.length >= 12) return raw.replace(/^91[\s-]*/, '');
+        return raw;
+    };
+
     const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
     const waitForTestPushResult = async (orderId) => {
@@ -115,7 +123,7 @@ const ProfilePage = () => {
                         <div>
                             <h2 className="text-base leading-tight font-semibold text-slate-900">{user?.name || 'Customer'}</h2>
                             <p className="text-slate-500 text-xs font-medium flex items-center gap-1 mt-0.5">
-                                <span className="bg-slate-100 px-1.5 py-0.5 rounded text-[10px] uppercase">India</span> +91 {user?.phone}
+                                <span className="bg-slate-100 px-1.5 py-0.5 rounded text-[10px] uppercase">India</span> +91 {formatIndiaPhone(user?.phone)}
                             </p>
                         </div>
                     </div>
@@ -137,7 +145,7 @@ const ProfilePage = () => {
                                 label="Your Orders"
                                 sub="Track, return or buy things again"
                                 path="/orders"
-                                color="#61dafbaa"
+                                color="#45B0E2"
                                 bg="rgba(16,185,129,0.10)"
                             />
                             <MenuItem
@@ -169,7 +177,7 @@ const ProfilePage = () => {
                                 label="Saved Addresses"
                                 sub="Manage your delivery locations"
                                 path="/addresses"
-                                color="#61dafbaa"
+                                color="#45B0E2"
                                 bg="rgba(56,189,248,0.10)"
                             />
                         </div>

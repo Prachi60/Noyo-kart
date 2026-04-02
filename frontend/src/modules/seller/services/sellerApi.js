@@ -2,20 +2,14 @@ import axiosInstance from '@core/api/axios';
 
 export const sellerApi = {
     login: (data) => axiosInstance.post('/seller/login', data),
-    signup: (data) => axiosInstance.post('/seller/signup', data, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-    }),
+    signup: (data) => axiosInstance.post('/seller/signup', data),
     sendVerificationOtp: (data) => axiosInstance.post('/seller/verification/send-otp', data),
     verifyVerificationOtp: (data) => axiosInstance.post('/seller/verification/verify-otp', data),
     // Products
     getProducts: (params) => axiosInstance.get('/products/seller/me', { params }),
     getProductById: (id) => axiosInstance.get(`/products/${id}`),
-    createProduct: (data) => axiosInstance.post('/products', data, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-    }),
-    updateProduct: (id, data) => axiosInstance.put(`/products/${id}`, data, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-    }),
+    createProduct: (data) => axiosInstance.post('/products', data),
+    updateProduct: (id, data) => axiosInstance.put(`/products/${id}`, data),
     deleteProduct: (id) => axiosInstance.delete(`/products/${id}`),
 
     // Categories (Public)

@@ -192,6 +192,8 @@ const HeaderCategories = () => {
 
       if (imageFile) {
         data.append("image", imageFile);
+      } else if (previewUrl && !previewUrl.startsWith("blob:")) {
+        data.append("image", previewUrl);
       }
 
       if (editingItem) {
@@ -259,7 +261,7 @@ const HeaderCategories = () => {
       handlingFees: item.handlingFees ?? "",
       headerColor: item.headerColor || "#FF1E1E",
     });
-    setPreviewUrl(item.image?.url || null);
+    setPreviewUrl(item.image || null);
     setIsAddModalOpen(true);
   };
 
@@ -383,9 +385,9 @@ const HeaderCategories = () => {
                               __html: getIconSvg(cat.iconId),
                             }}
                           />
-                        ) : cat.image?.url || cat.image ? (
+                        ) : cat.image ? (
                           <img
-                            src={cat.image?.url || cat.image}
+                            src={cat.image}
                             alt={cat.name}
                             className="w-full h-full object-cover"
                           />

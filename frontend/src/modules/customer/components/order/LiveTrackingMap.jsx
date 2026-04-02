@@ -246,7 +246,7 @@ const LiveTrackingMap = memo(({
         <motion.div
           animate={{ scale: [1, 1.05, 1] }}
           transition={{ duration: 2, repeat: Infinity }}
-          className="h-16 w-16 bg-[#61dafbaa] rounded-full flex items-center justify-center shadow-lg shadow-brand-200">
+          className="h-16 w-16 bg-[#45B0E2] rounded-full flex items-center justify-center shadow-lg shadow-brand-200">
           <Clock size={30} className="text-white" />
         </motion.div>
         <h3 className="text-lg font-black text-gray-800 text-center">
@@ -268,7 +268,7 @@ const LiveTrackingMap = memo(({
         {[1, 2, 3].map((i) => (
           <motion.div
             key={i}
-            className="absolute rounded-full border-2 border-[#61dafbaa]/20"
+            className="absolute rounded-full border-2 border-[#45B0E2]/20"
             initial={{ width: 60, height: 60, opacity: 0.8 }}
             animate={{ width: 60 + i * 70, height: 60 + i * 70, opacity: 0 }}
             transition={{
@@ -284,7 +284,7 @@ const LiveTrackingMap = memo(({
         <motion.div
           animate={{ scale: [1, 1.1, 1] }}
           transition={{ duration: 1.5, repeat: Infinity }}
-          className="relative z-10 h-16 w-16 bg-[#61dafbaa] rounded-full flex items-center justify-center shadow-xl shadow-brand-200">
+          className="relative z-10 h-16 w-16 bg-[#45B0E2] rounded-full flex items-center justify-center shadow-xl shadow-brand-200">
           <Search size={28} className="text-white" />
         </motion.div>
 
@@ -391,7 +391,7 @@ const LiveTrackingMap = memo(({
           <Polyline
             path={decodedPath}
             options={{
-              strokeColor: "#61dafbaa",
+              strokeColor: "#45B0E2",
               strokeOpacity: 0.8,
               strokeWeight: 4,
               geodesic: false,
@@ -401,7 +401,7 @@ const LiveTrackingMap = memo(({
           <Polyline
             path={[riderLocation, activeTargetLocation]}
             options={{
-              strokeColor: "#61dafbaa",
+              strokeColor: "#45B0E2",
               strokeOpacity: 0.6,
               strokeWeight: 3,
               geodesic: true,
@@ -416,7 +416,7 @@ const LiveTrackingMap = memo(({
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           className="bg-white/90 backdrop-blur-md rounded-2xl p-3 shadow-lg border border-white/50 flex items-center gap-3">
-          <div className="h-10 w-10 bg-brand-50 rounded-xl flex items-center justify-center text-[#61dafbaa]">
+          <div className="h-10 w-10 bg-brand-50 rounded-xl flex items-center justify-center text-[#45B0E2]">
             <Clock size={20} strokeWidth={2.5} />
           </div>
           <div>
@@ -437,7 +437,7 @@ const LiveTrackingMap = memo(({
             }
           }}
         >
-          <MapPin size={14} className="text-[#61dafbaa]" />
+          <MapPin size={14} className="text-[#45B0E2]" />
           Open in Maps
         </button>
       </div>
@@ -458,7 +458,7 @@ const LiveTrackingMap = memo(({
                     className="h-full w-full object-cover"
                   />
                 </div>
-                <div className="absolute -bottom-0.5 -right-0.5 bg-[#61dafbaa] text-white text-[7px] font-bold px-1 py-0.5 rounded-full flex items-center gap-0.5">
+                <div className="absolute -bottom-0.5 -right-0.5 bg-[#45B0E2] text-white text-[7px] font-bold px-1 py-0.5 rounded-full flex items-center gap-0.5">
                   4.8 <Star size={5} fill="white" />
                 </div>
               </div>
@@ -470,7 +470,7 @@ const LiveTrackingMap = memo(({
                 </p>
               </div>
               <div className="flex items-center gap-1.5">
-                <button className="h-8 w-8 rounded-full bg-brand-50 flex items-center justify-center text-[#61dafbaa] hover:bg-brand-100 transition-colors">
+                <button className="h-8 w-8 rounded-full bg-brand-50 flex items-center justify-center text-[#45B0E2] hover:bg-brand-100 transition-colors">
                   <Phone size={14} />
                 </button>
                 <button className="h-8 w-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 hover:bg-blue-100 transition-colors">

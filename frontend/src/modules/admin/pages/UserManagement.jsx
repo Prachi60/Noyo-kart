@@ -31,7 +31,11 @@ const UserManagement = () => {
                                 <tr key={i}>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center">
-                                            <div className="h-9 w-9 bg-gray-200 rounded-full mr-3"></div>
+                                            <img 
+                                                src="https://cdn-icons-png.flaticon.com/512/149/149071.png" 
+                                                alt="" 
+                                                className="h-9 w-9 rounded-full bg-slate-50 ring-1 ring-slate-100 object-cover mr-3" 
+                                            />
                                             <div>
                                                 <p className="font-semibold text-gray-900 text-sm">John Doe {i}</p>
                                                 <p className="text-xs text-gray-500">john{i}@example.com</p>

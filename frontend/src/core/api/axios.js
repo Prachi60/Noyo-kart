@@ -1,12 +1,10 @@
 import axios from 'axios';
+import { resolveApiBaseUrl } from './resolveApiBaseUrl';
 
 const ROLE_STORAGE_KEYS = ['auth_seller', 'auth_admin', 'auth_delivery', 'auth_customer'];
 
 const axiosInstance = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:7000/api',
-    headers: {
-        'Content-Type': 'application/json',
-    },
+    baseURL: resolveApiBaseUrl(),
 });
 
 // Request interceptor for API calls
@@ -15,6 +13,17 @@ axiosInstance.interceptors.request.use(
         let token = null;
         const url = config.url;
         const pagePath = window.location.pathname;
+        const isMultipartRequest =
+            typeof FormData !== 'undefined' && config.data instanceof FormData;
+
+        if (isMultipartRequest) {
+            // Let the browser set the multipart boundary for FormData uploads.
+            if (typeof config.headers?.delete === 'function') {
+                config.headers.delete('Content-Type');
+            } else if (config.headers) {
+                delete config.headers['Content-Type'];
+            }
+        }
 
         // Determination strategy: 
         // 1. If we are on a module-specific page (e.g. /seller/dashboard), prioritize that module's token
@@ -34,7 +43,7 @@ axiosInstance.interceptors.request.use(
             if (url.startsWith('/seller')) token = localStorage.getItem('auth_seller');
             else if (url.startsWith('/admin')) token = localStorage.getItem('auth_admin');
             else if (url.startsWith('/delivery')) token = localStorage.getItem('auth_delivery');
-            else if (url.startsWith('/customer') || url.startsWith('/cart') || url.startsWith('/wishlist') || url.startsWith('/categories') || url.startsWith('/products')) {
+            else if (url.startsWith('/customer') || url.startsWith('/cart') || url.startsWith('/wishlist') || url.startsWith('/categories') || url.startsWith('/products') || url.startsWith('/payments')) {
                 token = localStorage.getItem('auth_customer');
             }
         }

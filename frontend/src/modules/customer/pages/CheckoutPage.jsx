@@ -207,6 +207,7 @@ const CheckoutPage = () => {
 
   const deliveryFee = pricingPreview?.deliveryFeeCharged || 0;
   const handlingFee = pricingPreview?.handlingFeeCharged || 0;
+  const tipAmount = pricingPreview?.tipTotal || selectedTip || 0;
   const taxAmount = pricingPreview?.taxTotal || 0;
   const discountAmount = selectedCoupon
     ? selectedCoupon.discountAmount || selectedCoupon.discount || 0
@@ -644,6 +645,7 @@ const CheckoutPage = () => {
             address: buildAddressForOrder(),
             discountTotal: discountAmount,
             taxTotal: 0,
+            tipAmount: selectedTip,
             paymentMode: selectedPayment === "online" ? "ONLINE" : "COD",
             timeSlot: selectedTimeSlot,
           };
@@ -663,6 +665,7 @@ const CheckoutPage = () => {
     isAuthenticated,
     cart,
     selectedPayment,
+    selectedTip,
     selectedTimeSlot,
     discountAmount,
     savedRecipient,
@@ -678,6 +681,7 @@ const CheckoutPage = () => {
           paymentMode: selectedPayment === "online" ? "ONLINE" : "COD",
           discountTotal: discountAmount,
           taxTotal: taxAmount,
+          tipAmount: selectedTip,
           timeSlot: selectedTimeSlot,
           walletAmount: walletAmountToUse,
           items: cart.map((item) => ({
@@ -696,6 +700,7 @@ const CheckoutPage = () => {
         const result = response.data.result;
         const mainOrder = result.order || (Array.isArray(result.orders) ? result.orders[0] : null);
         const mainOrderId = mainOrder?.orderId || result.orderId;
+        const paymentRef = result.paymentRef || result.checkoutGroupId || mainOrderId;
         
         console.log("[CheckoutPage] Order placed. Result:", result, "Target ID:", mainOrderId);
         
@@ -707,6 +712,31 @@ const CheckoutPage = () => {
           return;
         }
 
+        // If online payment, initiate gateway redirect
+        if (selectedPayment === "online") {
+          try {
+            const paymentRes = await customerApi.createPaymentOrder({
+              orderRef: paymentRef,
+              orderId: mainOrderId
+            });
+            
+            if (paymentRes.data.success && paymentRes.data.result?.redirectUrl) {
+              clearCart();
+              window.location.href = paymentRes.data.result.redirectUrl;
+              return; // End function here as we are redirecting
+            } else {
+              throw new Error(paymentRes.data.message || "Failed to initiate payment gateway");
+            }
+          } catch (payError) {
+            console.error("[CheckoutPage] Payment initiation failed:", payError);
+            setIsPlacingOrder(false);
+            showToast(payError.message || "Order created but payment gateway failed. Please pay from order details.", "error");
+            navigate(`/orders/${mainOrderId}`);
+            return;
+          }
+        }
+
+        // COD Flow
         clearCart();
         showToast(`Order placed — waiting for seller to accept.`, "success");
         setOrderId(mainOrderId);
@@ -721,7 +751,6 @@ const CheckoutPage = () => {
           navigate(`/orders/${mainOrderId}`);
         }, 3000);
       } else {
-        // Handle case where success is false but didn't throw (unlikely with Axios)
         setIsPlacingOrder(false);
         showToast(response.data.message || "Could not place order.", "error");
       }
@@ -842,7 +871,7 @@ const CheckoutPage = () => {
 
           <Link
             to="/"
-            className="group relative inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-[#61dafbaa] to-[#38bdf8] text-white font-bold rounded-2xl overflow-hidden shadow-xl shadow-cyan-600/20 transition-all hover:scale-[1.02] active:scale-95 w-full sm:w-auto">
+            className="group relative inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-[#45B0E2] to-[#38bdf8] text-white font-bold rounded-2xl overflow-hidden shadow-xl shadow-cyan-600/20 transition-all hover:scale-[1.02] active:scale-95 w-full sm:w-auto">
             <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
             <span className="relative flex items-center gap-2 text-lg">
               Start Shopping <ChevronRight size={20} />
@@ -928,7 +957,7 @@ const CheckoutPage = () => {
             <motion.div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 mt-3">
               <div className="flex items-center gap-3">
                 <div className="h-12 w-12 rounded-full bg-brand-50 flex items-center justify-center flex-shrink-0">
-                  <Clock size={24} className="text-[#61dafbaa]" />
+                  <Clock size={24} className="text-[#45B0E2]" />
                 </div>
                 <div>
                   <h3 className="font-black text-slate-800 text-lg">
@@ -949,7 +978,7 @@ const CheckoutPage = () => {
                 </span>
                 <button
                   onClick={() => setShowRecipientForm(!showRecipientForm)}
-                  className="text-[#61dafbaa] text-xs font-bold hover:underline">
+                  className="text-[#45B0E2] text-xs font-bold hover:underline">
                   {showRecipientForm
                     ? "Close"
                     : savedRecipient
@@ -961,14 +990,14 @@ const CheckoutPage = () => {
               {savedRecipient && !showRecipientForm && (
                 <div className="mb-4 p-4 bg-cyan-50 border border-cyan-100 rounded-2xl flex items-start justify-between">
                   <div className="flex gap-3">
-                    <div className="h-10 w-10 rounded-full bg-cyan-100 flex items-center justify-center text-[#61dafbaa] flex-shrink-0">
+                    <div className="h-10 w-10 rounded-full bg-cyan-100 flex items-center justify-center text-[#45B0E2] flex-shrink-0">
                       <Contact2 size={18} />
                     </div>
                     <div>
                       <p className="text-sm font-bold text-slate-800">
                         {savedRecipient.name}
                       </p>
-                      <p className="text-xs text-[#61dafbaa] font-bold mb-1">
+                      <p className="text-xs text-[#45B0E2] font-bold mb-1">
                         {savedRecipient.phone}
                       </p>
                       <p className="text-xs text-slate-500 leading-tight">
@@ -1011,7 +1040,7 @@ const CheckoutPage = () => {
                                 completeAddress: e.target.value,
                               })
                             }
-                            className="h-12 rounded-xl border-slate-200 focus:ring-[#61dafbaa] focus:border-[#61dafbaa] text-sm"
+                            className="h-12 rounded-xl border-slate-200 focus:ring-[#45B0E2] focus:border-[#45B0E2] text-sm"
                           />
                           <Input
                             placeholder="Find landmark (optional)"
@@ -1022,7 +1051,7 @@ const CheckoutPage = () => {
                                 landmark: e.target.value,
                               })
                             }
-                            className="h-12 rounded-xl border-slate-200 focus:ring-[#61dafbaa] focus:border-[#61dafbaa] text-sm"
+                            className="h-12 rounded-xl border-slate-200 focus:ring-[#45B0E2] focus:border-[#45B0E2] text-sm"
                           />
                           <Input
                             placeholder="Enter pin code (optional)"
@@ -1033,7 +1062,7 @@ const CheckoutPage = () => {
                                 pincode: e.target.value,
                               })
                             }
-                            className="h-12 rounded-xl border-slate-200 focus:ring-[#61dafbaa] focus:border-[#61dafbaa] text-sm"
+                            className="h-12 rounded-xl border-slate-200 focus:ring-[#45B0E2] focus:border-[#45B0E2] text-sm"
                           />
                         </div>
                       </div>
@@ -1056,7 +1085,7 @@ const CheckoutPage = () => {
                                 name: e.target.value,
                               })
                             }
-                            className="h-12 rounded-xl border-slate-200 focus:ring-[#61dafbaa] focus:border-[#61dafbaa] text-sm"
+                            className="h-12 rounded-xl border-slate-200 focus:ring-[#45B0E2] focus:border-[#45B0E2] text-sm"
                           />
                           <div className="relative">
                             <Input
@@ -1068,7 +1097,7 @@ const CheckoutPage = () => {
                                   phone: e.target.value,
                                 })
                               }
-                              className="h-12 rounded-xl border-slate-200 focus:ring-[#61dafbaa] focus:border-[#61dafbaa] text-sm pr-10"
+                              className="h-12 rounded-xl border-slate-200 focus:ring-[#45B0E2] focus:border-[#45B0E2] text-sm pr-10"
                             />
                             <Contact2
                               size={18}
@@ -1097,11 +1126,11 @@ const CheckoutPage = () => {
               </div>
 
               {/* Address Card */}
-              <div className="border rounded-xl p-3 mb-3 relative cursor-pointer transition-all border-[#61dafbaa] bg-brand-50/50">
+              <div className="border rounded-xl p-3 mb-3 relative cursor-pointer transition-all border-[#45B0E2] bg-brand-50/50">
                 <div className="flex items-start gap-3">
                   {/* Radio/Check Button */}
                   <div className="mt-1">
-                    <div className="h-5 w-5 rounded-full bg-[#61dafbaa] flex items-center justify-center">
+                    <div className="h-5 w-5 rounded-full bg-[#45B0E2] flex items-center justify-center">
                       <Check size={12} className="text-white stroke-[4]" />
                     </div>
                   </div>
@@ -1125,7 +1154,7 @@ const CheckoutPage = () => {
                             e.stopPropagation();
                             setIsAddressModalOpen(true);
                           }}
-                          className="text-[#61dafbaa] text-xs font-bold hover:underline">
+                          className="text-[#45B0E2] text-xs font-bold hover:underline">
                           Change
                         </button>
                       </div>
@@ -1190,12 +1219,12 @@ const CheckoutPage = () => {
                     )}
                     <button
                       onClick={() => handleMoveToWishlist(item)}
-                      className="text-xs text-slate-500 underline hover:text-[#61dafbaa] transition-colors">
+                      className="text-xs text-slate-500 underline hover:text-[#45B0E2] transition-colors">
                       Move to wishlist
                     </button>
                   </div>
                   <div className="flex flex-col items-end gap-2">
-                    <div className="flex items-center gap-2 bg-[#61dafbaa] rounded-lg px-2 py-1">
+                    <div className="flex items-center gap-2 bg-[#45B0E2] rounded-lg px-2 py-1">
                       <button
                         onClick={() =>
                           item.quantity > 1
@@ -1297,7 +1326,7 @@ const CheckoutPage = () => {
                 </div>
                 <button
                   onClick={() => setIsCouponModalOpen(true)}
-                  className="text-[#61dafbaa] text-sm font-bold hover:underline">
+                  className="text-[#45B0E2] text-sm font-bold hover:underline">
                   See All
                 </button>
               </div>
@@ -1319,7 +1348,7 @@ const CheckoutPage = () => {
                       className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors ${
                         selectedCoupon?.code === coupon.code
                           ? "bg-slate-200 text-slate-500 cursor-not-allowed"
-                          : "bg-[#61dafbaa] text-white hover:bg-[#0b721b]"
+                          : "bg-[#45B0E2] text-white hover:bg-[#0b721b]"
                       }`}
                       disabled={selectedCoupon?.code === coupon.code}>
                       {selectedCoupon?.code === coupon.code
@@ -1364,7 +1393,7 @@ const CheckoutPage = () => {
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <div className="h-8 w-8 rounded-full bg-brand-50 flex items-center justify-center">
-                      <Wallet size={16} className="text-[#61dafbaa]" />
+                      <Wallet size={16} className="text-[#45B0E2]" />
                     </div>
                     <div>
                       <h3 className="font-black text-slate-800 text-sm tracking-tight uppercase">Use Wallet Balance</h3>
@@ -1374,7 +1403,7 @@ const CheckoutPage = () => {
                   <button
                     onClick={() => setUseWallet(!useWallet)}
                     className={`w-12 h-6 rounded-full transition-all duration-300 relative flex items-center px-1 ${
-                      useWallet ? "bg-[#61dafbaa]" : "bg-slate-200"
+                      useWallet ? "bg-[#45B0E2]" : "bg-slate-200"
                     }`}>
                     <motion.div
                       animate={{ x: useWallet ? 24 : 0 }}
@@ -1389,7 +1418,7 @@ const CheckoutPage = () => {
                     className="pt-2 border-t border-slate-50 mt-2">
                     <div className="flex justify-between items-center bg-brand-50/50 p-2 rounded-xl">
                       <span className="text-[11px] font-bold text-slate-600 uppercase">Amount to be used</span>
-                      <span className="text-[13px] font-black text-[#61dafbaa]">₹{walletAmountToUse}</span>
+                      <span className="text-[13px] font-black text-[#45B0E2]">₹{walletAmountToUse}</span>
                     </div>
                   </motion.div>
                 )}
@@ -1408,7 +1437,7 @@ const CheckoutPage = () => {
                       onClick={() => setSelectedPayment(method.id)}
                       className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
                         selectedPayment === method.id
-                          ? "border-[#61dafbaa] bg-brand-50"
+                          ? "border-[#45B0E2] bg-brand-50"
                           : "border-slate-200 bg-white hover:border-slate-300"
                       }`}>
                       <div
@@ -1421,14 +1450,14 @@ const CheckoutPage = () => {
                           size={18}
                           className={
                             selectedPayment === method.id
-                              ? "text-[#61dafbaa]"
+                              ? "text-[#45B0E2]"
                               : "text-slate-600"
                           }
                         />
                       </div>
                       <div className="flex-1 text-left">
                         <p
-                          className={`font-bold text-sm ${selectedPayment === method.id ? "text-[#61dafbaa]" : "text-slate-800"}`}>
+                          className={`font-bold text-sm ${selectedPayment === method.id ? "text-[#45B0E2]" : "text-slate-800"}`}>
                           {method.label}
                         </p>
                         <p className="text-xs text-slate-500">
@@ -1438,11 +1467,11 @@ const CheckoutPage = () => {
                       <div
                         className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${
                           selectedPayment === method.id
-                            ? "border-[#61dafbaa]"
+                            ? "border-[#45B0E2]"
                             : "border-slate-300"
                         }`}>
                         {selectedPayment === method.id && (
-                          <div className="h-3 w-3 rounded-full bg-[#61dafbaa]" />
+                          <div className="h-3 w-3 rounded-full bg-[#45B0E2]" />
                         )}
                       </div>
                     </button>
@@ -1455,7 +1484,7 @@ const CheckoutPage = () => {
             <motion.div className="bg-white rounded-[2rem] p-6 shadow-xl shadow-gray-200/50 border border-slate-100">
               <div className="flex items-center gap-2 mb-6">
                 <div className="h-10 w-10 rounded-2xl bg-brand-50 flex items-center justify-center">
-                  <Clipboard size={20} className="text-[#61dafbaa]" />
+                  <Clipboard size={20} className="text-[#45B0E2]" />
                 </div>
                 <h3 className="font-[1000] text-slate-800 text-xl tracking-tight uppercase">
                   Order Summary
@@ -1513,24 +1542,24 @@ const CheckoutPage = () => {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     className="flex justify-between items-center px-3 py-2 bg-cyan-50 rounded-xl border border-cyan-100">
-                    <span className="text-[#61dafbaa] font-black text-xs flex items-center gap-2 uppercase tracking-wider">
+                    <span className="text-[#45B0E2] font-black text-xs flex items-center gap-2 uppercase tracking-wider">
                       <Tag size={14} />
                       Coupon Reserved
                     </span>
-                    <span className="font-black text-[#61dafbaa]">
+                    <span className="font-black text-[#45B0E2]">
                       -₹{discountAmount}
                     </span>
                   </motion.div>
                 )}
 
-                {false && selectedTip > 0 && (
+                {tipAmount > 0 && (
                   <div className="flex justify-between items-center px-3 py-2 bg-pink-50 rounded-xl border border-pink-100 italic">
                     <span className="text-pink-600 font-bold text-xs flex items-center gap-2">
                       <Heart size={14} className="fill-pink-500" />
                       Partner Support
                     </span>
                     <span className="font-black text-pink-600">
-                      ₹{selectedTip}
+                      ₹{tipAmount}
                     </span>
                   </div>
                 )}
@@ -1540,11 +1569,11 @@ const CheckoutPage = () => {
                     initial={{ opacity: 0, x: -5 }}
                     animate={{ opacity: 1, x: 0 }}
                     className="flex justify-between items-center px-3 py-2 bg-brand-50 rounded-xl border border-brand-100 mb-2">
-                    <span className="text-[#61dafbaa] font-black text-[11px] flex items-center gap-2 uppercase tracking-tight">
+                    <span className="text-[#45B0E2] font-black text-[11px] flex items-center gap-2 uppercase tracking-tight">
                       <Wallet size={14} />
                       Wallet Applied
                     </span>
-                    <span className="font-black text-[#61dafbaa]">
+                    <span className="font-black text-[#45B0E2]">
                       -₹{walletAmountToUse}
                     </span>
                   </motion.div>
@@ -1560,7 +1589,7 @@ const CheckoutPage = () => {
                         {finalAmountToPay === 0 ? "Paid via Wallet" : "Safe & Secure Payment"}
                       </span>
                     </div>
-                    <span className="font-[1000] text-[#61dafbaa] text-3xl tracking-tighter italic">
+                    <span className="font-[1000] text-[#45B0E2] text-3xl tracking-tighter italic">
                       {isPreviewLoading ? "Calculating..." : `₹${Math.ceil(finalAmountToPay)}`}
                     </span>
                   </div>
@@ -1613,12 +1642,12 @@ const CheckoutPage = () => {
                 disabled={isResolvingAddressCoords}
                 className={`w-full p-4 rounded-2xl border-2 text-left transition-all ${
                   currentAddress.id === addr.id
-                    ? "border-[#61dafbaa] bg-brand-50 shadow-sm"
+                    ? "border-[#45B0E2] bg-brand-50 shadow-sm"
                     : "border-slate-100 bg-white hover:border-slate-200"
                 }`}>
                 <div className="flex items-center gap-3 mb-2">
                   <div
-                    className={`p-2 rounded-full ${currentAddress.id === addr.id ? "bg-[#61dafbaa] text-white" : "bg-slate-100 text-slate-500"}`}>
+                    className={`p-2 rounded-full ${currentAddress.id === addr.id ? "bg-[#45B0E2] text-white" : "bg-slate-100 text-slate-500"}`}>
                     <MapPin size={16} />
                   </div>
                   <span className="font-black text-slate-800 uppercase tracking-widest text-[10px]">
@@ -1733,7 +1762,7 @@ const CheckoutPage = () => {
               </Button>
               <Button
                 onClick={handleSaveEditedAddress}
-                className="bg-[#61dafbaa] hover:bg-[#0b721b] text-white font-bold">
+                className="bg-[#45B0E2] hover:bg-[#0b721b] text-white font-bold">
                 Save changes
               </Button>
             </DialogFooter>
@@ -1756,17 +1785,17 @@ const CheckoutPage = () => {
                 key={coupon.code}
                 className={`p-4 rounded-2xl border-2 transition-all relative overflow-hidden ${
                   selectedCoupon?.code === coupon.code
-                    ? "border-[#61dafbaa] bg-brand-50 shadow-sm"
+                    ? "border-[#45B0E2] bg-brand-50 shadow-sm"
                     : "border-slate-100 bg-white hover:border-slate-200"
                 }`}>
                 {selectedCoupon?.code === coupon.code && (
-                  <div className="absolute top-0 right-0 p-1.5 bg-[#61dafbaa] text-white rounded-bl-xl">
+                  <div className="absolute top-0 right-0 p-1.5 bg-[#45B0E2] text-white rounded-bl-xl">
                     <Check size={12} strokeWidth={4} />
                   </div>
                 )}
                 <div className="flex items-start gap-3">
                   <div
-                    className={`p-3 rounded-2xl ${selectedCoupon?.code === coupon.code ? "bg-[#61dafbaa]/10 text-[#61dafbaa]" : "bg-orange-50 text-orange-500"}`}>
+                    className={`p-3 rounded-2xl ${selectedCoupon?.code === coupon.code ? "bg-[#45B0E2]/10 text-[#45B0E2]" : "bg-orange-50 text-orange-500"}`}>
                     <Tag size={20} />
                   </div>
                   <div className="flex-1">
@@ -1781,8 +1810,8 @@ const CheckoutPage = () => {
                       disabled={selectedCoupon?.code === coupon.code}
                       className={`w-full py-2.5 rounded-xl font-bold text-sm transition-all ${
                         selectedCoupon?.code === coupon.code
-                          ? "bg-white text-[#61dafbaa] border-2 border-[#61dafbaa] cursor-default"
-                          : "bg-[#61dafbaa] text-white hover:bg-[#0b721b]"
+                          ? "bg-white text-[#45B0E2] border-2 border-[#45B0E2] cursor-default"
+                          : "bg-[#45B0E2] text-white hover:bg-[#0b721b]"
                       }`}>
                       {selectedCoupon?.code === coupon.code
                         ? "Applied"
@@ -1803,10 +1832,10 @@ const CheckoutPage = () => {
                 placeholder="Enter coupon code manually"
                 value={manualCode}
                 onChange={(e) => setManualCode(e.target.value.toUpperCase())}
-                className="pl-10 h-12 rounded-xl focus-visible:ring-[#61dafbaa]"
+                className="pl-10 h-12 rounded-xl focus-visible:ring-[#45B0E2]"
               />
               <button
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#61dafbaa] font-bold text-xs"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#45B0E2] font-bold text-xs"
                 onClick={async () => {
                   if (!manualCode.trim()) {
                     showToast("Please enter a coupon code", "error");
@@ -1859,7 +1888,7 @@ const CheckoutPage = () => {
               initial={{ scale: 0.5, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", damping: 12 }}
-              className="w-24 h-24 bg-brand-100 rounded-full flex items-center justify-center text-[#61dafbaa] mb-6">
+              className="w-24 h-24 bg-brand-100 rounded-full flex items-center justify-center text-[#45B0E2] mb-6">
               <Check size={48} strokeWidth={4} />
             </motion.div>
             <motion.h2
@@ -1884,7 +1913,7 @@ const CheckoutPage = () => {
               animate={{ width: "100%" }}
               transition={{ duration: 2.5, ease: "linear" }}
               className="w-48 h-1.5 bg-brand-100 rounded-full overflow-hidden">
-              <div className="h-full bg-[#61dafbaa]" />
+              <div className="h-full bg-[#45B0E2]" />
             </motion.div>
           </motion.div>
         )}

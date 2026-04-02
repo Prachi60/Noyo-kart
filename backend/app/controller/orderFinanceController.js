@@ -38,6 +38,7 @@ export const previewCheckoutFinance = async (req, res) => {
     const pricingSnapshot = await buildCheckoutPricingSnapshot({
       orderItems: payload.items,
       address: payload.address,
+      tipAmount: payload.tipAmount,
     });
 
     const sellerBreakdowns = pricingSnapshot.sellerBreakdownEntries.map((entry) => ({
@@ -79,6 +80,10 @@ export const createOrderWithFinancialSnapshot = async (req, res) => {
       address: validated.address,
       paymentMode: validated.paymentMode,
       timeSlot: validated.timeSlot || "now",
+      discountTotal: validated.discountTotal || 0,
+      taxTotal: validated.taxTotal || 0,
+      tipAmount: validated.tipAmount || 0,
+      walletAmount: validated.walletAmount || 0,
     };
     const idempotencyKey = String(req.headers["idempotency-key"] || "").trim() || null;
 
@@ -116,17 +121,16 @@ export const verifyOnlineOrderPayment = async (req, res) => {
     const verification = await verifyClientPaymentCallback({
       orderRef: id,
       userId: req.user?.id,
-      gatewayOrderId: payload.razorpay_order_id,
-      gatewayPaymentId: payload.razorpay_payment_id,
-      gatewaySignature: payload.razorpay_signature,
+      gatewayOrderId: payload.merchantOrderId,
+      gatewayPaymentId: payload.transactionId || null,
       correlationId: req.correlationId || null,
     });
 
     return handleResponse(res, 200, "Online payment verification processed", {
       paymentStatus: verification.status,
       publicOrderId: verification.payment.publicOrderId,
-      gatewayOrderId: verification.payment.gatewayOrderId,
-      gatewayPaymentId: verification.payment.gatewayPaymentId,
+      merchantOrderId: verification.payment.gatewayOrderId,
+      transactionId: verification.payment.gatewayPaymentId,
     });
   } catch (error) {
     return handleResponse(res, error.statusCode || 500, error.message);

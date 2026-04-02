@@ -14,6 +14,10 @@ import {
     optionalVerifyToken,
     requireApprovedSeller,
 } from "../middleware/authMiddleware.js";
+import multer from "multer";
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 const router = express.Router();
 
@@ -31,6 +35,7 @@ router.post(
     verifyToken,
     allowRoles("seller"),
     requireApprovedSeller,
+    upload.any(),
     createProduct
 );
 
@@ -39,6 +44,7 @@ router.put(
     verifyToken,
     allowRoles("seller", "admin"),
     requireApprovedSeller,
+    upload.any(),
     updateProduct
 );
 

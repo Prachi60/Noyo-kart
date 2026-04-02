@@ -5,9 +5,9 @@
 
 :root {
   /* Brand colors: overridden at runtime by SettingsContext from API (settings.primaryColor, settings.secondaryColor) */
-  --primary: oklch(0.82 0.12 215); /* #61dafb cyan/sea-foam */
+  --primary: oklch(0.55 0.23 260);
   --primary-color: var(--primary);
-  --primary-dark: #008eb7;
+  --primary-dark: #0369a1;
   --radius: 0.5rem;
   --background: oklch(0.99 0.005 260);
   --foreground: oklch(0.15 0.02 260);
@@ -34,7 +34,7 @@
   --glass-border: rgba(255, 255, 255, 0.4);
 
   /* Cart pill fill — overridden on Home by MainLocationHeader */
-  --customer-mini-cart-color: #61dafbaa;
+  --customer-mini-cart-color: #0284c7;
 }
 
 body {
@@ -44,7 +44,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 /* Custom scrollbar */
@@ -88,14 +88,13 @@ body {
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
-  
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
-  --color-primary: #61dafb;
+  --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
@@ -107,40 +106,19 @@ body {
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-
-  /* Semantic Color Overrides to force theme consistency */
-  --color-brand-50: #ecfeff;
-  --color-brand-100: #cffafe;
-  --color-brand-200: #a5f3fc;
-  --color-brand-300: #67e8f9;
-  --color-brand-400: #22d3ee;
-  --color-brand-500: #61dafb;
-  --color-brand-600: #0ea5e9;
-  --color-brand-700: #0284c7;
-  --color-brand-800: #0369a1;
-  --color-brand-900: #075985;
-
-  --color-emerald-50: #ecfeff;
-  --color-emerald-100: #cffafe;
-  --color-emerald-200: #a5f3fc;
-  --color-emerald-300: #67e8f9;
-  --color-emerald-400: #22d3ee;
-  --color-emerald-500: #61dafb;
-  --color-emerald-600: #0ea5e9;
-  --color-emerald-700: #0284c7;
-  --color-emerald-800: #0369a1;
-  --color-emerald-900: #075985;
-
-  --color-green-50: #ecfeff;
-  --color-green-100: #cffafe;
-  --color-green-200: #a5f3fc;
-  --color-green-300: #67e8f9;
-  --color-green-400: #22d3ee;
-  --color-green-500: #61dafb;
-  --color-green-600: #0ea5e9;
-  --color-green-700: #0284c7;
-  --color-green-800: #0369a1;
-  --color-green-900: #075985;
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
 }
 
 .dark {
@@ -189,19 +167,19 @@ body {
 
 @layer utilities {
   .admin-h1 {
-    @apply text-3xl font-black tracking-tight text-slate-900;
+    @apply text-2xl font-black tracking-tight text-slate-900;
   }
 
   .admin-h2 {
-    @apply text-2xl font-bold tracking-tight text-slate-900;
+    @apply text-xl font-bold tracking-tight text-slate-900;
   }
 
   .admin-h3 {
-    @apply text-lg font-bold text-slate-900;
+    @apply text-base font-bold text-slate-900;
   }
 
   .admin-h4 {
-    @apply text-base font-bold text-slate-900;
+    @apply text-sm font-bold text-slate-900;
   }
 
   .admin-description {
@@ -209,7 +187,7 @@ body {
   }
 
   .admin-label {
-    @apply text-[11px] font-black uppercase tracking-[0.2em] text-slate-400;
+    @apply text-[10px] font-black uppercase tracking-[0.2em] text-slate-400;
   }
 
   .admin-table-header {
@@ -249,7 +227,7 @@ body {
     background-image:
       radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.05) 0px, transparent 50%),
       radial-gradient(at 100% 0%, rgba(244, 63, 94, 0.05) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, rgba(97, 218, 251, 0.05) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.05) 0px, transparent 50%),
       radial-gradient(at 0% 100%, rgba(245, 158, 11, 0.05) 0px, transparent 50%);
   }
 
@@ -309,20 +287,20 @@ body {
 
 /* Professional Typography Scale */
 .text-2xs {
-  font-size: 0.625rem;
-  line-height: 0.875rem;
+  font-size: 0.5625rem;
+  line-height: 0.75rem;
 }
 
 /* Admin Panel Typography */
 .admin-h1 {
-  font-size: 1.5rem;
-  line-height: 2rem;
+  font-size: 1.25rem;
+  line-height: 1.75rem;
   font-weight: 700;
 }
 
 .admin-h2 {
-  font-size: 1.25rem;
-  line-height: 1.75rem;
+  font-size: 1.125rem;
+  line-height: 1.5rem;
   font-weight: 600;
 }
 
@@ -349,8 +327,8 @@ body {
 }
 
 .admin-description {
-  font-size: 0.75rem;
-  line-height: 1rem;
+  font-size: 0.6875rem;
+  line-height: 0.875rem;
   color: #6b7280;
 }
 
@@ -365,56 +343,4 @@ body {
 
 .compact-card-content {
   padding: 1rem;
-}
-
-/* Sonner Toast Theme Overrides */
-[data-sonner-toast] {
-  border-radius: 12px !important;
-  font-family: inherit !important;
-}
-
-[data-sonner-toast][data-type="success"] {
-  background-color: #f0fdfa !important; /* light cyan */
-  border-color: #61dafbaa !important;
-  color: #0ea5e9 !important;
-}
-
-[data-sonner-toast][data-type="success"] [data-icon] {
-  color: #61dafbaa !important;
-}
-
-[data-sonner-toast] [data-close-button] {
-  background: white !important;
-  border-color: #e2e8f0 !important;
-  color: #94a3b8 !important;
-}
-
-/* Fix for the screenshot's 'added to cart' UI if it uses primary color */
-.bg-success {
-    background-color: #f0fdfa !important;
-}
-.text-success {
-    color: #61dafbaa !important;
-}
-.border-success {
-    border-color: #61dafbaa !important;
-}
-
-/* Prevent text copying on mobile/small screens for native-app feel */
-@media (max-width: 1024px) {
-  * {
-    -webkit-user-select: none !important;
-    -moz-user-select: none !important;
-    -ms-user-select: none !important;
-    user-select: none !important;
-    -webkit-touch-callout: none !important; /* Disables long-press context menu on iOS */
-  }
-  
-  /* Ensure inputs and textareas remain usable */
-  input, textarea {
-    -webkit-user-select: text !important;
-    -moz-user-select: text !important;
-    -ms-user-select: text !important;
-    user-select: text !important;
-  }
 }

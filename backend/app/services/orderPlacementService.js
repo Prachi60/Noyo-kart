@@ -286,6 +286,7 @@ export async function placeOrderAtomic({
       : null;
     const source = placementSource(normalizedPayload);
     const walletAmount = Math.max(0, Number(normalizedPayload.walletAmount || 0));
+    const tipAmount = Math.max(0, Number(normalizedPayload.tipAmount || 0));
 
     // 1. Fetch user and validate wallet
     const user = await User.findById(customerId).session(session);
@@ -309,6 +310,7 @@ export async function placeOrderAtomic({
     const pricingSnapshot = await buildCheckoutPricingSnapshot({
       orderItems: orderItemsInput,
       address: normalizedAddress,
+      tipAmount,
       session,
     });
 
@@ -334,6 +336,7 @@ export async function placeOrderAtomic({
       expiresAt: checkoutReservation.expiresAt || null,
       metadata: {
         timeSlot: normalizedPayload.timeSlot || "now",
+        tipAmount,
       },
     });
     await checkoutGroup.save({ session });
@@ -380,6 +383,7 @@ export async function placeOrderAtomic({
         },
         pricing: {
           ...entry.breakdown, // This might overwrite fields, be careful
+          tip: entry.breakdown.tipTotal,
           total: entry.breakdown.grandTotal,
           walletAmount: proportionateWallet,
         },
@@ -423,6 +427,7 @@ export async function placeOrderAtomic({
       itemCount: order.items.reduce((sum, item) => sum + Number(item.quantity || 0), 0),
       subtotal: Number(order.paymentBreakdown?.productSubtotal || 0),
       sellerPayout: Number(order.paymentBreakdown?.sellerPayoutTotal || 0),
+      riderTipAmount: Number(order.paymentBreakdown?.riderTipAmount || 0),
       adminCommission: Number(order.paymentBreakdown?.adminProductCommissionTotal || 0),
       grandTotal: Number(order.paymentBreakdown?.grandTotal || 0),
     }));
