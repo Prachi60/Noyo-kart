@@ -1,5 +1,8 @@
 // Ultimate Order Intelligence Dossier
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
+import { useSettings } from '@core/context/SettingsContext';
 import { useParams, useNavigate } from 'react-router-dom';
 import Card from '@shared/components/ui/Card';
 import Badge from '@shared/components/ui/Badge';
@@ -33,8 +36,10 @@ const OrderDetail = () => {
     const { orderId } = useParams();
     const navigate = useNavigate();
     const { showToast } = useToast();
+    const { settings } = useSettings();
     const [order, setOrder] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const invoiceRef = useRef(null);
 
     const fetchDetail = async () => {
         setIsLoading(true);
@@ -83,6 +88,63 @@ const OrderDetail = () => {
         if (!text) return;
         navigator.clipboard.writeText(text);
         showToast(`${label} copied to internal clipboard`, 'success');
+    };
+
+    const handlePrintInvoice = async () => {
+        const element = invoiceRef.current;
+        if (!element) return;
+        
+        showToast("Generating PDF Invoice...", "info");
+        
+        try {
+            const canvas = await html2canvas(element, {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                allowTaint: true,
+                backgroundColor: "#ffffff",
+                onclone: (clonedDoc) => {
+                    // Forcefully remove any elements or styles that might use oklch
+                    // html2canvas crashes when it encounters oklch color functions in stylesheets
+                    const styleSheets = clonedDoc.styleSheets;
+                    for (let i = 0; i < styleSheets.length; i++) {
+                        try {
+                            const rules = styleSheets[i].cssRules || styleSheets[i].rules;
+                            for (let j = rules.length - 1; j >= 0; j--) {
+                                if (rules[j].cssText && rules[j].cssText.includes('oklch')) {
+                                    styleSheets[i].deleteRule(j);
+                                }
+                            }
+                        } catch (e) {
+                            // Skip cross-origin stylesheets that we can't access
+                        }
+                    }
+                    
+                    // Also explicitly reset root variables just in case
+                    const style = clonedDoc.createElement('style');
+                    style.innerHTML = `
+                        :root {
+                            --primary: #45B0E2 !important;
+                            --secondary: #64748b !important;
+                            --background: #ffffff !important;
+                            --foreground: #0f172a !important;
+                        }
+                    `;
+                    clonedDoc.head.appendChild(style);
+                }
+            });
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            pdf.save(`Invoice_${order.orderId}.pdf`);
+            showToast("Invoice downloaded successfully", "success");
+        } catch (error) {
+            console.error("PDF generation failed:", error);
+            showToast("Failed to generate PDF", "error");
+        }
     };
 
     if (isLoading) {
@@ -144,7 +206,10 @@ const OrderDetail = () => {
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
-                    <button className="flex items-center gap-2 px-5 py-3 bg-white ring-1 ring-slate-200 text-slate-700 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm">
+                    <button 
+                        onClick={handlePrintInvoice}
+                        className="flex items-center gap-2 px-5 py-3 bg-white ring-1 ring-slate-200 text-slate-700 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm"
+                    >
                         <Printer className="h-4 w-4 text-slate-400" />
                         Print Invoice
                     </button>
@@ -407,6 +472,128 @@ const OrderDetail = () => {
                             "{order.cancelReason ? `Cancellation Payload: ${order.cancelReason}` : `Delivery window scheduled for ${order.timeSlot}. Instructions: Follow local logistical protocols.`}"
                         </p>
                     </Card>
+                </div>
+            </div>
+
+            {/* Hidden Printable Invoice Template */}
+            <div className="fixed -left-[9999px] top-0">
+                <div 
+                    ref={invoiceRef}
+                    className="w-[800px] bg-white p-12"
+                    style={{ 
+                        fontFamily: "'Inter', sans-serif",
+                        color: "#0f172a",
+                        backgroundColor: "#ffffff"
+                    }}
+                >
+                    {/* Header: Logo and App Info */}
+                    <div className="flex justify-between items-start border-b-2 pb-8 mb-8" style={{ borderColor: "#f1f5f9" }}>
+                        <div className="flex items-center gap-4">
+                            {settings?.logoUrl ? (
+                                <img 
+                                    src={settings.logoUrl} 
+                                    alt="Logo" 
+                                    className="h-16 w-16 object-contain"
+                                    crossOrigin="anonymous"
+                                />
+                            ) : (
+                                <div className="h-16 w-16 flex items-center justify-center rounded-xl font-black text-2xl" style={{ backgroundColor: "#0f172a", color: "#ffffff" }}>
+                                    {settings?.appName?.[0] || 'N'}
+                                </div>
+                            )}
+                            <div>
+                                <h1 className="text-3xl font-black tracking-tight uppercase" style={{ color: "#0f172a" }}>
+                                    {settings?.appName || 'NOYO KART'}
+                                </h1>
+                                <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "#94a3b8" }}>
+                                    {settings?.companyName}
+                                </p>
+                            </div>
+                        </div>
+                        <div className="text-right">
+                            <h2 className="text-4xl font-black uppercase tracking-tighter mb-2" style={{ color: "#e2e8f0" }}>INVOICE</h2>
+                            <p className="text-sm font-black" style={{ color: "#0f172a" }}>#{order.orderId}</p>
+                            <p className="text-[10px] font-bold uppercase" style={{ color: "#94a3b8" }}>
+                                {new Date(order.createdAt).toLocaleDateString()} • {new Date(order.createdAt).toLocaleTimeString()}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Addresses */}
+                    <div className="grid grid-cols-2 gap-12 mb-12">
+                        <div>
+                            <h4 className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: "#94a3b8" }}>Customer Node</h4>
+                            <div className="space-y-1">
+                                <p className="text-sm font-black" style={{ color: "#0f172a" }}>{order.customer?.name}</p>
+                                <p className="text-xs font-bold leading-relaxed" style={{ color: "#475569" }}>
+                                    {order.address?.address}<br />
+                                    {order.address?.landmark && `${order.address.landmark}, `}
+                                    {order.address?.city}
+                                </p>
+                                <p className="text-xs font-bold" style={{ color: "#94a3b8" }}>{order.customer?.phone}</p>
+                            </div>
+                        </div>
+                        <div className="text-right">
+                            <h4 className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: "#94a3b8" }}>Sold By</h4>
+                            <div className="space-y-1">
+                                <p className="text-sm font-black" style={{ color: "#0f172a" }}>{order.seller?.shopName || 'Partner Shop'}</p>
+                                <p className="text-xs font-bold" style={{ color: "#475569" }}>
+                                    {settings?.address || 'Varanasi, Uttar Pradesh, India'}
+                                </p>
+                                <p className="text-xs font-bold" style={{ color: "#94a3b8" }}>GST: {settings?.taxId || 'N/A'}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Order Items Table */}
+                    <div className="mb-12">
+                        <table className="w-full text-left">
+                            <thead>
+                                <tr className="border-b-2" style={{ borderColor: "#0f172a" }}>
+                                    <th className="py-4 text-[10px] font-black uppercase tracking-widest" style={{ color: "#0f172a" }}>Manifest Item</th>
+                                    <th className="py-4 text-[10px] font-black uppercase tracking-widest text-center" style={{ color: "#0f172a" }}>Price</th>
+                                    <th className="py-4 text-[10px] font-black uppercase tracking-widest text-center" style={{ color: "#0f172a" }}>Qty</th>
+                                    <th className="py-4 text-[10px] font-black uppercase tracking-widest text-right" style={{ color: "#0f172a" }}>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y" style={{ borderTopColor: "#f1f5f9" }}>
+                                {order.items.map((item, idx) => (
+                                    <tr key={idx}>
+                                        <td className="py-5 font-black text-sm" style={{ color: "#0f172a" }}>{item.name}</td>
+                                        <td className="py-5 text-center font-bold text-sm" style={{ color: "#475569" }}>₹{item.price}</td>
+                                        <td className="py-5 text-center font-bold text-sm" style={{ color: "#475569" }}>x{item.quantity}</td>
+                                        <td className="py-5 text-right font-black text-sm" style={{ color: "#0f172a" }}>₹{item.price * item.quantity}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Totals Section */}
+                    <div className="flex justify-end pt-8 border-t-2" style={{ borderColor: "#f1f5f9" }}>
+                        <div className="w-64 space-y-3">
+                            <div className="flex justify-between items-center px-2">
+                                <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: "#94a3b8" }}>Subtotal</span>
+                                <span className="text-sm font-bold" style={{ color: "#475569" }}>₹{order.pricing?.subtotal || 0}</span>
+                            </div>
+                            <div className="flex justify-between items-center px-2">
+                                <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: "#94a3b8" }}>Delivery Fee</span>
+                                <span className="text-sm font-bold" style={{ color: "#475569" }}>₹{order.pricing?.deliveryFee || 0}</span>
+                            </div>
+                            <div className="h-px my-2" style={{ backgroundColor: "#f1f5f9" }} />
+                            <div className="flex justify-between items-center p-4 rounded-xl" style={{ backgroundColor: "#0f172a" }}>
+                                <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: "#ffffff" }}>Total Amount</span>
+                                <span className="text-xl font-black" style={{ color: "#e879f9" }}>₹{order.pricing?.total || 0}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="mt-24 pt-8 border-t text-center" style={{ borderColor: "#f1f5f9" }}>
+                        <p className="text-[10px] font-black uppercase tracking-[4px]" style={{ color: "#cbd5e1" }}>
+                            This is a computer generated document • All rights reserved • {settings?.appName}
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
