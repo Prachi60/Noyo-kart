@@ -15,7 +15,7 @@ import { BlurFade } from "@/components/ui/blur-fade";
 import { MagicCard } from "@/components/ui/magic-card";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Loader2 } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 import { onReturnDropOtp } from "@core/services/orderSocket";
 
 const Returns = () => {
@@ -378,7 +378,7 @@ const Returns = () => {
                                                         {mapReturnStatusLabel(ret.returnStatus)}
                                                     </Badge>
                                                     <p className="text-xs font-black text-slate-900">
-                                                        ₹
+                                                        {"\u20B9"}
                                                         {ret.returnRefundAmount ||
                                                             ret.pricing?.subtotal ||
                                                             0}
@@ -439,7 +439,7 @@ const Returns = () => {
                                     onClick={() => setIsDetailsOpen(false)}
                                     className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-600"
                                 >
-                                    ✕
+                                    <X className="h-5 w-5" />
                                 </button>
                             </div>
 
@@ -657,7 +657,7 @@ const Returns = () => {
                                     <p className="text-xs text-slate-700">
                                         Product refund:{" "}
                                         <span className="font-black">
-                                            ₹
+                                            {"\u20B9"}
                                             {selectedReturn.returnRefundAmount ||
                                                 selectedReturn.pricing?.subtotal ||
                                                 0}
@@ -666,7 +666,7 @@ const Returns = () => {
                                     <p className="text-xs text-slate-700">
                                         Return delivery commission:{" "}
                                         <span className="font-black">
-                                            ₹
+                                            {"\u20B9"}
                                             {selectedReturn.returnDeliveryCommission ||
                                                 0}
                                         </span>

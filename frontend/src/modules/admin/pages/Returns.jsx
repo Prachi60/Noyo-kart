@@ -15,7 +15,7 @@ import { BlurFade } from "@/components/ui/blur-fade";
 import { MagicCard } from "@/components/ui/magic-card";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Loader2 } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 
 const Returns = () => {
   const { showToast } = useToast();
@@ -427,7 +427,7 @@ const Returns = () => {
                             {mapReturnStatusLabel(ret.returnStatus)}
                           </Badge>
                           <p className="text-xs font-black text-slate-900">
-                            â‚¹{ret.returnRefundAmount || ret.pricing?.subtotal || 0}
+                            {"\u20B9"}{ret.returnRefundAmount || ret.pricing?.subtotal || 0}
                           </p>
                           <button
                             onClick={() => openDetails(ret)}
@@ -481,7 +481,7 @@ const Returns = () => {
                   onClick={() => setIsDetailsOpen(false)}
                   className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-600"
                 >
-                  âœ•
+                  <X className="h-5 w-5" />
                 </button>
               </div>
 
@@ -683,7 +683,7 @@ const Returns = () => {
                           <p className="text-xs text-slate-500">Qty: {item.quantity}</p>
                         </div>
                         <p className="text-xs font-black text-slate-900">
-                          â‚¹{item.price * item.quantity}
+                          {"\u20B9"}{item.price * item.quantity}
                         </p>
                       </div>
                     ))}
@@ -697,13 +697,13 @@ const Returns = () => {
                   <p className="text-xs text-slate-700">
                     Product refund:{" "}
                     <span className="font-black">
-                      â‚¹{selectedReturn.returnRefundAmount || selectedReturn.pricing?.subtotal || 0}
+                      {"\u20B9"}{selectedReturn.returnRefundAmount || selectedReturn.pricing?.subtotal || 0}
                     </span>
                   </p>
                   <p className="text-xs text-slate-700">
                     Return delivery commission:{" "}
                     <span className="font-black">
-                      â‚¹{selectedReturn.returnDeliveryCommission || 0}
+                      {"\u20B9"}{selectedReturn.returnDeliveryCommission || 0}
                     </span>
                   </p>
                 </div>

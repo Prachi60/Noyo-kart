@@ -122,7 +122,7 @@ const Earnings = () => {
               Total Earnings
             </p>
             <div className="flex items-baseline mb-6 relative z-10">
-              <span className="text-3xl font-bold mr-1">₹</span>
+              <span className="text-3xl font-bold mr-1">{"\u20B9"}</span>
               <span className="text-5xl font-extrabold tracking-tight">
                 {earningsData.totalEarnings.toLocaleString()}
               </span>
@@ -131,11 +131,11 @@ const Earnings = () => {
             <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/20 relative z-10">
               <div>
                 <p className="text-blue-100 text-xs mb-1">Incentives</p>
-                <p className="font-bold text-lg">+₹{earningsData.incentives}</p>
+                <p className="font-bold text-lg">+{"\u20B9"}{earningsData.incentives}</p>
               </div>
               <div>
                 <p className="text-blue-100 text-xs mb-1">Bonuses</p>
-                <p className="font-bold text-lg">+₹{earningsData.bonuses}</p>
+                <p className="font-bold text-lg">+{"\u20B9"}{earningsData.bonuses}</p>
               </div>
             </div>
           </div>
@@ -200,7 +200,7 @@ const Earnings = () => {
                   COD Cash Management
                 </p>
                 <p className="text-3xl font-extrabold text-gray-900">
-                  â‚¹{Number(codCash.systemFloatCOD || 0).toLocaleString()}
+                  {"\u20B9"}{Number(codCash.systemFloatCOD || 0).toLocaleString()}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
                   Net cash to remit (gross âˆ’ your commission)
@@ -217,7 +217,7 @@ const Earnings = () => {
                   Cash In Hand
                 </p>
                 <p className="text-lg font-bold text-gray-900">
-                  â‚¹{Number(codCash.cashInHand || 0).toLocaleString()}
+                  {"\u20B9"}{Number(codCash.cashInHand || 0).toLocaleString()}
                 </p>
               </div>
               <div className="rounded-xl bg-gray-50 border border-gray-100 p-3">
@@ -242,11 +242,11 @@ const Earnings = () => {
                       Order #{row.orderId}
                     </p>
                     <p className="text-xs text-gray-600">
-                      Collect from customer â€¢ Gross â‚¹{Number(row.amountGross || 0).toLocaleString()}
+                      Collect from customer • Gross {"\u20B9"}{Number(row.amountGross || 0).toLocaleString()}
                     </p>
                   </div>
                   <p className="text-sm font-extrabold text-orange-700">
-                    â‚¹{Number(row.amountNetExpected || 0).toLocaleString()}
+                    {"\u20B9"}{Number(row.amountNetExpected || 0).toLocaleString()}
                   </p>
                 </div>
               ))}
@@ -265,7 +265,7 @@ const Earnings = () => {
                     </p>
                   </div>
                   <p className="text-sm font-extrabold text-gray-900">
-                    â‚¹{Number(row.amountNetPending || 0).toLocaleString()}
+                    {"\u20B9"}{Number(row.amountNetPending || 0).toLocaleString()}
                   </p>
                 </div>
               ))}
@@ -309,7 +309,7 @@ const Earnings = () => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold text-gray-900">{txn.type.includes('Withdrawal') ? '-' : '+'}₹{txn.amount}</p>
+                    <p className="font-bold text-gray-900">{txn.type.includes('Withdrawal') ? '-' : '+'}{"\u20B9"}{txn.amount}</p>
                     <p
                       className={`text-xs font-bold ${txn.status === "Settled" || txn.status === "Completed" ? "text-brand-500" : "text-yellow-500"}`}>
                       {txn.status}
