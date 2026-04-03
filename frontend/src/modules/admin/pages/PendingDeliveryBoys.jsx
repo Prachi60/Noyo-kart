@@ -31,37 +31,40 @@ const PendingDeliveryBoys = () => {
     const [isProcessing, setIsProcessing] = useState(false);
 
     // Fetch Pending Riders
-    try {
-        // verified=false fetches riders waiting for review
-        const params = { verified: 'false' };
-        if (searchTerm.trim()) params.search = searchTerm.trim();
-        const response = await adminApi.getDeliveryPartners(params);
-        const payload = response.data.result || {};
-        const list = Array.isArray(payload.items) ? payload.items : (response.data.results || []);
+    const fetchPendingRiders = async () => {
+        setIsLoading(true);
+        try {
+            // verified=false fetches riders waiting for review
+            const params = { verified: 'false' };
+            if (searchTerm.trim()) params.search = searchTerm.trim();
+            const response = await adminApi.getDeliveryPartners(params);
+            const payload = response.data.result || {};
+            const list = Array.isArray(payload.items) ? payload.items : (response.data.results || []);
 
-        // Map backend data to frontend format
-        const mappedRiders = list.map(r => ({
-            id: r._id,
-            name: r.name,
-            phone: r.phone,
-            email: r.email,
-            appliedDate: new Date(r.createdAt).toLocaleDateString(),
-            location: r.currentArea || 'Unknown',
-            vehicle: r.vehicleType,
-            documents: Object.keys(r.documents || {}).filter(key => r.documents[key]),
-            status: r.isVerified ? 'approved' : 'pending_review',
-            experience: 'Not Specified', // Mock for now
-            preferredArea: r.currentArea || 'Not Specified'
-        }));
+            // Map backend data to frontend format
+            const mappedRiders = list.map(r => ({
+                id: r._id,
+                name: r.name,
+                phone: r.phone,
+                email: r.email,
+                appliedDate: new Date(r.createdAt).toLocaleDateString(),
+                location: r.currentArea || 'Unknown',
+                vehicle: r.vehicleType,
+                documents: Object.keys(r.documents || {}).filter(key => r.documents[key]),
+                status: r.isVerified ? 'approved' : 'pending_review',
+                experience: 'Not Specified', // Mock for now
+                preferredArea: r.currentArea || 'Not Specified'
+            }));
 
-        setPendingRiders(mappedRiders);
-    } catch (error) {
-        console.error('Fetch Pending Riders Error:', error);
-        toast.error('Failed to load applications');
-    } finally {
-        setIsLoading(false);
-    }
-};
+            setPendingRiders(mappedRiders);
+        } catch (error) {
+            console.error('Fetch Pending Riders Error:', error);
+            toast.error('Failed to load applications');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
 
 React.useEffect(() => {
     const timer = setTimeout(() => {
