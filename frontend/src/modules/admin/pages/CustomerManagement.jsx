@@ -34,14 +34,19 @@ const CustomerManagement = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetchCustomers(1);
+        const timer = setTimeout(() => {
+            fetchCustomers(1);
+        }, 500);
+        return () => clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [pageSize]);
-
+    }, [pageSize, searchTerm, filterStatus]);
     const fetchCustomers = async (requestedPage = 1) => {
         try {
             setLoading(true);
-            const { data } = await adminApi.getUsers({ page: requestedPage, limit: pageSize });
+            const params = { page: requestedPage, limit: pageSize };
+            if (searchTerm.trim()) params.search = searchTerm.trim();
+            if (filterStatus !== 'all') params.status = filterStatus;
+            const { data } = await adminApi.getUsers(params);
             if (data.success) {
                 const payload = data.result || {};
                 const list = Array.isArray(payload.items) ? payload.items : (data.results || []);

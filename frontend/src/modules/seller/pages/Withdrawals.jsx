@@ -122,7 +122,8 @@ const Withdrawals = () => {
     }
 
     const balances = {
-        available: Math.max(0, Number(data.balances?.settledBalance ?? 0) - Math.abs(Number(data.balances?.pendingPayouts ?? 0))),
+        available: Number(data.balances?.availableBalance ?? 0),
+        onHold: Number(data.balances?.onHoldBalance ?? 0),
         pending: Math.abs(Number(data.balances?.pendingPayouts ?? 0)),
         lastWithdrawal: Math.abs(withdrawalHistory[0]?.amount ?? 0),
     };
@@ -151,19 +152,22 @@ const Withdrawals = () => {
             </BlurFade>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                 {[
                     { label: 'Available Balance', value: `₹${balances.available.toLocaleString()}`, icon: Wallet, color: 'emerald', sub: 'Ready to withdraw' },
-                    { label: 'Pending Requests', value: `₹${balances.pending.toLocaleString()}`, icon: Clock, color: 'amber', sub: 'Awaiting approval' },
-                    { label: 'Last Withdrawal', value: `₹${balances.lastWithdrawal.toLocaleString()}`, icon: CheckCircle2, color: 'blue', sub: 'Sent to bank' },
+                    { label: 'On Hold', value: `₹${balances.onHold.toLocaleString()}`, icon: Clock, color: 'blue', sub: 'Return window open' },
+                    { label: 'Withdrawal Pending', value: `₹${balances.pending.toLocaleString()}`, icon: History, color: 'amber', sub: 'Awaiting approval' },
+                    { label: 'Last Withdrawal', value: `₹${balances.lastWithdrawal.toLocaleString()}`, icon: CheckCircle2, color: 'indigo', sub: 'Sent to bank' },
                 ].map((stat, i) => (
                     <BlurFade key={i} delay={0.2 + i * 0.1}>
                         <Card className="p-6 border-none shadow-sm ring-1 ring-slate-100 hover:ring-indigo-200 transition-all bg-white group relative overflow-hidden">
                             <div className="relative z-10">
                                 <div className={cn(
                                     "h-10 w-10 rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110",
-                                    stat.color === 'emerald' ? 'bg-brand-50 text-brand-600' :
-                                        stat.color === 'amber' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'
+                                    stat.color === 'emerald' ? 'bg-emerald-50 text-emerald-600' :
+                                    stat.color === 'blue' ? 'bg-blue-50 text-blue-600' :
+                                    stat.color === 'indigo' ? 'bg-indigo-50 text-indigo-600' : 
+                                    'bg-amber-50 text-amber-600'
                                 )}>
                                     <stat.icon className="h-5 w-5" />
                                 </div>

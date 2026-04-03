@@ -15,13 +15,16 @@ const orderOtpSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["delivery", "return_pickup"],
+      enum: ["delivery", "return_pickup", "return_drop"],
       default: "delivery",
       index: true,
     },
     codeHash: {
       type: String,
       required: true,
+    },
+    code: {
+      type: String,
     },
     expiresAt: {
       type: Date,

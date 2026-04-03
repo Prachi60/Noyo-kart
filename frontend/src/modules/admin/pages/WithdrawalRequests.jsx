@@ -47,9 +47,13 @@ const WithdrawalRequests = () => {
     const fetchData = async (sellerPageNum = 1, deliveryPageNum = 1) => {
         try {
             setLoading(true);
+            const commonParams = { page: 1, limit: pageSize };
+            if (searchTerm.trim()) commonParams.search = searchTerm.trim();
+            if (filterStatus !== 'all') commonParams.status = filterStatus;
+
             const [sellerRes, deliveryRes] = await Promise.all([
-                adminApi.getSellerWithdrawals({ page: sellerPageNum, limit: pageSize }).catch(err => ({ data: { success: false, result: {} } })),
-                adminApi.getDeliveryWithdrawals({ page: deliveryPageNum, limit: pageSize }).catch(err => ({ data: { success: false, result: {} } }))
+                adminApi.getSellerWithdrawals({ ...commonParams, page: sellerPageNum }).catch(err => ({ data: { success: false, result: {} } })),
+                adminApi.getDeliveryWithdrawals({ ...commonParams, page: deliveryPageNum }).catch(err => ({ data: { success: false, result: {} } }))
             ]);
 
             if (sellerRes.data.success) {
@@ -75,9 +79,12 @@ const WithdrawalRequests = () => {
     };
 
     useEffect(() => {
-        fetchData(sellerPage, deliveryPage);
+        const timer = setTimeout(() => {
+            fetchData(1, 1);
+        }, 500);
+        return () => clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [pageSize]);
+    }, [pageSize, searchTerm, filterStatus]);
 
     const fetchSellerPage = (p) => {
         fetchData(p, deliveryPage);

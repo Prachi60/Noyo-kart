@@ -14,10 +14,12 @@ import {
   getSellerReturns,
   approveReturnRequest,
   rejectReturnRequest,
+  updateReturnQcStatus,
   assignReturnDelivery,
   acceptReturnPickup,
   rejectReturnPickup,
   updateReturnStatus,
+  uploadReturnPickupProof,
 } from "../controller/orderController.js";
 import {
   createOrderWithFinancialSnapshot,
@@ -35,9 +37,10 @@ import {
   verifyDeliveryOtp,
   requestReturnPickupOtp,
   verifyReturnPickupOtp,
+  requestReturnDropOtp,
+  verifyReturnDropOtp,
   getOrderRoute,
 } from "../controller/orderWorkflowController.js";
-// Assuming there's a middleware to verify customer token
 import {
   verifyToken,
   allowRoles,
@@ -98,7 +101,7 @@ router.put("/cancel/:orderId", verifyToken, cancelOrder);
 router.post("/:orderId/returns", verifyToken, requestReturn);
 router.get("/:orderId/returns", verifyToken, getReturnDetails);
 
-// Admin/Seller routes (might need different auth middleware for role checks)
+// Admin/Seller routes
 router.get(
   "/seller-orders",
   verifyToken,
@@ -133,6 +136,12 @@ router.put(
   allowRoles("admin", "seller"),
   requireApprovedSeller,
   rejectReturnRequest,
+);
+router.put(
+  "/returns/:orderId/qc",
+  verifyToken,
+  allowRoles("admin"),
+  updateReturnQcStatus,
 );
 router.put(
   "/returns/:orderId/assign-delivery",
@@ -180,6 +189,7 @@ router.put(
   updateReturnStatus,
 );
 
+// Workflow routes — standard delivery
 router.post(
   "/workflow/:orderId/pickup/confirm",
   verifyToken,
@@ -210,6 +220,8 @@ router.post(
   allowRoles("delivery", "admin"),
   verifyDeliveryOtp,
 );
+
+// Workflow routes — return pickup OTP (customer)
 router.post(
   "/workflow/:orderId/return-otp/request",
   verifyToken,
@@ -222,25 +234,36 @@ router.post(
   allowRoles("delivery", "admin"),
   verifyReturnPickupOtp,
 );
+
+// Workflow routes — return drop OTP (seller)
+router.post(
+  "/workflow/:orderId/return-drop-otp/request",
+  verifyToken,
+  allowRoles("delivery", "admin"),
+  requestReturnDropOtp,
+);
+router.post(
+  "/workflow/:orderId/return-drop-otp/verify",
+  verifyToken,
+  allowRoles("delivery", "admin"),
+  verifyReturnDropOtp,
+);
+
+// Return pickup proof (images + condition)
+router.post(
+  "/returns/:orderId/pickup-proof",
+  verifyToken,
+  allowRoles("delivery", "admin"),
+  uploadReturnPickupProof,
+);
+
+// Route map
 router.get(
   "/workflow/:orderId/route",
   verifyToken,
   allowRoles("customer", "user", "delivery", "seller", "admin"),
   requireApprovedSeller,
   getOrderRoute,
-);
-
-router.put(
-  "/returns/:orderId/accept-pickup",
-  verifyToken,
-  allowRoles("delivery", "admin"),
-  acceptReturnPickup
-);
-router.put(
-  "/returns/:orderId/reject-pickup",
-  verifyToken,
-  allowRoles("delivery", "admin"),
-  rejectReturnPickup
 );
 
 export default router;

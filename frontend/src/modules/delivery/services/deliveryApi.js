@@ -14,7 +14,8 @@ export const deliveryApi = {
   getWalletSummary: () => axiosInstance.get("/delivery/wallet/summary"),
   getOrderHistory: (params, config = {}) =>
     axiosInstance.get("/delivery/order-history", { params, ...config }),
-  getAvailableOrders: (config = {}) => axiosInstance.get("/orders/available", config),
+  getAvailableOrders: (params = {}, config = {}) =>
+    axiosInstance.get("/orders/available", { params, ...config }),
   acceptOrder: (orderId, idempotencyKey) =>
     axiosInstance.put(
       `/orders/accept/${encodeURIComponent(String(orderId))}`,
@@ -65,4 +66,10 @@ export const deliveryApi = {
     axiosInstance.post(`/orders/workflow/${orderId}/return-otp/request`, body),
   verifyReturnOtp: (orderId, body) =>
     axiosInstance.post(`/orders/workflow/${orderId}/return-otp/verify`, body),
+  uploadReturnPickupProof: (orderId, data) =>
+    axiosInstance.post(`/orders/returns/${orderId}/pickup-proof`, data),
+  requestReturnDropOtp: (orderId, body) =>
+    axiosInstance.post(`/orders/workflow/${orderId}/return-drop-otp/request`, body),
+  verifyReturnDropOtp: (orderId, body) =>
+    axiosInstance.post(`/orders/workflow/${orderId}/return-drop-otp/verify`, body),
 };

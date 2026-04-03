@@ -22,8 +22,6 @@ const orderSchema = new mongoose.Schema(
     seller: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Seller",
-      // In a multi-seller cart, this would be complex.
-      // For now, let's assume we store the primary seller or track per item.
     },
     items: [
       {
@@ -42,7 +40,7 @@ const orderSchema = new mongoose.Schema(
           type: Number,
           required: true,
         },
-        variantSlot: String, // To identify which variant was bought
+        variantSlot: String,
         image: String,
       },
     ],
@@ -57,7 +55,6 @@ const orderSchema = new mongoose.Schema(
       city: String,
       phone: String,
       landmark: String,
-      // Precise coordinates from checkout map (order-only; does not mutate saved addresses)
       location: {
         lat: Number,
         lng: Number,
@@ -127,7 +124,6 @@ const orderSchema = new mongoose.Schema(
         default: null,
       },
     },
-    // Multi-seller checkout fields
     checkoutGroupId: {
       type: String,
       index: true,
@@ -141,8 +137,6 @@ const orderSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-    
-    // Idempotency tracking
     placement: {
       idempotencyKey: {
         type: String,
@@ -171,7 +165,7 @@ const orderSchema = new mongoose.Schema(
       },
       sellerPayout: {
         type: String,
-        enum: ["NOT_APPLICABLE", "PENDING", "PROCESSING", "COMPLETED", "FAILED"],
+        enum: ["NOT_APPLICABLE", "HOLD", "PENDING", "PROCESSING", "COMPLETED", "FAILED", "CANCELLED"],
         default: "PENDING",
       },
       riderPayout: {
@@ -266,7 +260,6 @@ const orderSchema = new mongoose.Schema(
       ],
       default: "pending",
     },
-    /** v2 state machine — set when workflowVersion >= 2 */
     workflowStatus: {
       type: String,
       enum: Object.values(WORKFLOW_STATUS),
@@ -289,13 +282,8 @@ const orderSchema = new mongoose.Schema(
       lastBroadcastAt: Date,
     },
     pickupConfirmedAt: Date,
-    /** Rider tapped "arrived at store" (workflow v2: PICKUP_READY) */
     pickupReadyAt: Date,
     outForDeliveryAt: Date,
-    /**
-     * Delivery app progress 1–4 (refresh-safe UI).
-     * 1 en route to store, 2 at store, 3 en route to customer, 4 at customer / pre-OTP.
-     */
     deliveryRiderStep: {
       type: Number,
       min: 1,
@@ -343,8 +331,6 @@ const orderSchema = new mongoose.Schema(
         ref: "Delivery",
       },
     ],
-
-    // Return / refund lifecycle (separate from main delivery status)
     returnStatus: {
       type: String,
       enum: [
@@ -354,12 +340,21 @@ const orderSchema = new mongoose.Schema(
         "return_rejected",
         "return_pickup_assigned",
         "return_in_transit",
+        "return_drop_pending",
         "returned",
+        "qc_passed",
+        "qc_failed",
         "refund_completed",
       ],
       default: "none",
     },
     returnRequestedAt: {
+      type: Date,
+    },
+    returnEligibleAt: {
+      type: Date,
+    },
+    returnWindowExpiresAt: {
       type: Date,
     },
     returnDeadline: {
@@ -368,11 +363,14 @@ const orderSchema = new mongoose.Schema(
     returnReason: {
       type: String,
     },
-    returnImages: [
-      {
-        type: String,
-      },
-    ],
+    returnReasonDetail: {
+      type: String,
+    },
+    returnConditionAssurance: {
+      type: Boolean,
+      default: false,
+    },
+    returnImages: [{ type: String }],
     returnItems: [
       {
         product: {
@@ -422,15 +420,40 @@ const orderSchema = new mongoose.Schema(
     returnDeliveredBackAt: {
       type: Date,
     },
-    // Proximity-based delivery OTP tracking
+    returnQcStatus: {
+      type: String,
+      enum: ["passed", "failed"],
+    },
+    returnQcAt: {
+      type: Date,
+    },
+    returnQcBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Admin",
+    },
+    returnQcNote: {
+      type: String,
+    },
+    returnPickupImages: [{ type: String }],
+    returnPickupCondition: {
+      type: String,
+      enum: ["good", "damaged", "suspicious"],
+    },
+    returnPickupConditionNote: { type: String },
+    returnDropVerifiedAt: { type: Date },
+    returnDropVerifiedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Delivery",
+    },
+    refundIssuedAt: { type: Date },
+    sellerPayoutReleasedAt: { type: Date },
+    deliveryProofImages: [{ type: String }],
     otpValidatedAt: {
       type: Date,
-      // Timestamp when delivery OTP was successfully validated
     },
     otpValidationLocation: {
       lat: Number,
       lng: Number,
-      // Location where OTP validation occurred
     },
   },
   { timestamps: true },
@@ -456,12 +479,8 @@ orderSchema.index(
   },
 );
 orderSchema.index({ "stockReservation.status": 1, "stockReservation.expiresAt": 1 });
-
-// Phase 2: Multi-seller checkout index
 orderSchema.index({ checkoutGroupId: 1, createdAt: -1 });
 orderSchema.index({ checkoutGroupId: 1, checkoutGroupIndex: 1 });
-
-// Phase 2: TTL index for idempotency key expiry
 orderSchema.index(
   { "placement.idempotencyKeyExpiry": 1 },
   { 
@@ -470,7 +489,6 @@ orderSchema.index(
   }
 );
 
-// BUGFIX: Pre-save hook to validate customer reference integrity
 orderSchema.pre('save', function(next) {
   if (!this.orderStatus) {
     this.orderStatus = this.status || "pending";
@@ -478,12 +496,10 @@ orderSchema.pre('save', function(next) {
   if (!this.status && this.orderStatus) {
     this.status = this.orderStatus;
   }
-
   if (!this.paymentMode) {
     const method = String(this.payment?.method || "").toLowerCase();
     this.paymentMode = method === "online" ? "ONLINE" : "COD";
   }
-
   if (!this.paymentStatus) {
     const paymentStatusLegacy = String(this.payment?.status || "").toLowerCase();
     if (this.paymentMode === "ONLINE") {
@@ -492,7 +508,6 @@ orderSchema.pre('save', function(next) {
       this.paymentStatus = paymentStatusLegacy === "completed" ? "CASH_COLLECTED" : "PENDING_CASH_COLLECTION";
     }
   }
-
   if (!this.settlementStatus?.overall) {
     this.settlementStatus = {
       ...(this.settlementStatus || {}),
@@ -503,53 +518,32 @@ orderSchema.pre('save', function(next) {
       reconciledAt: this.settlementStatus?.reconciledAt || null,
     };
   }
-
   if (!this.deliveryPartner && this.deliveryBoy) {
     this.deliveryPartner = this.deliveryBoy;
   }
   if (!this.deliveryBoy && this.deliveryPartner) {
     this.deliveryBoy = this.deliveryPartner;
   }
-
   if (!this.customer) {
     const error = new Error('Order must have a valid customer reference');
     error.name = 'ValidationError';
-    console.error('[ORDER_VALIDATION] Attempted to save order without customer reference', {
-      orderId: this.orderId,
-      _id: this._id,
-      timestamp: new Date().toISOString(),
-    });
     return next(error);
   }
   next();
 });
 
-// BUGFIX: Pre-update hook to prevent customer field from being nullified
 orderSchema.pre('findOneAndUpdate', function(next) {
   const update = this.getUpdate();
-  
-  // Check if update attempts to unset or nullify customer field
   if (update.$unset && update.$unset.customer) {
     const error = new Error('Cannot unset customer field from order');
     error.name = 'ValidationError';
-    console.error('[ORDER_VALIDATION] Attempted to unset customer field', {
-      update,
-      timestamp: new Date().toISOString(),
-    });
     return next(error);
   }
-  
-  // Check if update attempts to set customer to null
   if (update.$set && update.$set.customer === null) {
     const error = new Error('Cannot set customer field to null');
     error.name = 'ValidationError';
-    console.error('[ORDER_VALIDATION] Attempted to set customer to null', {
-      update,
-      timestamp: new Date().toISOString(),
-    });
     return next(error);
   }
-  
   next();
 });
 

@@ -49,9 +49,12 @@ const AdminWallet = () => {
     const fetchData = async (page = 1) => {
         try {
             setLoading(true);
+            const params = { page, limit: txnPageSize };
+            if (searchTerm.trim()) params.search = searchTerm.trim();
+            
             const [summaryRes, ledgerRes, requestsRes] = await Promise.all([
                 adminApi.getFinanceSummary(),
-                adminApi.getFinanceLedger({ page, limit: txnPageSize }),
+                adminApi.getFinanceLedger(params),
                 adminApi.getFinancePayouts({ seller: true, status: "PENDING", page: 1, limit: 100 })
             ]);
 
@@ -104,9 +107,18 @@ const AdminWallet = () => {
     };
 
     useEffect(() => {
+        const timer = setTimeout(() => {
+            fetchData(1);
+        }, 500);
+        return () => clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [txnPageSize, searchTerm]);
+
+    // Track the actual page change separately (no debounce needed for clicking next)
+    useEffect(() => {
         fetchData(txnPage);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [txnPage, txnPageSize]);
+    }, [txnPage]);
 
     const handleUpdateStatus = async (id, status, reason = "") => {
         try {

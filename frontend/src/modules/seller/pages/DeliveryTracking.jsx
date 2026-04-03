@@ -176,8 +176,8 @@ const DeliveryTracking = () => {
                 Live Fleet
               </Badge>
             </h1>
-            <p className="text-slate-600 text-base mt-0.5 font-medium">
-              Monitor active deliveries and assigned delivery partners.
+            <p className="text-slate-600 text-sm mt-0.5 font-medium">
+              Monitor active deliveries and assigned partners.
             </p>
           </div>
         </div>
@@ -206,17 +206,17 @@ const DeliveryTracking = () => {
                   <div className="flex items-center gap-4 p-5 relative z-10">
                     <div
                       className={cn(
-                        "h-14 w-14 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110 duration-500 shadow-sm",
+                        "h-10 w-10 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110 duration-500 shadow-sm",
                         stat.bg,
                         stat.color,
                       )}>
-                      <stat.icon className="h-7 w-7" />
+                      <stat.icon className="h-5 w-5" />
                     </div>
                     <div className="flex flex-col">
-                      <p className="text-xs font-black text-slate-600 uppercase tracking-widest">
+                      <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">
                         {stat.label}
                       </p>
-                      <h4 className="text-3xl font-black text-slate-900 tracking-tight leading-none mt-1">
+                      <h4 className="text-xl font-black text-slate-900 tracking-tight leading-none mt-0.5">
                         {stat.value}
                       </h4>
                     </div>
@@ -230,14 +230,14 @@ const DeliveryTracking = () => {
             <Card className="border-none shadow-xl ring-1 ring-slate-100 overflow-hidden rounded-lg bg-white">
               {/* Tabs & Search */}
               <div className="border-b border-slate-100 bg-slate-50/30">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between px-6">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between px-4">
                   <div className="flex items-center">
                     {tabs.map((tab) => (
                       <button
                         key={tab}
                         onClick={() => setActiveTab(tab)}
                         className={cn(
-                          "relative py-5 px-6 text-[10px] font-black uppercase tracking-widest transition-all duration-300",
+                          "relative py-3.5 px-5 text-[9px] font-black uppercase tracking-widest transition-all duration-300",
                           activeTab === tab
                             ? "text-primary bg-white/50"
                             : "text-slate-600 hover:text-slate-700",
@@ -246,19 +246,19 @@ const DeliveryTracking = () => {
                         {activeTab === tab && (
                           <motion.div
                             layoutId="tab-underline-tracking"
-                            className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full mx-4"
+                            className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full mx-4"
                           />
                         )}
                       </button>
                     ))}
                   </div>
-                  <div className="py-3 lg:py-0 w-full lg:w-72">
+                  <div className="py-2 lg:py-0 w-full lg:w-64">
                     <div className="relative group">
-                      <HiOutlineMagnifyingGlass className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-600 group-focus-within:text-primary transition-all" />
+                      <HiOutlineMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 group-focus-within:text-primary transition-all" />
                       <input
                         type="text"
-                        placeholder="Search Order ID or Partner..."
-                        className="w-full pl-10 pr-4 py-2 bg-slate-100/50 border-none rounded-lg text-sm font-bold text-slate-700 placeholder:text-slate-500 focus:ring-2 focus:ring-primary/10 transition-all outline-none"
+                        placeholder="Search ID or Partner..."
+                        className="w-full pl-9 pr-3 py-1.5 bg-slate-100/50 border-none rounded-lg text-xs font-bold text-slate-700 placeholder:text-slate-400 focus:ring-1 focus:ring-primary/10 transition-all outline-none"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                       />
@@ -273,39 +273,39 @@ const DeliveryTracking = () => {
                   {paginatedDeliveries.map((dlv, idx) => (
                     <motion.div
                       key={dlv.id}
-                      initial={{ opacity: 0, y: 20 }}
+                      initial={{ opacity: 0, y: 15 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ delay: idx * 0.05 }}
-                      className="group relative bg-white rounded-lg border border-slate-100 p-2 sm:p-1 hover:shadow-2xl hover:shadow-primary/5 hover:border-primary/20 transition-all duration-500 min-w-0">
-                      <div className="flex flex-col lg:flex-row items-stretch gap-3 sm:gap-1">
+                      exit={{ opacity: 0, scale: 0.98 }}
+                      transition={{ delay: idx * 0.04 }}
+                      className="group relative bg-white rounded-lg border border-slate-100 p-1.5 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/20 transition-all duration-300 min-w-0">
+                      <div className="flex flex-col lg:flex-row items-stretch gap-1">
                         {/* Partner Info Section */}
-                        <div className="lg:w-1/3 p-3 sm:p-5 bg-slate-50/50 rounded-lg border border-transparent group-hover:bg-primary/[0.02] group-hover:border-primary/5 transition-all min-w-0">
-                          <div className="flex items-center gap-3 sm:gap-4">
+                        <div className="lg:w-48 p-2 bg-slate-50/50 rounded-lg border border-transparent group-hover:bg-primary/[0.02] group-hover:border-primary/5 transition-all min-w-0">
+                          <div className="flex items-center gap-2.5">
                             <div className="relative shrink-0">
-                              <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-lg overflow-hidden ring-2 sm:ring-4 ring-white shadow-md">
+                              <div className="h-10 w-10 rounded-md overflow-hidden ring-2 ring-white shadow-sm">
                                 <img
                                   src={dlv.deliveryBoy.image}
                                   alt={dlv.deliveryBoy.name}
                                   className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-700"
                                 />
                               </div>
-                              <div className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 h-5 w-5 sm:h-6 sm:w-6 bg-brand-500 rounded-md border-2 border-white flex items-center justify-center text-white text-[9px] sm:text-[10px] font-black shadow-sm">
+                              <div className="absolute -bottom-1 -right-1 h-3.5 w-3.5 bg-brand-500 rounded-sm border-[1px] border-white flex items-center justify-center text-white text-[7px] font-black shadow-sm">
                                 {dlv.deliveryBoy.rating}
                               </div>
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-[9px] sm:text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-0.5">
-                                Delivery Partner
+                              <p className="text-[8px] font-black text-primary uppercase tracking-[0.1em] mb-0.5">
+                                Partner
                               </p>
-                              <h3 className="text-sm sm:text-base font-black text-slate-900 leading-none truncate">
+                              <h3 className="text-xs font-black text-slate-900 leading-none truncate">
                                 {dlv.deliveryBoy.name}
                               </h3>
                               <a
                                 href={`tel:${dlv.deliveryBoy.phone}`}
-                                className="inline-flex items-center gap-1.5 mt-1.5 sm:mt-2 px-2.5 py-1.5 sm:px-3 sm:py-2 bg-white rounded-lg text-[10px] sm:text-[11px] font-black text-slate-800 shadow-sm border border-slate-100 hover:bg-primary hover:text-white hover:border-primary transition-all"
+                                className="inline-flex items-center gap-1 mt-1 text-[9px] font-bold text-slate-500 hover:text-primary transition-colors"
                               >
-                                <HiOutlinePhone className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />
+                                <HiOutlinePhone className="h-2.5 w-2.5 shrink-0" />
                                 <span className="truncate">{dlv.deliveryBoy.phone}</span>
                               </a>
                             </div>
@@ -313,61 +313,38 @@ const DeliveryTracking = () => {
                         </div>
 
                         {/* Order Info Section */}
-                        <div className="flex-1 p-3 sm:p-5 flex flex-col justify-between min-w-0">
-                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4 mb-3 sm:mb-4">
+                        <div className="flex-1 p-2 flex flex-col justify-between min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 mb-2">
                             <div className="min-w-0">
-                              <div className="flex flex-wrap items-center gap-2 mb-1 sm:mb-1.5">
-                                <span className="text-[11px] sm:text-xs font-black text-slate-900 tracking-tight break-all">
+                              <div className="flex flex-wrap items-center gap-2 mb-0.5">
+                                <span className="text-[10px] font-black text-slate-900 tracking-tight">
                                   #{dlv.orderId}
                                 </span>
                                 <Badge
                                   variant={getStatusVariant(dlv.status)}
-                                  className="text-[8px] sm:text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest shrink-0"
+                                  className="text-[7px] font-black px-1.5 py-0 rounded-full uppercase tracking-widest shrink-0"
                                 >
                                   {dlv.status}
                                 </Badge>
                               </div>
-                              <h4 className="text-[11px] sm:text-xs font-bold text-slate-600 flex items-center gap-1.5 flex-wrap">
-                                <HiOutlineUser className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-slate-600 shrink-0" />
-                                Customer:{" "}
-                                <span className="text-slate-900 capitalize">{dlv.customerName}</span>
+                              <h4 className="text-[10px] font-bold text-slate-500 flex items-center gap-1 flex-wrap">
+                                <HiOutlineUser className="h-3 w-3 text-slate-400 shrink-0" />
+                                <span className="text-slate-900 capitalize font-black">{dlv.customerName}</span>
                               </h4>
                             </div>
                             <div className="sm:text-right shrink-0">
-                              <p className="text-[9px] sm:text-xs font-black text-slate-600 uppercase tracking-widest">
-                                Order Date & Time
+                              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                                Timing
                               </p>
-                              <p className="text-xs sm:text-sm font-black text-primary tracking-tight">
-                                {dlv.orderDate && dlv.startTime ? `${dlv.orderDate} • ${dlv.startTime}` : dlv.startTime || dlv.orderDate || "—"}
+                              <p className="text-[10px] font-black text-primary tracking-tight mt-0.5">
+                                {dlv.startTime || "—"}
                               </p>
                             </div>
                           </div>
 
-                          <div className="bg-slate-50/50 p-3 sm:p-4 rounded-lg border border-slate-100/50 min-w-0">
-                            <div className="flex items-center justify-between gap-2 mb-1.5 sm:mb-2">
-                              <p className="text-[9px] sm:text-xs font-black text-slate-600 uppercase tracking-widest flex items-center gap-2">
-                                <HiOutlineMapPin className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary shrink-0" />
-                                Customer Address
-                              </p>
-                              {dlv.addressCoords &&
-                                typeof dlv.addressCoords.lat === "number" &&
-                                typeof dlv.addressCoords.lng === "number" && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const { lat, lng } = dlv.addressCoords;
-                                      window.open(
-                                        `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,
-                                        "_blank",
-                                      );
-                                    }}
-                                    className="text-[10px] font-bold text-primary hover:underline"
-                                  >
-                                    View on map
-                                  </button>
-                                )}
-                            </div>
-                            <p className="text-[11px] sm:text-xs font-bold text-slate-700 leading-relaxed break-words">
+                          <div className="bg-slate-50/30 px-3 py-1.5 rounded-md border border-slate-100/30 min-w-0">
+                            <p className="text-[10px] font-bold text-slate-600 leading-tight truncate">
+                              <HiOutlineMapPin className="inline h-2.5 w-2.5 text-primary mr-1 -mt-0.5" />
                               {dlv.address}
                             </p>
                           </div>
@@ -376,7 +353,7 @@ const DeliveryTracking = () => {
                         {/* Action Button Section */}
                         <div className="lg:w-16 flex items-center justify-center p-2 sm:p-3 shrink-0">
                           <button className="h-10 w-10 lg:h-full lg:w-full bg-slate-900 group-hover:bg-primary rounded-lg lg:rounded-r-lg lg:rounded-l-none flex items-center justify-center text-white transition-all duration-500 shadow-xl shadow-slate-900/10 hover:shadow-primary/30">
-                            <HiOutlineTruck className="h-5 w-5 group-hover:scale-125 transition-transform" />
+                            <HiOutlineTruck className="h-4 w-4 group-hover:scale-125 transition-transform" />
                           </button>
                         </div>
                       </div>

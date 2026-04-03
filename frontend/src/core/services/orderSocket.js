@@ -138,6 +138,20 @@ export function onCustomerOtp(getToken, handler) {
   return () => s.off("order:otp", handler);
 }
 
+export function onReturnPickupOtp(getToken, handler) {
+  const s = getOrderSocket(getToken);
+  if (!s || typeof handler !== "function") return () => {};
+  s.on("return:pickup:otp", handler);
+  return () => s.off("return:pickup:otp", handler);
+}
+
+export function onReturnDropOtp(getToken, handler) {
+  const s = getOrderSocket(getToken);
+  if (!s || typeof handler !== "function") return () => {};
+  s.on("return:drop:otp", handler);
+  return () => s.off("return:drop:otp", handler);
+}
+
 export function onDeliveryOtpGenerated(getToken, handler) {
   const s = getOrderSocket(getToken);
   if (!s || typeof handler !== "function") {

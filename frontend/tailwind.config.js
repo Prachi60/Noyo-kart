@@ -16,7 +16,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Nunito', 'sans-serif'],
+        sans: ['Outfit', 'sans-serif'],
         heading: ['Fredoka', 'sans-serif'],
       },
       colors: {

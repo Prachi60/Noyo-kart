@@ -26,6 +26,7 @@ import {
 } from "./app/core/shutdown.js";
 import { registerScheduledJob, startScheduledJobs } from "./app/services/distributedScheduler.js";
 import { getOrderAutoCancelJobHandler, getOrderAutoCancelJobInterval } from "./app/jobs/orderAutoCancelJob.js";
+import { getReturnWindowReleaseJobHandler, getReturnWindowReleaseJobInterval } from "./app/jobs/returnWindowReleaseJob.js";
 import {
   getPayoutBatchJobHandler,
   getPayoutBatchJobInterval,
@@ -242,6 +243,13 @@ async function startScheduler() {
     'orderAutoCancelJob',
     getOrderAutoCancelJobInterval(),
     getOrderAutoCancelJobHandler()
+  );
+
+  // Register return window release job (seller payout hold release)
+  registerScheduledJob(
+    'returnWindowReleaseJob',
+    getReturnWindowReleaseJobInterval(),
+    getReturnWindowReleaseJobHandler()
   );
   
   // Register payout batch job (if enabled)

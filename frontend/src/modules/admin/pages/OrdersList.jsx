@@ -9,14 +9,11 @@ import {
     Search,
     Filter,
     Truck,
-    RotateCcw,
-    MoreVertical,
     Eye,
     Download,
     Calendar,
     ArrowUpRight,
     Package,
-    MapPin,
     IndianRupee,
     ChevronDown,
     ShoppingBag,
@@ -26,6 +23,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@shared/components/ui/Toast';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     getLegacyStatusFromOrder,
     adminRouteMatchesOrder,
@@ -42,12 +40,49 @@ const OrdersList = () => {
     const [pageSize, setPageSize] = useState(25);
     const [total, setTotal] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
+    const [isExporting, setIsExporting] = useState(false);
+    const [isDateMenuOpen, setIsDateMenuOpen] = useState(false);
+
+    const handleCSVExport = () => {
+        setIsExporting(true);
+        try {
+            const headers = ["Order ID", "Customer", "Seller", "Status", "Amount", "Date", "Payment"];
+            const rows = orders.map(o => [
+                o.id,
+                o.customer,
+                o.seller,
+                o.status.toUpperCase(),
+                `₹${o.amount}`,
+                o.date,
+                o.payment
+            ]);
+            
+            const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `orders_${status}_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast("CSV Exported successfully", "success");
+        } catch (error) {
+            showToast("Export failed", "error");
+        } finally {
+            setIsExporting(false);
+        }
+    };
 
     const fetchOrders = async (requestedPage = 1) => {
         setIsLoading(true);
         try {
             const params = { page: requestedPage, limit: pageSize };
             if (status !== 'all') params.status = status;
+            if (searchTerm.trim()) params.search = searchTerm.trim();
+            if (dateRange !== 'All Time') {
+                params.dateFilter = dateRange.toLowerCase().replace(/ /g, '_');
+            }
             const response = await adminApi.getOrders(params);
             if (response.data.success) {
                 const payload = response.data.result || {};
@@ -98,9 +133,11 @@ const OrdersList = () => {
     };
 
     useEffect(() => {
-        fetchOrders(1);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [pageSize, status]);
+        const timer = setTimeout(() => {
+            fetchOrders(1);
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [pageSize, status, searchTerm, dateRange]);
 
     const safeOrders = useMemo(
         () => (Array.isArray(orders) ? orders : []),
@@ -123,10 +160,12 @@ const OrdersList = () => {
 
     const filteredOrders = useMemo(() => {
         return safeOrders.filter(order => {
+            const safeLower = (value) => String(value || '').toLowerCase();
+            const query = safeLower(searchTerm);
             const matchesSearch =
-                (order.id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                (order.customer || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                (order.seller || '').toLowerCase().includes(searchTerm.toLowerCase());
+                safeLower(order.id).includes(query) ||
+                safeLower(order.customer).includes(query) ||
+                safeLower(order.seller).includes(query);
 
             const matchesStatus = adminRouteMatchesOrder(status, order);
 
@@ -135,7 +174,7 @@ const OrdersList = () => {
     }, [safeOrders, searchTerm, status]);
 
     const getStatusStyles = (status) => {
-        switch (status.toLowerCase()) {
+        switch (String(status || '').toLowerCase()) {
             case 'pending': return 'bg-amber-100 text-amber-600 border-amber-200';
             case 'confirmed': return 'bg-blue-100 text-blue-600 border-blue-200';
             case 'packed': return 'bg-indigo-100 text-indigo-600 border-indigo-200';
@@ -147,20 +186,38 @@ const OrdersList = () => {
         }
     };
 
-    const getStatusIcon = (status) => {
-        switch (status) {
-            case 'pending': return <Clock className="h-4 w-4" />;
-            case 'confirmed': return <CheckCircle2 className="h-4 w-4" />;
-            case 'packed': return <Package className="h-4 w-4" />;
-            case 'out_for_delivery': return <Truck className="h-4 w-4" />;
-            case 'delivered': return <CheckCircle2 className="h-4 w-4" />;
-            case 'cancelled': return <XCircle className="h-4 w-4" />;
-            default: return <Package className="h-4 w-4" />;
-        }
-    };
-
     const handleExport = () => {
-        showToast('Exporting order data archive...', 'info');
+        if (safeOrders.length === 0) {
+            showToast('No data to export', 'warning');
+            return;
+        }
+        
+        const headers = ['Order ID', 'Date', 'Customer', 'Seller', 'Items', 'Amount', 'Status', 'Payment'];
+        const csvContent = [
+            headers.join(','),
+            ...safeOrders.map(o => [
+                String(o.id || ''),
+                String(o.date || '').replace(/,/g, ''),
+                String(o.customer || '').replace(/,/g, ''),
+                String(o.seller || '').replace(/,/g, ''),
+                o.items,
+                o.amount,
+                o.status,
+                o.payment
+            ].join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `noyo-orders-${status}-${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        showToast('Order ledger exported successfully', 'success');
     };
 
     const pageTitle = status === 'all' ? 'All Orders' : status.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
@@ -187,10 +244,45 @@ const OrdersList = () => {
                         EXPORT
                     </button>
                     <div className="h-10 w-px bg-slate-200 mx-1 hidden lg:block" />
-                    <button className="flex items-center gap-2 px-5 py-3 bg-white ring-1 ring-slate-200 text-slate-700 rounded-2xl text-xs font-bold hover:bg-slate-50 transition-all shadow-sm">
-                        <Calendar className="h-4 w-4 text-brand-500" />
-                        {dateRange}
-                    </button>
+                    <div className="relative">
+                        <button
+                            onClick={() => setIsDateMenuOpen(!isDateMenuOpen)}
+                            className="flex items-center gap-2 px-5 py-3 bg-white ring-1 ring-slate-200 text-slate-700 rounded-2xl text-xs font-bold hover:bg-slate-50 transition-all shadow-sm active:scale-95"
+                        >
+                            <Calendar className="h-4 w-4 text-brand-500" />
+                            {dateRange}
+                        </button>
+                        
+                        <AnimatePresence>
+                            {isDateMenuOpen && (
+                                <>
+                                    <div className="fixed inset-0 z-10" onClick={() => setIsDateMenuOpen(false)} />
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                        className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-2xl ring-1 ring-slate-100 p-2 z-20"
+                                    >
+                                        {['All Time', 'Today', 'Yesterday', 'Last 7 Days', 'This Month'].map((range) => (
+                                            <button
+                                                key={range}
+                                                onClick={() => {
+                                                    setDateRange(range);
+                                                    setIsDateMenuOpen(false);
+                                                }}
+                                                className={cn(
+                                                    "w-full text-left px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all",
+                                                    dateRange === range ? "bg-brand-50 text-brand-600" : "text-slate-500 hover:bg-slate-50"
+                                                )}
+                                            >
+                                                {range}
+                                            </button>
+                                        ))}
+                                    </motion.div>
+                                </>
+                            )}
+                        </AnimatePresence>
+                    </div>
                 </div>
             </div>
 
@@ -229,7 +321,17 @@ const OrdersList = () => {
                             className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-xs font-semibold outline-none focus:ring-2 focus:ring-fuchsia-500/10 transition-all"
                         />
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
+                        {status === 'processed' && (
+                            <button 
+                                onClick={handleCSVExport}
+                                disabled={isExporting}
+                                className="flex items-center gap-2 px-4 py-2.5 bg-fuchsia-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-fuchsia-700 transition-all shadow-lg shadow-fuchsia-100 disabled:opacity-50"
+                            >
+                                <Download className={cn("h-3.5 w-3.5", isExporting && "animate-bounce")} />
+                                {isExporting ? 'Exporting...' : 'Export CSV'}
+                            </button>
+                        )}
                         <button className="p-3 bg-slate-50 rounded-xl text-slate-400 hover:text-slate-600 transition-all">
                             <Filter className="h-4 w-4" />
                         </button>
@@ -319,15 +421,42 @@ const OrdersList = () => {
                                         </div>
                                     </td>
                                     <td className="px-4 py-5 text-right">
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                navigate(`/admin/orders/view/${order.id}`);
-                                            }}
-                                            className="p-2.5 bg-slate-50 text-slate-400 hover:text-fuchsia-600 hover:bg-fuchsia-50 rounded-xl transition-all"
-                                        >
-                                            <Eye className="h-4 w-4" />
-                                        </button>
+                                        <div className="flex items-center justify-end gap-2">
+                                            {status === 'processed' && order.status === 'confirmed' && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleStatusUpdate(order._id, 'packed');
+                                                    }}
+                                                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100"
+                                                >
+                                                    <Package className="h-3.5 w-3.5" />
+                                                    MARK PACKED
+                                                </button>
+                                            )}
+                                            {status === 'processed' && order.status === 'packed' && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleStatusUpdate(order._id, 'out_for_delivery');
+                                                    }}
+                                                    className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-purple-700 transition-all shadow-lg shadow-purple-100"
+                                                >
+                                                    <Truck className="h-3.5 w-3.5" />
+                                                    DISPATCH
+                                                </button>
+                                            )}
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    navigate(`/admin/orders/view/${order.id}`);
+                                                }}
+                                                className="p-2.5 bg-slate-50 text-slate-400 hover:text-fuchsia-600 hover:bg-fuchsia-100 rounded-xl transition-all"
+                                                title="View Details"
+                                            >
+                                                <Eye className="h-4 w-4" />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             )) : (

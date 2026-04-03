@@ -49,14 +49,23 @@ const SellerTransactions = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetchTransactions(1);
+        const timer = setTimeout(() => {
+            fetchTransactions(1);
+        }, 500);
+        return () => clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [pageSize]);
+    }, [pageSize, searchTerm, filterStatus, filterType, selectedSeller]);
 
     const fetchTransactions = async (requestedPage = 1) => {
         try {
             setLoading(true);
-            const res = await adminApi.getSellerTransactions({ page: requestedPage, limit: pageSize });
+            const params = { page: requestedPage, limit: pageSize };
+            if (searchTerm.trim()) params.search = searchTerm.trim();
+            if (filterStatus !== 'all') params.status = filterStatus;
+            if (filterType !== 'all') params.type = filterType;
+            if (selectedSeller !== 'all') params.sellerId = selectedSeller; // Assuming backend supports seller filter
+            
+            const res = await adminApi.getSellerTransactions(params);
             if (res.data.success) {
                 const payload = res.data.result || {};
                 const data = Array.isArray(payload.items) ? payload.items : (res.data.results || []);

@@ -4,7 +4,12 @@
 
 import mongoose from "mongoose";
 import Notification from "../models/notification.js";
-import { getDeliveryPartnerIdsWithinSellerRadius } from "./deliveryNearbyService.js";
+import { 
+  getDeliveryPartnerIdsWithinSellerRadius,
+  getDeliveryPartnerIdsWithinCustomerRadius
+} from "./deliveryNearbyService.js";
+import { emitNotificationEvent } from "../modules/notifications/notification.emitter.js";
+import { NOTIFICATION_EVENTS } from "../modules/notifications/notification.constants.js";
 
 let _getIo = null;
 
@@ -116,6 +121,14 @@ export async function emitDeliveryBroadcastForSeller(sellerId, payload) {
     for (const id of ids) {
       s.to(`delivery:${id}`).emit("delivery:broadcast", body);
     }
+  }
+
+  // Trigger Push Notifications for nearby riders
+  if (ids.length > 0 && !payload.retryAttempt) {
+    emitNotificationEvent(NOTIFICATION_EVENTS.NEW_DELIVERY_BROADCAST, {
+      orderId: payload.orderId,
+      deliveryIds: ids,
+    });
   }
 
   // Avoid duplicate DB rows when delivery search retries with wider ring
@@ -230,4 +243,63 @@ export function emitToCustomer(customerId, { event, payload }) {
   const s = getIo();
   if (!s || !customerId) return;
   s.to(`customer:${customerId}`).emit(event, payload);
+}
+
+/**
+ * Notify delivery partners near a CUSTOMER for return pickups.
+ * Sends both Socket events (for open app) and Push (for background).
+ */
+export async function emitReturnBroadcastForCustomer(customerLocation, payload) {
+  const s = getIo();
+  if (!customerLocation) return;
+
+  const ids = await getDeliveryPartnerIdsWithinCustomerRadius(customerLocation);
+  if (!ids.length) {
+    console.warn("[emitReturnBroadcastForCustomer] No riders in customer radius", customerLocation);
+    // If DEV/Test, fallback to all online riders if no one near
+    if (process.env.NODE_ENV !== "production" && s) {
+        s.to("delivery:online").emit("delivery:broadcast", { ...payload, at: new Date().toISOString() });
+    }
+    return;
+  }
+
+  console.log(`[emitReturnBroadcastForCustomer] ${ids.length} rider(s) near customer for return ${payload.orderId}`);
+
+  const body = {
+    ...payload,
+    at: new Date().toISOString(),
+  };
+
+  if (s) {
+    for (const id of ids) {
+      s.to(`delivery:${id}`).emit("delivery:broadcast", body);
+    }
+  }
+
+  // Send Push Notification
+  emitNotificationEvent(NOTIFICATION_EVENTS.NEW_RETURN_BROADCAST, {
+    orderId: payload.orderId,
+    deliveryIds: ids,
+  });
+
+  // DB Sync for in-app notification list
+  try {
+    await Notification.insertMany(
+      ids.map((id) => ({
+        recipient: new mongoose.Types.ObjectId(id),
+        recipientModel: "Delivery",
+        title: "New Return Pickup Task",
+        message: `Return pickup ${payload.orderId} nearby — tap to Accept.`,
+        type: "order",
+        data: {
+          orderId: payload.orderId,
+          type: "RETURN_PICKUP",
+          preview: payload.preview || null,
+        },
+      })),
+      { ordered: false }
+    );
+  } catch (err) {
+    console.warn("[emitReturnBroadcastForCustomer] DB error", err.message);
+  }
 }

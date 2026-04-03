@@ -7,16 +7,12 @@ import BottomNav from './BottomNav';
 import { sellerApi } from '@/modules/seller/services/sellerApi';
 import { useAuth } from "@core/context/AuthContext";
 import { motion, AnimatePresence } from 'framer-motion';
-import { BellRing, Check, X, Clock } from 'lucide-react';
+import { BellRing, Check, X, Clock, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import SellerOrdersContext from '@/modules/seller/context/SellerOrdersContext';
 import SellerEarningsContext, { defaultEarnings } from '@/modules/seller/context/SellerEarningsContext';
-import {
-    getOrderSocket,
-    onSellerOrderNew,
-    onSellerReturnRequested,
-} from '@/core/services/orderSocket';
+import { getOrderSocket, onSellerOrderNew, onReturnDropOtp } from '@/core/services/orderSocket';
 
 const POLL_INTERVAL_MS = 15000;
 
@@ -34,7 +30,7 @@ const isEarningsRoute = (path) =>
 
 function playAlertSound() {
     const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-    audio.play().catch(() => {});
+    audio.play().catch(() => { });
 }
 
 const DashboardLayout = ({ children, navItems, title }) => {
@@ -46,6 +42,7 @@ const DashboardLayout = ({ children, navItems, title }) => {
     /** Total seconds in this acceptance window (for progress bar), set when modal opens */
     const acceptWindowTotalRef = useRef(60);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [returnDropOtpAlert, setReturnDropOtpAlert] = useState(null); // { orderId, otp, expiresAt }
     const { user, logout, role } = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
@@ -136,28 +133,19 @@ const DashboardLayout = ({ children, navItems, title }) => {
         if (role !== 'seller') return undefined;
         const getToken = () => localStorage.getItem('auth_seller');
         getOrderSocket(getToken);
-        const offOrderNew = onSellerOrderNew(getToken, () => {
+        onSellerOrderNew(getToken, () => {
             if (fetchOrdersRef.current) fetchOrdersRef.current();
         });
-        const offReturnRequested = onSellerReturnRequested(getToken, (payload) => {
-            const orderId = String(payload?.orderId || '').trim();
-            if (!orderId) return;
-            if (shownReturnOrderIdsRef.current.has(orderId)) return;
-            if (newReturnAlertRef.current) return;
 
-            setShownReturnOrderIds((prev) => new Set(prev).add(orderId));
-            shownReturnOrderIdsRef.current = new Set(shownReturnOrderIdsRef.current).add(orderId);
-
-            setNewReturnAlert({
-                orderId,
-                reason: payload?.returnReason || '',
-                at: payload?.returnRequestedAt || new Date().toISOString(),
-            });
-            playAlertSound();
+        const unsubscribeDrop = onReturnDropOtp(getToken, (payload) => {
+            console.log("[DashboardLayout] Received return drop OTP:", payload);
+            setReturnDropOtpAlert(payload);
+            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+            audio.play().catch(() => { });
         });
+
         return () => {
-            offOrderNew();
-            offReturnRequested();
+            unsubscribeDrop();
         };
     }, [role]);
 
@@ -364,52 +352,45 @@ const DashboardLayout = ({ children, navItems, title }) => {
                         </motion.div>
                     </div>
                 )}
-            </AnimatePresence>
 
-            {/* Global Return Alert Modal */}
-            <AnimatePresence>
-                {newReturnAlert && (
-                    <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                {/* Global Return Drop OTP Modal */}
+                {returnDropOtpAlert && (
+                    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
                         <motion.div
                             initial={{ scale: 0.9, opacity: 0, y: 20 }}
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                            className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl border border-slate-100"
+                            className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl border border-brand-100"
                         >
                             <div className="flex flex-col items-center text-center">
-                                <div className="h-20 w-20 bg-orange-100 rounded-full flex items-center justify-center mb-6 animate-bounce">
-                                    <BellRing className="h-10 w-10 text-orange-600" />
+                                <div className="h-20 w-20 bg-brand-50 rounded-full flex items-center justify-center mb-6 animate-pulse">
+                                    <Truck className="h-10 w-10 text-brand-600" />
                                 </div>
 
-                                <h2 className="text-2xl font-black text-slate-900 mb-2">New Return Request</h2>
-                                <p className="text-slate-600 font-medium mb-2">
-                                    Order <span className="text-orange-600 font-bold">#{newReturnAlert.orderId}</span> has a new return request.
+                                <h2 className="text-2xl font-black text-slate-900 mb-2">Rider at Store!</h2>
+                                <p className="text-slate-600 font-medium mb-6">
+                                    A rider is at your store for Return <span className="text-brand-600 font-bold">#{returnDropOtpAlert.orderId}</span>.
+                                    Please share the OTP below:
                                 </p>
-                                {newReturnAlert.reason ? (
-                                    <p className="text-sm text-slate-500 bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 mb-6 w-full">
-                                        Reason: {newReturnAlert.reason}
-                                    </p>
-                                ) : (
-                                    <div className="mb-6" />
-                                )}
 
-                                <div className="grid grid-cols-2 gap-4 w-full">
-                                    <button
-                                        onClick={() => setNewReturnAlert(null)}
-                                        className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition-colors"
-                                    >
-                                        Dismiss
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            setNewReturnAlert(null);
-                                            navigate('/seller/returns');
-                                        }}
-                                        className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-orange-600 text-white font-bold hover:bg-orange-500 shadow-xl shadow-orange-600/20 transition-all active:scale-95"
-                                    >
-                                        View Return
-                                    </button>
+                                <div className="flex items-center justify-center gap-3 mb-8">
+                                    {returnDropOtpAlert.otp.split('').map((char, i) => (
+                                        <div key={i} className="h-16 w-14 bg-slate-50 rounded-2xl shadow-sm border border-brand-100 flex items-center justify-center text-4xl font-black text-slate-900 border-b-4 border-b-brand-600">
+                                            {char}
+                                        </div>
+                                    ))}
                                 </div>
+
+                                <p className="text-xs font-bold text-slate-500 italic mb-8">
+                                    Confirm receipt of the product by sharing this code.
+                                </p>
+
+                                <button
+                                    onClick={() => setReturnDropOtpAlert(null)}
+                                    className="w-full py-4 rounded-2xl bg-primary text-white font-black hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all active:scale-95 uppercase tracking-widest text-xs"
+                                >
+                                    Dismiss Alert
+                                </button>
                             </div>
                         </motion.div>
                     </div>
