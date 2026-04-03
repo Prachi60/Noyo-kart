@@ -185,16 +185,16 @@ const AdminSettings = () => {
                         onClick={handleSave}
                         disabled={isSaving}
                         className={cn(
-                            "flex items-center gap-2 px-6 py-3 bg-brand-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-brand-100 active:scale-95",
-                            isSaving ? "opacity-70 cursor-wait" : "hover:bg-brand-700"
+                            "flex items-center gap-2 px-8 py-4 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl shadow-indigo-200 hover:shadow-indigo-300 active:scale-95 active:shadow-inner",
+                            isSaving ? "opacity-70 cursor-wait" : "hover:bg-indigo-700"
                         )}
                     >
                         {isSaving ? (
-                            <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            <Loader2 className="h-5 w-5 animate-spin" />
                         ) : (
-                            <Save className="h-4 w-4" />
+                            <Save className="h-5 w-5" />
                         )}
-                        {isSaving ? 'Saving...' : 'Save Changes'}
+                        {isSaving ? 'Updating...' : 'Save All Changes'}
                     </button>
                 </div>
             </div>
