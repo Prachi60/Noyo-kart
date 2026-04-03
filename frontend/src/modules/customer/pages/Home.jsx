@@ -909,7 +909,7 @@ const Home = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F7F8] pt-[216px] md:pt-[250px]">
+    <div className={`min-h-screen pt-[216px] md:pt-[250px] ${products.length === 0 && !isLoading ? "bg-white" : "bg-[#F5F7F8]"}`}>
       {/* Top Dynamic Gradient Section */}
       <div
         className={cn("contents", isProductDetailOpen && "hidden md:contents")}>
@@ -923,7 +923,7 @@ const Home = () => {
       {/* Main Page Content - Conditionally Hidden if No Service */}
       {products.length === 0 && !isLoading ? (
         <div className="flex flex-col items-center justify-center pt-24 pb-48 animate-in fade-in zoom-in duration-700">
-          <div className="w-64 h-64 md:w-96 md:h-96 mb-8 drop-shadow-2xl">
+          <div className="w-64 h-64 md:w-96 md:h-96 mb-8">
             <Lottie animationData={noServiceAnimation} loop={true} />
           </div>
           <h3 className="text-3xl md:text-5xl font-[1000] text-slate-800 tracking-tighter mb-4 text-center px-4 uppercase">
@@ -936,7 +936,7 @@ const Home = () => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => window.location.reload()}
-            className="mt-12 px-10 py-4 bg-[#45B0E2] text-white font-[1000] rounded-[24px] shadow-2xl shadow-cyan-200 uppercase text-[13px] tracking-[0.2em] transition-all"
+            className="mt-12 px-10 py-4 bg-[#45B0E2] text-white font-[1000] rounded-[24px] uppercase text-[13px] tracking-[0.2em] transition-all"
           >
             Check Again
           </motion.button>
