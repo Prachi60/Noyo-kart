@@ -9,14 +9,11 @@ import {
     Search,
     Filter,
     Truck,
-    RotateCcw,
-    MoreVertical,
     Eye,
     Download,
     Calendar,
     ArrowUpRight,
     Package,
-    MapPin,
     IndianRupee,
     ChevronDown,
     ShoppingBag,
@@ -166,15 +163,9 @@ const OrdersList = () => {
             const safeLower = (value) => String(value || '').toLowerCase();
             const query = safeLower(searchTerm);
             const matchesSearch =
-<<<<<<< HEAD
                 safeLower(order.id).includes(query) ||
                 safeLower(order.customer).includes(query) ||
                 safeLower(order.seller).includes(query);
-=======
-                (order.id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                (order.customer || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                (order.seller || '').toLowerCase().includes(searchTerm.toLowerCase());
->>>>>>> 4e9dc5d2792db297d5b3bd70a835c8adab9ec76b
 
             const matchesStatus = adminRouteMatchesOrder(status, order);
 
@@ -192,18 +183,6 @@ const OrdersList = () => {
             case 'cancelled': return 'bg-rose-100 text-rose-600 border-rose-200';
             case 'returned': return 'bg-slate-100 text-slate-600 border-slate-200';
             default: return 'bg-gray-100 text-gray-600 border-gray-200';
-        }
-    };
-
-    const getStatusIcon = (status) => {
-        switch (status) {
-            case 'pending': return <Clock className="h-4 w-4" />;
-            case 'confirmed': return <CheckCircle2 className="h-4 w-4" />;
-            case 'packed': return <Package className="h-4 w-4" />;
-            case 'out_for_delivery': return <Truck className="h-4 w-4" />;
-            case 'delivered': return <CheckCircle2 className="h-4 w-4" />;
-            case 'cancelled': return <XCircle className="h-4 w-4" />;
-            default: return <Package className="h-4 w-4" />;
         }
     };
 
