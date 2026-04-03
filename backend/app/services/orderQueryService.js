@@ -222,7 +222,7 @@ export async function fetchAvailableOrdersForDelivery({
     .lean();
 
   const returnPickupsRaw = await Order.find({
-    returnStatus: "return_pickup_assigned",
+    returnStatus: { $in: ["return_approved", "return_pickup_assigned"] },
     returnDeliveryBoy: null,
     seller: { $in: sellerIds },
     skippedBy: { $nin: [userId] },

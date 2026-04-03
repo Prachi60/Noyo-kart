@@ -3,6 +3,7 @@ import Transaction from "../models/transaction.js";
 import Product from "../models/product.js";
 import handleResponse from "../utils/helper.js";
 import mongoose from "mongoose";
+import Wallet from "../models/wallet.js";
 
 /* ===============================
    GET SELLER DASHBOARD STATS
@@ -324,6 +325,11 @@ export const getSellerEarnings = async (req, res) => {
             .filter(t => t.type === 'Withdrawal' && (t.status === 'Pending' || t.status === 'Processing'))
             .reduce((acc, t) => acc + Math.abs(t.amount), 0);
 
+        // Fetch wallet for live pending balance (money on hold due to return window)
+        const wallet = await Wallet.findOne({ ownerType: 'SELLER', ownerId: sellerId });
+        const onHoldBalance = wallet ? wallet.pendingBalance : 0;
+        const liveAvailableBalance = wallet ? wallet.availableBalance : settledBalance;
+
         const totalRevenue = transactions
             .filter(t => t.type === 'Order Payment')
             .reduce((acc, t) => acc + t.amount, 0);
@@ -371,6 +377,8 @@ export const getSellerEarnings = async (req, res) => {
             balances: {
                 settledBalance: settledBalance,
                 pendingPayouts: pendingPayouts,
+                onHoldBalance: onHoldBalance, // New field
+                availableBalance: liveAvailableBalance, // New field for clarity
                 totalRevenue: totalRevenue,
                 totalWithdrawn: totalWithdrawn
             },

@@ -7,12 +7,12 @@ import BottomNav from './BottomNav';
 import { sellerApi } from '@/modules/seller/services/sellerApi';
 import { useAuth } from "@core/context/AuthContext";
 import { motion, AnimatePresence } from 'framer-motion';
-import { BellRing, Check, X, Clock } from 'lucide-react';
+import { BellRing, Check, X, Clock, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import SellerOrdersContext from '@/modules/seller/context/SellerOrdersContext';
 import SellerEarningsContext, { defaultEarnings } from '@/modules/seller/context/SellerEarningsContext';
-import { getOrderSocket, onSellerOrderNew } from '@/core/services/orderSocket';
+import { getOrderSocket, onSellerOrderNew, onReturnDropOtp } from '@/core/services/orderSocket';
 
 const POLL_INTERVAL_MS = 15000;
 
@@ -35,6 +35,7 @@ const DashboardLayout = ({ children, navItems, title }) => {
     /** Total seconds in this acceptance window (for progress bar), set when modal opens */
     const acceptWindowTotalRef = useRef(60);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [returnDropOtpAlert, setReturnDropOtpAlert] = useState(null); // { orderId, otp, expiresAt }
     const { user, logout, role } = useAuth();
     const location = useLocation();
 
@@ -117,9 +118,20 @@ const DashboardLayout = ({ children, navItems, title }) => {
         if (role !== 'seller') return undefined;
         const getToken = () => localStorage.getItem('auth_seller');
         getOrderSocket(getToken);
-        return onSellerOrderNew(getToken, () => {
+        onSellerOrderNew(getToken, () => {
             if (fetchOrdersRef.current) fetchOrdersRef.current();
         });
+
+        const unsubscribeDrop = onReturnDropOtp(getToken, (payload) => {
+            console.log("[DashboardLayout] Received return drop OTP:", payload);
+            setReturnDropOtpAlert(payload);
+            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+            audio.play().catch(() => {});
+        });
+
+        return () => {
+            unsubscribeDrop();
+        };
     }, [role]);
 
     // Single earnings fetch when seller is on earnings/withdrawals/transactions – no duplicate calls
@@ -321,6 +333,49 @@ const DashboardLayout = ({ children, navItems, title }) => {
                                         Accept
                                     </button>
                                 </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+
+                {/* Global Return Drop OTP Modal */}
+                {returnDropOtpAlert && (
+                    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                            className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl border border-brand-100"
+                        >
+                            <div className="flex flex-col items-center text-center">
+                                <div className="h-20 w-20 bg-brand-50 rounded-full flex items-center justify-center mb-6 animate-pulse">
+                                    <Truck className="h-10 w-10 text-brand-600" />
+                                </div>
+
+                                <h2 className="text-2xl font-black text-slate-900 mb-2">Rider at Store!</h2>
+                                <p className="text-slate-600 font-medium mb-6">
+                                    A rider is at your store for Return <span className="text-brand-600 font-bold">#{returnDropOtpAlert.orderId}</span>.
+                                    Please share the OTP below:
+                                </p>
+
+                                <div className="flex items-center justify-center gap-3 mb-8">
+                                    {returnDropOtpAlert.otp.split('').map((char, i) => (
+                                        <div key={i} className="h-16 w-14 bg-slate-50 rounded-2xl shadow-sm border border-brand-100 flex items-center justify-center text-4xl font-black text-slate-900 border-b-4 border-b-brand-600">
+                                            {char}
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <p className="text-xs font-bold text-slate-500 italic mb-8">
+                                    Confirm receipt of the product by sharing this code.
+                                </p>
+
+                                <button
+                                    onClick={() => setReturnDropOtpAlert(null)}
+                                    className="w-full py-4 rounded-2xl bg-primary text-white font-black hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all active:scale-95 uppercase tracking-widest text-xs"
+                                >
+                                    Dismiss Alert
+                                </button>
                             </div>
                         </motion.div>
                     </div>

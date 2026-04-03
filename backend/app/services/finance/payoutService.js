@@ -1,243 +1,145 @@
 import mongoose from "mongoose";
-import Payout from "../../models/payout.js";
 import Order from "../../models/order.js";
+import Wallet from "../../models/wallet.js";
+import Payout from "../../models/payout.js";
+import Transaction from "../../models/transaction.js";
+import FinanceAuditLog from "../../models/financeAuditLog.js";
 import {
-  LEDGER_DIRECTION,
-  LEDGER_TRANSACTION_TYPE,
-  OWNER_TYPE,
   PAYOUT_STATUS,
   PAYOUT_TYPE,
+  OWNER_TYPE,
+  LEDGER_TRANSACTION_TYPE,
+  LEDGER_DIRECTION,
 } from "../../constants/finance.js";
-import {
-  debitWallet,
-  getOrCreateWallet,
-  movePendingToAvailable,
-} from "./walletService.js";
+import { getOrCreateWallet } from "./walletService.js";
 import { createLedgerEntry } from "./ledgerService.js";
-import { createFinanceAuditLog } from "./auditLogService.js";
-import { roundCurrency } from "../../utils/money.js";
+
+const roundCurrency = (num) => Math.round((num + Number.EPSILON) * 100) / 100;
 
 function payoutTypeToOwnerType(payoutType) {
   if (payoutType === PAYOUT_TYPE.SELLER) return OWNER_TYPE.SELLER;
-  return OWNER_TYPE.DELIVERY_PARTNER;
+  if (payoutType === PAYOUT_TYPE.DELIVERY_PARTNER) return OWNER_TYPE.RIDER;
+  throw new Error(`Unsupported payout type: ${payoutType}`);
 }
 
-function pendingLedgerTypeByPayoutType(payoutType) {
-  return payoutType === PAYOUT_TYPE.SELLER
-    ? LEDGER_TRANSACTION_TYPE.SELLER_PAYOUT_PENDING
-    : LEDGER_TRANSACTION_TYPE.RIDER_PAYOUT_PENDING;
+async function createFinanceAuditLog(data, { session } = {}) {
+  return await FinanceAuditLog.create([data], { session });
 }
 
-function processedLedgerTypeByPayoutType(payoutType) {
-  return payoutType === PAYOUT_TYPE.SELLER
-    ? LEDGER_TRANSACTION_TYPE.SELLER_PAYOUT_PROCESSED
-    : LEDGER_TRANSACTION_TYPE.RIDER_PAYOUT_PROCESSED;
-}
+export async function createPendingPayoutForOrder({
+  order,
+  payoutType,
+  beneficiaryId,
+  amount,
+  remarks = "Automatic payout creation on delivery.",
+  metadata = {},
+}) {
+  if (!order || !beneficiaryId || amount <= 0) return null;
 
-export async function createPendingPayoutForOrder(
-  {
-    order,
-    payoutType,
-    beneficiaryId,
-    amount,
-    remarks = "",
-    createdBy = null,
-    metadata = {},
-  },
-  { session } = {},
-) {
-  const normalizedAmount = roundCurrency(amount || 0);
-  if (!order?._id || normalizedAmount <= 0 || !beneficiaryId) {
-    return null;
-  }
-
-  const existing = await Payout.findOne(
-    {
-      payoutType,
-      beneficiaryId,
-      relatedOrderIds: order._id,
-      status: { $in: [PAYOUT_STATUS.PENDING, PAYOUT_STATUS.PROCESSING, PAYOUT_STATUS.COMPLETED] },
-    },
-    null,
-    session ? { session } : {},
-  );
-  if (existing) return existing;
-
-  const ownerType = payoutTypeToOwnerType(payoutType);
-  const beneficiaryWallet = await getOrCreateWallet(ownerType, beneficiaryId, { session });
-
-  beneficiaryWallet.pendingBalance = roundCurrency(
-    (beneficiaryWallet.pendingBalance || 0) + normalizedAmount,
-  );
-  beneficiaryWallet.totalCredited = roundCurrency(
-    (beneficiaryWallet.totalCredited || 0) + normalizedAmount,
-  );
-  await beneficiaryWallet.save({ session });
-
-  const payout = await Payout.create(
-    [
-      {
-        payoutType,
-        beneficiaryId,
-        amount: normalizedAmount,
-        status: PAYOUT_STATUS.PENDING,
-        relatedOrderIds: [order._id],
-        walletId: beneficiaryWallet._id,
-        remarks,
-        createdBy,
-        metadata,
-      },
-    ],
-    session ? { session } : {},
-  );
-
-  await createLedgerEntry(
-    {
-      orderId: order._id,
-      payoutId: payout[0]._id,
-      walletId: beneficiaryWallet._id,
-      actorType: ownerType,
-      actorId: beneficiaryId,
-      type: pendingLedgerTypeByPayoutType(payoutType),
-      direction: LEDGER_DIRECTION.CREDIT,
-      amount: normalizedAmount,
-      paymentMode: order.paymentMode,
-      description: `${payoutType} payout moved to pending`,
-      reference: order.orderId,
-    },
-    { session },
-  );
-
-  await createFinanceAuditLog(
-    {
-      action: "PAYOUT_QUEUED",
-      actorType: OWNER_TYPE.ADMIN,
-      actorId: createdBy,
-      orderId: order._id,
-      payoutId: payout[0]._id,
-      metadata: { payoutType, amount: normalizedAmount, beneficiaryId },
-    },
-    { session },
-  );
-
-  return payout[0];
-}
-
-function patchOrderSettlementForPayout(order, payoutType, status) {
-  const next = { ...(order.settlementStatus || {}) };
-  if (payoutType === PAYOUT_TYPE.SELLER) {
-    next.sellerPayout = status;
-  } else {
-    next.riderPayout = status;
-  }
-
-  const sellerDone = next.sellerPayout === "COMPLETED";
-  const riderDone =
-    next.riderPayout === "COMPLETED" || next.riderPayout === "NOT_APPLICABLE";
-  if (sellerDone && riderDone && next.adminEarningCredited) {
-    next.overall = "COMPLETED";
-    if (!next.reconciledAt) next.reconciledAt = new Date();
-  } else if (sellerDone || riderDone || next.adminEarningCredited) {
-    next.overall = "PARTIAL";
-  }
-  return next;
-}
-
-export async function processPayout(payoutId, { remarks, adminId } = {}) {
   const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
-    session.startTransaction();
-    const payout = await Payout.findById(payoutId, null, { session });
-    if (!payout) {
-      throw new Error("Payout not found");
+    const existing = await Payout.findOne({
+      relatedOrderIds: order._id,
+      payoutType,
+      status: { $ne: PAYOUT_STATUS.CANCELLED },
+    }).session(session);
+
+    if (existing) {
+      await session.abortTransaction();
+      return existing;
     }
-    if (![PAYOUT_STATUS.PENDING, PAYOUT_STATUS.PROCESSING].includes(payout.status)) {
-      throw new Error("Payout is not processable");
+
+    const ownerType = payoutTypeToOwnerType(payoutType);
+    const wallet = await getOrCreateWallet(ownerType, beneficiaryId, { session });
+
+    const payout = await Payout.create(
+      [
+        {
+          payoutType,
+          beneficiaryId,
+          amount: roundCurrency(amount),
+          status: PAYOUT_STATUS.PENDING,
+          relatedOrderIds: [order._id],
+          remarks,
+          metadata: {
+            ...metadata,
+            orderId: order.orderId,
+          },
+        },
+      ],
+      { session },
+    );
+
+    wallet.pendingBalance = roundCurrency((wallet.pendingBalance || 0) + amount);
+    wallet.totalCredited = roundCurrency((wallet.totalCredited || 0) + amount);
+    await wallet.save({ session });
+
+    await createLedgerEntry(
+      {
+        orderId: order._id,
+        payoutId: payout[0]._id,
+        walletId: wallet._id,
+        actorType: ownerType,
+        actorId: beneficiaryId,
+        type: LEDGER_TRANSACTION_TYPE.PAYOUT_QUEUED,
+        direction: LEDGER_DIRECTION.CREDIT,
+        amount: roundCurrency(amount),
+        description: `${payoutType} payout queued for order ${order.orderId}`,
+      },
+      { session },
+    );
+
+    await session.commitTransaction();
+    return payout[0];
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
+  }
+}
+
+export async function processPayout(payoutId, { remarks = "", adminId = null } = {}) {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const payout = await Payout.findById(payoutId).session(session);
+    if (!payout) throw new Error("Payout not found.");
+    if (payout.status !== PAYOUT_STATUS.PENDING && payout.status !== PAYOUT_STATUS.PROCESSING) {
+      throw new Error(`Invalid payout status for processing: ${payout.status}`);
     }
 
     const ownerType = payoutTypeToOwnerType(payout.payoutType);
-    const adminWallet = await getOrCreateWallet(OWNER_TYPE.ADMIN, null, { session });
-    const beneficiaryWallet = await getOrCreateWallet(ownerType, payout.beneficiaryId, { session });
+    const wallet = await getOrCreateWallet(ownerType, payout.beneficiaryId, { session });
 
-    const debitResult = await debitWallet({
-      ownerType: OWNER_TYPE.ADMIN,
-      ownerId: null,
-      amount: payout.amount,
-      bucket: "available",
-      session,
-    });
+    const amount = roundCurrency(payout.amount);
+    if (wallet.pendingBalance < amount) {
+      console.warn(`[Payout] Warning: Pending balance (${wallet.pendingBalance}) less than payout (${amount}) for ${ownerType} ${payout.beneficiaryId}`);
+    }
 
-    const moveResult = await movePendingToAvailable({
-      ownerType,
-      ownerId: payout.beneficiaryId,
-      amount: payout.amount,
-      session,
-    });
+    wallet.pendingBalance = roundCurrency(Math.max(0, (wallet.pendingBalance || 0) - amount));
+    wallet.availableBalance = roundCurrency((wallet.availableBalance || 0) + amount);
+    await wallet.save({ session });
 
     payout.status = PAYOUT_STATUS.COMPLETED;
     payout.processedAt = new Date();
-    if (remarks) payout.remarks = remarks;
-    payout.createdBy = adminId || payout.createdBy;
-    payout.failedReason = undefined;
+    payout.remarks = remarks || payout.remarks;
+    if (adminId) payout.createdBy = adminId;
     await payout.save({ session });
 
-    await createLedgerEntry(
-      {
-        payoutId: payout._id,
-        walletId: adminWallet._id,
-        actorType: OWNER_TYPE.ADMIN,
-        actorId: null,
-        type: processedLedgerTypeByPayoutType(payout.payoutType),
-        direction: LEDGER_DIRECTION.DEBIT,
-        amount: payout.amount,
-        status: "COMPLETED",
-        description: `${payout.payoutType} payout processed`,
-        reference: `PAYOUT-${payout._id}`,
-        balanceBefore: debitResult.before,
-        balanceAfter: debitResult.after,
-      },
-      { session },
-    );
+    for (const orderId of payout.relatedOrderIds) {
+      const order = await Order.findById(orderId).session(session);
+      if (!order) continue;
 
-    await createLedgerEntry(
-      {
-        payoutId: payout._id,
-        walletId: beneficiaryWallet._id,
-        actorType: ownerType,
-        actorId: payout.beneficiaryId,
-        type: processedLedgerTypeByPayoutType(payout.payoutType),
-        direction: LEDGER_DIRECTION.CREDIT,
-        amount: payout.amount,
-        status: "COMPLETED",
-        description: `${payout.payoutType} payout released to beneficiary`,
-        reference: `PAYOUT-${payout._id}`,
-        balanceBefore: moveResult.availableBefore,
-        balanceAfter: moveResult.availableAfter,
-      },
-      { session },
-    );
-
-    const relatedOrders = await Order.find(
-      { _id: { $in: payout.relatedOrderIds || [] } },
-      null,
-      { session },
-    );
-    for (const order of relatedOrders) {
-      order.settlementStatus = patchOrderSettlementForPayout(
-        order,
-        payout.payoutType,
-        "COMPLETED",
-      );
       if (payout.payoutType === PAYOUT_TYPE.SELLER) {
-        order.financeFlags = {
-          ...(order.financeFlags || {}),
-          sellerPayoutQueued: true,
-        };
-      } else {
-        order.financeFlags = {
-          ...(order.financeFlags || {}),
-          riderPayoutQueued: true,
-        };
+        order.settlementStatus = { ...(order.settlementStatus || {}), sellerPayout: "COMPLETED" };
+        order.financeFlags = { ...(order.financeFlags || {}), sellerPayoutQueued: true };
+      } else if (payout.payoutType === PAYOUT_TYPE.DELIVERY_PARTNER) {
+        order.settlementStatus = { ...(order.settlementStatus || {}), riderPayout: "COMPLETED" };
+        order.financeFlags = { ...(order.financeFlags || {}), riderPayoutQueued: true };
       }
       await order.save({ session });
     }
@@ -267,13 +169,115 @@ export async function processPayout(payoutId, { remarks, adminId } = {}) {
   }
 }
 
-export async function bulkProcessPayouts({
+export async function queueSellerPayouts({ orderIds = [] } = {}) {
+  const query = {
+    status: "delivered",
+    "settlementStatus.sellerPayout": { $ne: "COMPLETED" },
+  };
+  if (Array.isArray(orderIds) && orderIds.length > 0) {
+    query._id = { $in: orderIds };
+  }
+
+  const orders = await Order.find(query).lean();
+  const created = [];
+  for (const order of orders) {
+    const payout = await createPendingPayoutForOrder({
+      order,
+      payoutType: PAYOUT_TYPE.SELLER,
+      beneficiaryId: order.seller,
+      amount: order.paymentBreakdown?.sellerPayoutTotal || 0,
+      metadata: { trigger: "queueSellerPayouts" },
+    });
+    if (payout) created.push(payout);
+  }
+  return created;
+}
+
+export async function queueRiderPayouts({ orderIds = [] } = {}) {
+  const query = {
+    status: "delivered",
+    "settlementStatus.riderPayout": { $ne: "COMPLETED" },
+    deliveryBoy: { $ne: null },
+  };
+  if (Array.isArray(orderIds) && orderIds.length > 0) {
+    query._id = { $in: orderIds };
+  }
+
+  const orders = await Order.find(query).lean();
+  const created = [];
+  for (const order of orders) {
+    const payout = await createPendingPayoutForOrder({
+      order,
+      payoutType: PAYOUT_TYPE.DELIVERY_PARTNER,
+      beneficiaryId: order.deliveryBoy,
+      amount: order.paymentBreakdown?.riderPayoutTotal || 0,
+      metadata: { trigger: "queueRiderPayouts" },
+    });
+    if (payout) created.push(payout);
+  }
+  return created;
+}
+
+export async function cancelPendingPayoutForOrder(orderId, payoutType, { remarks, adminId, session: externalSession } = {}) {
+  const session = externalSession || (await mongoose.startSession());
+  const managedSession = !externalSession;
+  if (managedSession) session.startTransaction();
+
+  try {
+    const payout = await Payout.findOne({
+      relatedOrderIds: orderId,
+      payoutType,
+      status: { $in: [PAYOUT_STATUS.PENDING, PAYOUT_STATUS.PROCESSING] },
+    }, null, { session });
+
+    if (!payout) return null;
+
+    const ownerType = payoutTypeToOwnerType(payout.payoutType);
+    const beneficiaryWallet = await getOrCreateWallet(ownerType, payout.beneficiaryId, { session });
+
+    const amount = roundCurrency(payout.amount);
+    beneficiaryWallet.pendingBalance = roundCurrency(Math.max((beneficiaryWallet.pendingBalance || 0) - amount, 0));
+    beneficiaryWallet.totalCredited = roundCurrency(Math.max((beneficiaryWallet.totalCredited || 0) - amount, 0));
+    await beneficiaryWallet.save({ session });
+
+    payout.status = PAYOUT_STATUS.CANCELLED;
+    payout.remarks = remarks || `Payout cancelled due to return/reversal.`;
+    payout.cancelledAt = new Date();
+    if (adminId) payout.createdBy = adminId;
+    await payout.save({ session });
+
+    await createLedgerEntry(
+      {
+        orderId,
+        payoutId: payout._id,
+        walletId: beneficiaryWallet._id,
+        actorType: ownerType,
+        actorId: payout.beneficiaryId,
+        type: LEDGER_TRANSACTION_TYPE.PAYOUT_CANCELLED || "PAYOUT_CANCELLED",
+        direction: LEDGER_DIRECTION.DEBIT,
+        amount,
+        description: `Pending ${payout.payoutType} payout reversed due to return.`,
+      },
+      { session },
+    );
+
+    if (managedSession) await session.commitTransaction();
+    return payout;
+  } catch (error) {
+    if (managedSession) await session.abortTransaction();
+    throw error;
+  } finally {
+    if (managedSession) session.endSession();
+  }
+}
+
+export const bulkProcessPayouts = async ({
   payoutIds = [],
   payoutType,
   limit = 50,
   adminId = null,
   remarks = "",
-} = {}) {
+} = {}) => {
   let targets = payoutIds;
   if (!Array.isArray(targets) || targets.length === 0) {
     const query = {
@@ -311,57 +315,4 @@ export async function bulkProcessPayouts({
     failed: results.filter((row) => row.status === "FAILED").length,
     results,
   };
-}
-
-export async function queueSellerPayouts({ orderIds = [] } = {}) {
-  const query = {
-    status: "delivered",
-    "settlementStatus.sellerPayout": { $ne: "COMPLETED" },
-  };
-  if (Array.isArray(orderIds) && orderIds.length > 0) {
-    query._id = { $in: orderIds };
-  }
-
-  const orders = await Order.find(query).lean();
-  const created = [];
-
-  for (const order of orders) {
-    const payout = await createPendingPayoutForOrder({
-      order,
-      payoutType: PAYOUT_TYPE.SELLER,
-      beneficiaryId: order.seller,
-      amount: order.paymentBreakdown?.sellerPayoutTotal || 0,
-      metadata: { trigger: "queueSellerPayouts" },
-    });
-    if (payout) created.push(payout);
-  }
-
-  return created;
-}
-
-export async function queueRiderPayouts({ orderIds = [] } = {}) {
-  const query = {
-    status: "delivered",
-    "settlementStatus.riderPayout": { $ne: "COMPLETED" },
-    deliveryBoy: { $ne: null },
-  };
-  if (Array.isArray(orderIds) && orderIds.length > 0) {
-    query._id = { $in: orderIds };
-  }
-
-  const orders = await Order.find(query).lean();
-  const created = [];
-
-  for (const order of orders) {
-    const payout = await createPendingPayoutForOrder({
-      order,
-      payoutType: PAYOUT_TYPE.DELIVERY_PARTNER,
-      beneficiaryId: order.deliveryBoy,
-      amount: order.paymentBreakdown?.riderPayoutTotal || 0,
-      metadata: { trigger: "queueRiderPayouts" },
-    });
-    if (payout) created.push(payout);
-  }
-
-  return created;
 }

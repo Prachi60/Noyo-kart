@@ -24,9 +24,10 @@ const DeliverySlideButton = ({
   onSuccess,
   onError,
   isReturn = false,
+  isReturnDrop = false,
   label = "SLIDE TO GENERATE OTP",
-  bgColor = "bg-brand-600",
-  bgColorLight = "bg-brand-50",
+  bgColor = "bg-indigo-600",
+  bgColorLight = "bg-indigo-50",
 }) => {
   const [isSlideComplete, setIsSlideComplete] = useState(false);
   const [dragX, setDragX] = useState(0);
@@ -53,7 +54,9 @@ const DeliverySlideButton = ({
 
     try {
       // Call appropriate endpoint based on flow type
-      const response = isReturn 
+      const response = isReturnDrop
+        ? await deliveryApi.requestReturnDropOtp(orderId, {})
+        : isReturn 
         ? await deliveryApi.requestReturnOtp(orderId, {})
         : await deliveryApi.generateDeliveryOtp(orderId);
 

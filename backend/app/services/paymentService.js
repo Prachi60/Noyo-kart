@@ -371,6 +371,11 @@ async function handleOrderSideEffectsFromPaymentStatus(payment, nextStatus, reas
         userId: order.customer,
         sellerId: order.seller,
       });
+
+      emitNotificationEvent(NOTIFICATION_EVENTS.NEW_ORDER, {
+        orderId: order.orderId,
+        sellerId: order.seller,
+      });
     }
     await updateCheckoutGroupPaymentStatus(payment.checkoutGroupId, nextStatus);
     return;

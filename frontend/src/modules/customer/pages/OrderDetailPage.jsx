@@ -33,6 +33,8 @@ import {
   leaveOrderRoom,
   onOrderStatusUpdate,
   onCustomerOtp,
+  onReturnPickupOtp,
+  onReturnDropOtp,
 } from "@/core/services/orderSocket";
 import { getLegacyStatusFromOrder } from "@/shared/utils/orderStatus";
 
@@ -187,7 +189,11 @@ const OrderDetailPage = () => {
 
         try {
           const retRes = await customerApi.getReturnDetails(orderId);
-          setReturnDetails(retRes.data.result);
+          const ret = retRes.data.result;
+          setReturnDetails(ret);
+          if (ret?.returnPickupOtp) {
+            setHandoffOtp(ret.returnPickupOtp);
+          }
         } catch {
           setReturnDetails(null);
         }
@@ -230,14 +236,22 @@ const OrderDetailPage = () => {
       refresh();
     });
     const offOtp = onCustomerOtp(getToken, (payload) => {
-      if (matchesOrderIdentifier(payload?.orderId, identifiersRef.current) && payload?.code) {
-        setHandoffOtp(payload.code);
+      if (matchesOrderIdentifier(payload?.orderId, identifiersRef.current) && (payload?.code || payload?.otp)) {
+        setHandoffOtp(payload.code || payload.otp);
         toast.info("Delivery OTP received — share with rider if asked.");
       }
     });
+    const offReturnOtp = onReturnPickupOtp(getToken, (payload) => {
+      if (matchesOrderIdentifier(payload?.orderId, identifiersRef.current) && payload?.otp) {
+        setHandoffOtp(payload.otp);
+        toast.info("Return pickup OTP received — share with rider.");
+      }
+    });
+
     return () => {
       offStatus();
       offOtp();
+      offReturnOtp();
       leaveOrderRoom(orderId, getToken);
     };
   }, [orderId]);

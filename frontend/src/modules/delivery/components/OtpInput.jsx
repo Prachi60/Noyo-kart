@@ -18,7 +18,7 @@ import { deliveryApi } from "../services/deliveryApi";
  * @param {Function} props.onError - Callback when validation fails
  * @param {Function} props.onCancel - Optional callback for cancel action
  */
-const OtpInput = ({ orderId, isReturn = false, onSuccess, onError, onCancel }) => {
+const OtpInput = ({ orderId, isReturn = false, isReturnDrop = false, onSuccess, onError, onCancel }) => {
   const [otp, setOtp] = useState(["", "", "", ""]);
   const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -150,12 +150,21 @@ const OtpInput = ({ orderId, isReturn = false, onSuccess, onError, onCancel }) =
 
     try {
       // Call appropriate validation endpoint
-      const response = isReturn 
+      const response = isReturnDrop
+        ? await deliveryApi.verifyReturnDropOtp(orderId, { code: otpString })
+        : isReturn
         ? await deliveryApi.verifyReturnOtp(orderId, { otp: otpString })
         : await deliveryApi.validateDeliveryOtp(orderId, { otp: otpString });
 
       // Success
-      toast.success(response.data?.message || (isReturn ? "Return pickup verified!" : "Order delivered successfully!"));
+      toast.success(
+        response.data?.message ||
+          (isReturnDrop
+            ? "Seller confirmed! Return complete."
+            : isReturn
+            ? "Return pickup verified!"
+            : "Order delivered successfully!")
+      );
       
       if (onSuccess) {
         onSuccess(response.data);
@@ -218,10 +227,12 @@ const OtpInput = ({ orderId, isReturn = false, onSuccess, onError, onCancel }) =
       {/* Header */}
       <div className="text-center">
         <h3 className="text-lg font-bold text-gray-900 mb-1">
-          {isReturn ? "Enter Return OTP" : "Enter Delivery OTP"}
+          {isReturnDrop ? "Enter Seller OTP" : isReturn ? "Enter Return OTP" : "Enter Delivery OTP"}
         </h3>
         <p className="text-sm text-gray-600">
-          Ask the customer for the 4-digit code
+          {isReturnDrop
+            ? "Ask the seller for the 4-digit return confirmation code"
+            : "Ask the customer for the 4-digit code"}
         </p>
       </div>
 
@@ -306,7 +317,7 @@ const OtpInput = ({ orderId, isReturn = false, onSuccess, onError, onCancel }) =
         ) : (
           <>
             <CheckCircle className="w-5 h-5" />
-            <span>{isReturn ? "Confirm Pickup" : "Confirm Delivery"}</span>
+            <span>{isReturnDrop ? "Confirm Return Delivery" : isReturn ? "Confirm Pickup" : "Confirm Delivery"}</span>
           </>
         )}
       </button>

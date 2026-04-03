@@ -100,6 +100,33 @@ function ensurePaymentBreakdownSnapshots(order) {
   };
 }
 
+function parsePositiveInt(value, fallback) {
+  const parsed = parseInt(value, 10);
+  if (Number.isFinite(parsed) && parsed >= 0) return parsed;
+  return fallback;
+}
+
+function getReturnEligibilityDelayMinutes() {
+  return parsePositiveInt(process.env.RETURN_ELIGIBILITY_DELAY_MINUTES, 2);
+}
+
+function getReturnWindowMinutes() {
+  return parsePositiveInt(process.env.RETURN_WINDOW_MINUTES, 2);
+}
+
+function computeReturnWindowDates(deliveredAt) {
+  const eligibleDelay = getReturnEligibilityDelayMinutes();
+  const windowMinutes = getReturnWindowMinutes();
+  const start = deliveredAt instanceof Date ? deliveredAt : new Date();
+  const eligibleAt = new Date(start.getTime() + eligibleDelay * 60 * 1000);
+  const windowExpiresAt = new Date(start.getTime() + windowMinutes * 60 * 1000);
+
+  return {
+    eligibleAt,
+    windowExpiresAt,
+  };
+}
+
 export function freezeFinancialSnapshot(order, breakdown) {
   if (!order || !breakdown) return order;
 
@@ -173,6 +200,45 @@ export async function createPendingSellerPayout(order, { session, actorId } = {}
     sellerPayout: "PENDING",
   };
   return payout;
+}
+
+export async function releaseHeldSellerPayout(orderOrId, { actorId = null } = {}) {
+  const session = await mongoose.startSession();
+  try {
+    session.startTransaction();
+    const order = await findOrderForUpdate(orderOrId, session);
+
+    if (!order?.seller) {
+      await session.commitTransaction();
+      return null;
+    }
+
+    if (order.financeFlags?.sellerPayoutQueued) {
+      await session.commitTransaction();
+      return null;
+    }
+
+    const payout = await createPendingSellerPayout(order, { session, actorId });
+    order.financeFlags = {
+      ...(order.financeFlags || {}),
+      sellerPayoutHeld: false,
+    };
+    if (payout) {
+      order.settlementStatus = {
+        ...(order.settlementStatus || {}),
+        sellerPayout: "PENDING",
+      };
+    }
+
+    await order.save({ session });
+    await session.commitTransaction();
+    return payout;
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
+  }
 }
 
 export async function createPendingRiderPayout(order, { session, actorId } = {}) {
@@ -519,6 +585,13 @@ export async function settleDeliveredOrder(orderOrId, { actorId = null } = {}) {
       order.deliveredAt = new Date();
     }
 
+    if (!order.returnEligibleAt || !order.returnWindowExpiresAt) {
+      const { eligibleAt, windowExpiresAt } = computeReturnWindowDates(order.deliveredAt);
+      order.returnEligibleAt = order.returnEligibleAt || eligibleAt;
+      order.returnWindowExpiresAt = order.returnWindowExpiresAt || windowExpiresAt;
+      order.returnDeadline = order.returnDeadline || windowExpiresAt;
+    }
+
     if (order.paymentMode === "ONLINE" && !order.financeFlags?.onlinePaymentCaptured) {
       throw new Error("Cannot settle delivered online order before payment capture");
     }
@@ -528,7 +601,22 @@ export async function settleDeliveredOrder(orderOrId, { actorId = null } = {}) {
       return order;
     }
 
+    const now = new Date();
+    const holdSellerPayout =
+      order.returnWindowExpiresAt instanceof Date && order.returnWindowExpiresAt > now;
+
     await createPendingSellerPayout(order, { session, actorId });
+
+    if (holdSellerPayout) {
+      order.financeFlags = {
+        ...(order.financeFlags || {}),
+        sellerPayoutHeld: true,
+      };
+      order.settlementStatus = {
+        ...(order.settlementStatus || {}),
+        sellerPayout: "HOLD",
+      };
+    }
     await createPendingRiderPayout(order, { session, actorId });
     await creditAdminEarning(order, { session, actorId });
 

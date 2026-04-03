@@ -123,10 +123,12 @@ const OrdersList = () => {
 
     const filteredOrders = useMemo(() => {
         return safeOrders.filter(order => {
+            const safeLower = (value) => String(value || '').toLowerCase();
+            const query = safeLower(searchTerm);
             const matchesSearch =
-                order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                order.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                order.seller.toLowerCase().includes(searchTerm.toLowerCase());
+                safeLower(order.id).includes(query) ||
+                safeLower(order.customer).includes(query) ||
+                safeLower(order.seller).includes(query);
 
             const matchesStatus = adminRouteMatchesOrder(status, order);
 
@@ -135,7 +137,7 @@ const OrdersList = () => {
     }, [safeOrders, searchTerm, status]);
 
     const getStatusStyles = (status) => {
-        switch (status.toLowerCase()) {
+        switch (String(status || '').toLowerCase()) {
             case 'pending': return 'bg-amber-100 text-amber-600 border-amber-200';
             case 'confirmed': return 'bg-blue-100 text-blue-600 border-blue-200';
             case 'packed': return 'bg-indigo-100 text-indigo-600 border-indigo-200';

@@ -8,6 +8,8 @@ import Delivery from "../models/delivery.js";
 import Setting from "../models/setting.js";
 import User from "../models/customer.js";
 import CheckoutGroup from "../models/checkoutGroup.js";
+import Payout from "../models/payout.js";
+import OrderOtp from "../models/orderOtp.js";
 import handleResponse from "../utils/helper.js";
 import getPagination from "../utils/pagination.js";
 import { WORKFLOW_STATUS, DEFAULT_SELLER_TIMEOUT_MS } from "../constants/orderWorkflow.js";
@@ -43,9 +45,14 @@ import { placeOrderAtomic } from "../services/orderPlacementService.js";
 import { emitNotificationEvent } from "../modules/notifications/notification.emitter.js";
 import { NOTIFICATION_EVENTS } from "../modules/notifications/notification.constants.js";
 import { getDeliveryPartnerIdsWithinSellerRadius } from "../services/deliveryNearbyService.js";
-import { emitDeliveryBroadcastForSeller } from "../services/orderSocketEmitter.js";
+import {
+  emitDeliveryBroadcastForSeller,
+  emitReturnBroadcastForCustomer,
+  retractDeliveryBroadcastForOrder,
+} from "../services/orderSocketEmitter.js";
 import * as walletService from "../services/finance/walletService.js";
 import { OWNER_TYPE } from "../constants/finance.js";
+import { processPayout } from "../services/finance/payoutService.js";
 
 function validateWithJoi(schema, payload) {
   const { error, value } = schema.validate(payload, {
@@ -91,6 +98,39 @@ function inferPaymentMode(payment = {}) {
     return "COD";
   }
   return null;
+}
+
+function parsePositiveInt(value, fallback) {
+  const parsed = parseInt(value, 10);
+  if (Number.isFinite(parsed) && parsed >= 0) return parsed;
+  return fallback;
+}
+
+function getReturnEligibilityDelayMinutes() {
+  return parsePositiveInt(process.env.RETURN_ELIGIBILITY_DELAY_MINUTES, 2);
+}
+
+function getReturnWindowMinutes() {
+  return parsePositiveInt(process.env.RETURN_WINDOW_MINUTES, 2);
+}
+
+function computeReturnWindowForOrder(order) {
+  const base = order?.deliveredAt || order?.createdAt || new Date();
+  const deliveredAt = base instanceof Date ? base : new Date(base);
+  const eligibleDelay = getReturnEligibilityDelayMinutes();
+  const windowMinutes = getReturnWindowMinutes();
+  const eligibleAt = order?.returnEligibleAt || new Date(deliveredAt.getTime() + eligibleDelay * 60 * 1000);
+  let windowExpiresAt = order?.returnWindowExpiresAt || new Date(deliveredAt.getTime() + windowMinutes * 60 * 1000);
+  if (windowExpiresAt < eligibleAt) {
+    windowExpiresAt = eligibleAt;
+  }
+
+  return {
+    eligibleAt,
+    windowExpiresAt,
+    eligibleDelay,
+    windowMinutes,
+  };
 }
 
 async function deriveDistanceKm({ sellerId, addressLocation }) {
@@ -549,17 +589,23 @@ export const requestReturn = async (req, res) => {
       );
     }
 
-    const parsedWindow = parseInt(process.env.RETURN_WINDOW_MINUTES || "2", 10);
-    const returnWindowMinutes = Number.isFinite(parsedWindow) && parsedWindow > 0 ? parsedWindow : 2;
     const now = new Date();
-    const returnWindowStart = order.deliveredAt || order.createdAt;
-    const deadline = new Date(returnWindowStart.getTime() + returnWindowMinutes * 60 * 1000);
+    const { eligibleAt, windowExpiresAt, eligibleDelay, windowMinutes } =
+      computeReturnWindowForOrder(order);
 
-    if (now > deadline) {
+    if (now < eligibleAt) {
       return handleResponse(
         res,
         400,
-        `Return window has expired. You can only request a return within ${returnWindowMinutes} minutes of delivery.`,
+        `Return is available after ${eligibleDelay} minutes from delivery. Please try again later.`,
+      );
+    }
+
+    if (windowExpiresAt && now > windowExpiresAt) {
+      return handleResponse(
+        res,
+        400,
+        `Return window has expired. You can only request a return within ${windowMinutes} minutes of delivery.`,
       );
     }
 
@@ -599,7 +645,9 @@ export const requestReturn = async (req, res) => {
     order.returnImages = Array.isArray(images) ? images.slice(0, 5) : [];
     order.returnItems = selectedItems;
     order.returnRequestedAt = now;
-    order.returnDeadline = deadline;
+    order.returnEligibleAt = eligibleAt;
+    order.returnWindowExpiresAt = windowExpiresAt;
+    order.returnDeadline = windowExpiresAt;
 
     await order.save();
 
@@ -680,6 +728,18 @@ export const getReturnDetails = async (req, res) => {
         returnDeliveryCommission = 0;
       }
     }
+    
+    // Fetch active OTP if in pickup assigned status
+    let activeOtp = null;
+    if (order.returnStatus === "return_pickup_assigned") {
+      const otpDoc = await OrderOtp.findOne({
+        orderId: order.orderId,
+        type: "return_pickup",
+        consumedAt: null,
+        expiresAt: { $gt: new Date() },
+      }).sort({ createdAt: -1 });
+      activeOtp = otpDoc?.code || null;
+    }
 
     const payload = {
       orderId: order.orderId,
@@ -689,11 +749,17 @@ export const getReturnDetails = async (req, res) => {
       returnRejectedReason: order.returnRejectedReason,
       returnRequestedAt: order.returnRequestedAt,
       returnDeadline: order.returnDeadline,
+      returnEligibleAt: order.returnEligibleAt,
+      returnWindowExpiresAt: order.returnWindowExpiresAt,
       returnImages: order.returnImages || [],
       returnItems: order.returnItems || [],
       returnRefundAmount: order.returnRefundAmount,
       returnDeliveryCommission,
       returnDeliveryBoy: order.returnDeliveryBoy || null,
+      returnQcStatus: order.returnQcStatus,
+      returnQcAt: order.returnQcAt,
+      returnQcNote: order.returnQcNote,
+      returnPickupOtp: activeOtp,
     };
 
     return handleResponse(res, 200, "Return details fetched", payload);
@@ -933,11 +999,16 @@ export const approveReturnRequest = async (req, res) => {
       ...(item.toObject?.() ?? item),
       status: "approved",
     }));
-    order.returnStatus = "return_approved";
     order.returnRefundAmount = refundAmount;
     order.returnDeliveryCommission = returnCommission;
 
+    // Move to approved state (broadcast)
+    order.returnStatus = "return_approved";
+    order.returnDeliveryBoy = null;
+    order.skippedBy = [];
+
     await order.save();
+
     emitNotificationEvent(NOTIFICATION_EVENTS.RETURN_APPROVED, {
       orderId: order.orderId,
       customerId: order.customer,
@@ -946,6 +1017,59 @@ export const approveReturnRequest = async (req, res) => {
       data: {
         refundAmount,
       },
+    });
+
+    // Broadcast to nearby delivery partners for return pickup
+    let sellerInfo = null;
+    try {
+      sellerInfo = await Seller.findById(order.seller)
+        .select("shopName address phone")
+        .lean();
+    } catch {
+      sellerInfo = null;
+    }
+
+    // Fetch customer info for enriched ride panel display
+    let customerInfo = null;
+    try {
+      customerInfo = await User.findById(order.customer)
+        .select("name phone")
+        .lean();
+    } catch {
+      customerInfo = null;
+    }
+
+    const payload = {
+      orderId: order.orderId,
+      type: "RETURN_PICKUP",
+      commission: returnCommission,
+      preview: {
+        pickup: order.address?.address || "Customer Address",
+        pickupPhone: order.address?.phone || customerInfo?.phone || "",
+        customerName: order.address?.name || customerInfo?.name || "Customer",
+        drop: sellerInfo?.shopName || "Seller Store",
+        dropAddress: sellerInfo?.address || "",
+        total: order.pricing?.total || 0,
+        returnReason: order.returnReason || "",
+        returnItems: Array.isArray(order.returnItems)
+          ? order.returnItems.map((i) => ({
+              name: i.name || "",
+              quantity: i.quantity || 1,
+              price: i.price || 0,
+              image: i.image || "",
+            }))
+          : [],
+      },
+      deliverySearchExpiresAt: new Date(Date.now() + 60 * 1000).toISOString(),
+    };
+
+    const customerLocation = order.address?.location;
+    emitReturnBroadcastForCustomer(customerLocation, payload);
+    emitNotificationEvent(NOTIFICATION_EVENTS.RETURN_PICKUP_ASSIGNED, {
+      orderId: order.orderId,
+      sellerId: order.seller,
+      customerId: order.customer,
+      data: { commission: returnCommission },
     });
 
     return handleResponse(res, 200, "Return request approved", order);
@@ -1020,6 +1144,92 @@ export const rejectReturnRequest = async (req, res) => {
 };
 
 /* ===============================
+   QC CHECK (Admin)
+================================ */
+export const updateReturnQcStatus = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { qcStatus, note } = req.body || {};
+    const { id: userId, role } = req.user;
+
+    if (role !== "admin") {
+      return handleResponse(res, 403, "Access denied. Admins only.");
+    }
+
+    if (!["qc_passed", "qc_failed"].includes(qcStatus)) {
+      return handleResponse(res, 400, "Invalid qcStatus value.");
+    }
+
+    const orderKey = orderMatchQueryFromRouteParam(orderId);
+    if (!orderKey) {
+      return handleResponse(res, 404, "Order not found");
+    }
+
+    const order = await Order.findOne(orderKey);
+    if (!order) {
+      return handleResponse(res, 404, "Order not found");
+    }
+
+    if (order.returnStatus !== "returned") {
+      return handleResponse(
+        res,
+        400,
+        "QC can only be completed after the item is returned.",
+      );
+    }
+
+    order.returnStatus = qcStatus;
+    order.returnQcStatus = qcStatus === "qc_passed" ? "passed" : "failed";
+    order.returnQcAt = new Date();
+    order.returnQcBy = userId;
+    order.returnQcNote = note ? String(note).trim().slice(0, 500) : undefined;
+
+    await order.save();
+
+    if (qcStatus === "qc_passed") {
+      const updated = await completeReturnAndRefund(order);
+      return handleResponse(res, 200, "QC passed and refund processed", updated);
+    }
+
+    // QC failed: allow seller payout release if on hold
+    // Fraud guard — prevent double release
+    if (order.sellerPayoutReleasedAt) {
+      return handleResponse(res, 409, "Seller payout already released for this order.");
+    }
+    const autoRelease =
+      String(process.env.AUTO_RELEASE_SELLER_PAYOUT || "true").toLowerCase() === "true";
+    if (autoRelease) {
+      const payout = await Payout.findOne({
+        payoutType: "SELLER",
+        relatedOrderIds: order._id,
+        status: { $in: ["PENDING", "PROCESSING"] },
+      }).select("_id").lean();
+      if (payout?._id) {
+        try {
+          await processPayout(payout._id);
+        } catch (error) {
+          console.warn("[ReturnQC] Auto-release payout failed:", error.message);
+        }
+      }
+    } else {
+      await Order.updateOne(
+        { _id: order._id },
+        {
+          $set: {
+            "settlementStatus.sellerPayout": "PENDING",
+            "financeFlags.sellerPayoutHeld": false,
+          },
+        },
+      );
+    }
+
+    return handleResponse(res, 200, "QC failed recorded", order);
+  } catch (error) {
+    return handleResponse(res, 500, error.message);
+  }
+};
+
+/* ===============================
    ASSIGN RETURN DELIVERY (Seller/Admin)
 ================================ */
 export const assignReturnDelivery = async (req, res) => {
@@ -1027,10 +1237,6 @@ export const assignReturnDelivery = async (req, res) => {
     const { orderId } = req.params;
     const { id: userId, role } = req.user;
     const { deliveryBoyId } = req.body || {};
-
-    if (!deliveryBoyId) {
-      return handleResponse(res, 400, "deliveryBoyId is required.");
-    }
 
     const orderKey = orderMatchQueryFromRouteParam(orderId);
     if (!orderKey) {
@@ -1092,16 +1298,24 @@ export const assignReturnDelivery = async (req, res) => {
       const payload = {
         orderId: order.orderId,
         type: "RETURN_PICKUP",
+        isReturnPickup: true,
+        items: (order.items || []).map(item => ({
+          name: item.name,
+          quantity: item.quantity,
+          image: item.image || item.thumbnail
+        })),
         preview: {
-          pickup: "Customer Address",
-          drop: "Seller Store",
+          pickup: order.address?.completeAddress || "Customer Address",
+          drop: order.sellerBranchArea || "Seller Store",
           total: order.pricing?.total || 0,
+          earnings: order.riderEarnings || 0,
         },
         deliverySearchExpiresAt: new Date(Date.now() + 60 * 1000).toISOString(),
       };
       
-      // Emit websocket broadcast
-      emitDeliveryBroadcastForSeller(order.seller, payload);
+      // Trigger broadcast for nearby riders (Riders near Customer for returns)
+      const customerLocation = order.address?.location;
+      emitReturnBroadcastForCustomer(customerLocation, payload);
 
       emitNotificationEvent(NOTIFICATION_EVENTS.RETURN_PICKUP_ASSIGNED, {
         orderId: order.orderId,
@@ -1150,6 +1364,22 @@ export const acceptReturnPickup = async (req, res) => {
       order.returnDeliveryBoy = userId;
       order.returnStatus = "return_pickup_assigned";
       await order.save();
+
+      // Retract broadcast so other riders stop seeing this task
+      try {
+        await retractDeliveryBroadcastForOrder(order.orderId, userId);
+      } catch (e) {
+        console.warn("[acceptReturnPickup] retract broadcast failed:", e.message);
+      }
+
+      // Notify customer their return pickup is assigned
+      emitNotificationEvent(NOTIFICATION_EVENTS.RETURN_PICKUP_ASSIGNED, {
+        orderId: order.orderId,
+        customerId: order.customer,
+        userId: order.customer,
+        deliveryId: userId,
+        data: { message: "A delivery partner has accepted your return pickup!" },
+      });
     }
 
     return handleResponse(res, 200, "Return pickup accepted", order);
@@ -1221,6 +1451,9 @@ export const completeReturnAndRefund = async (order) => {
   if (order.returnStatus === "refund_completed") {
     return order;
   }
+  if (order.returnStatus !== "qc_passed") {
+    return order;
+  }
 
   const refundAmount =
     order.returnRefundAmount ||
@@ -1232,14 +1465,9 @@ export const completeReturnAndRefund = async (order) => {
       : 0);
 
   const commission = order.returnDeliveryCommission || 0;
-  const isCOD = order.paymentMode === "COD" || order.paymentMethod?.toLowerCase() === "cod";
-  const totalPaidByWallet = Number(order.pricing?.walletAmount || 0);
-  const totalOrderAmount = Number(order.pricing?.total || 1);
-  const walletPortionOfReturn = (refundAmount / totalOrderAmount) * totalPaidByWallet;
+  const walletRefundTotal = refundAmount;
 
-  // 1. Credit customer wallet (Proportion of wallet used + 100% for ONLINE)
-  const walletRefundTotal = isCOD ? walletPortionOfReturn : refundAmount;
-
+  // 1. Credit customer wallet (full refund, even for COD)
   if (order.customer && walletRefundTotal > 0) {
     const customer = await User.findById(order.customer);
     if (customer) {
@@ -1250,45 +1478,56 @@ export const completeReturnAndRefund = async (order) => {
         user: customer._id,
         userModel: "User",
         order: order._id,
-        type: "Wallet Refund (Return)",
+        type: "Refund",
         amount: Number(walletRefundTotal.toFixed(2)),
         status: "Settled",
-        reference: `WLT-REF-${order.orderId}`,
-        meta: { orderId: order._id, type: "return" }
+        reference: `REF-WALLET-${order.orderId}`,
+        meta: { orderId: order._id, type: "return_wallet" }
       });
     }
-  } else if (isCOD && cashPortionOfReturn > 0) {
-     // For COD, the delivery boy physically hands cash to the user.
-     // We still record a transaction for the system to know the refund happened.
-     await Transaction.create({
-        user: order.customer,
-        userModel: "User",
-        order: order._id,
-        type: "Cash Refund (Return)",
-        amount: Number(cashPortionOfReturn.toFixed(2)),
-        status: "Settled",
-        note: `Physical Cash Refund (Net of wallet: ₹${walletPortionOfReturn.toFixed(2)})`,
-        reference: `REF-CUST-CASH-${order.orderId}`,
-        meta: { orderId: order._id, type: "return_cash" }
-     });
   }
 
-  // 2. Seller adjustment (refund + return commission)
+  // 2. Seller adjustment (cancel payout if on hold, else debit available balance)
   if (order.seller && (refundAmount > 0 || commission > 0)) {
-    const adjustment = Math.abs(refundAmount + commission);
-    
-    // Debit seller wallet
-    try {
-      await walletService.debitWallet({
-        ownerType: "SELLER",
-        ownerId: order.seller,
-        amount: adjustment,
-        bucket: "available"
-      });
-    } catch (error) {
-      console.warn(`[ReturnFinance] Seller ${order.seller} balance low.`, error.message);
+    const isHeld = 
+      order.settlementStatus?.sellerPayout === "HOLD" || 
+      order.financeFlags?.sellerPayoutHeld;
+
+    if (isHeld) {
+      try {
+        const { cancelPendingPayoutForOrder } = await import("../services/finance/payoutService.js");
+        const cancelled = await cancelPendingPayoutForOrder(order._id, "SELLER", {
+          remarks: `Payout cancelled due to return QC passed.`,
+        });
+
+        if (cancelled) {
+          // If payout was cancelled, we don't need to debit the seller's available balance
+          // because they never received the money in the first place.
+          await Order.findByIdAndUpdate(order._id, {
+            "settlementStatus.sellerPayout": "CANCELLED",
+            "financeFlags.sellerPayoutHeld": false,
+          });
+        }
+      } catch (error) {
+        console.error(`[ReturnFinance] Payout cancellation failed for seller ${order.seller}`, error.message);
+      }
+    } else {
+      // If payment was already released (Available balance), we must debit to recover funds.
+      const adjustment = Math.max(0, refundAmount + commission);
+      try {
+        const { debitWallet } = await import("../services/finance/walletService.js");
+        await debitWallet({
+          ownerType: "SELLER",
+          ownerId: order.seller,
+          amount: adjustment,
+          bucket: "available",
+        });
+      } catch (error) {
+        console.warn(`[ReturnFinance] Wallet debit failed for seller ${order.seller}.`, error.message);
+      }
     }
 
+    const adjustment = Math.max(0, refundAmount + commission);
     await Transaction.create({
       user: order.seller,
       userModel: "Seller",
@@ -1301,7 +1540,10 @@ export const completeReturnAndRefund = async (order) => {
   }
 
   // 3. Delivery partner earning for return pickup
-  if (order.returnDeliveryBoy && commission > 0) {
+  // Guard: commission is already credited at pickupOTP time (verifyReturnPickupOtp)
+  // Only credit here if it wasn't already paid to prevent double payment
+  const commissionAlreadyPaid = order.financeFlags?.returnPickupCommissionPaid;
+  if (order.returnDeliveryBoy && commission > 0 && !commissionAlreadyPaid) {
     try {
       await walletService.creditWallet({
         ownerType: "DELIVERY_PARTNER",
@@ -1322,6 +1564,8 @@ export const completeReturnAndRefund = async (order) => {
       status: "Settled",
       reference: `RET-DEL-${order.orderId}`,
     });
+  } else if (commissionAlreadyPaid) {
+    console.log(`[ReturnFinance] Commission already paid at pickup for order ${order.orderId} — skipping duplicate credit.`);
   }
 
   order.returnStatus = "refund_completed";
@@ -1339,7 +1583,7 @@ export const completeReturnAndRefund = async (order) => {
     data: {
       refundAmount,
       returnDeliveryCommission: commission,
-      isCOD
+      isCOD: order.paymentMode === "COD"
     },
   });
   return order;
@@ -1423,14 +1667,7 @@ export const updateReturnStatus = async (req, res) => {
         order.returnDeliveredBackAt = now;
       }
       await order.save();
-
-      const updated = await completeReturnAndRefund(order);
-      return handleResponse(
-        res,
-        200,
-        "Return received and refund processed",
-        updated,
-      );
+      return handleResponse(res, 200, "Return received", order);
     }
 
     order.returnStatus = returnStatus;
@@ -1648,3 +1885,56 @@ export const skipOrder = async (req, res) => {
   }
 };
 
+/* ===============================
+   UPLOAD RETURN PICKUP PROOF (Delivery)
+================================ */
+export const uploadReturnPickupProof = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { id: userId, role } = req.user;
+    const { images, condition, conditionNote } = req.body || {};
+
+    if (role !== "delivery" && role !== "admin") {
+      return handleResponse(res, 403, "Access denied.");
+    }
+
+    const orderKey = orderMatchQueryFromRouteParam(orderId);
+    if (!orderKey) return handleResponse(res, 404, "Order not found");
+
+    const order = await Order.findOne(orderKey);
+    if (!order) return handleResponse(res, 404, "Order not found");
+
+    if (role === "delivery" && order.returnDeliveryBoy?.toString() !== userId) {
+      return handleResponse(res, 403, "Not assigned to this return pickup.");
+    }
+
+    if (order.returnStatus !== "return_pickup_assigned") {
+      return handleResponse(
+        res,
+        400,
+        "Proof can only be uploaded when status is return_pickup_assigned.",
+      );
+    }
+
+    if (!Array.isArray(images) || images.length === 0) {
+      return handleResponse(res, 400, "At least one image URL is required.");
+    }
+
+    const validConditions = ["good", "damaged", "suspicious"];
+    if (condition && !validConditions.includes(condition)) {
+      return handleResponse(res, 400, "Condition must be: good, damaged, or suspicious.");
+    }
+
+    order.returnPickupImages = images.slice(0, 10);
+    if (condition) order.returnPickupCondition = condition;
+    if (conditionNote) order.returnPickupConditionNote = String(conditionNote).trim().slice(0, 500);
+    await order.save();
+
+    return handleResponse(res, 200, "Pickup proof uploaded", {
+      returnPickupImages: order.returnPickupImages,
+      returnPickupCondition: order.returnPickupCondition,
+    });
+  } catch (error) {
+    return handleResponse(res, 500, error.message);
+  }
+};

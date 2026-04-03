@@ -96,6 +96,21 @@ const DISPLAY_LABELS = {
 
 /** Human-readable status for list/detail badges (customer-facing tone). */
 export function getOrderStatusLabel(order) {
+  const rs = order?.returnStatus;
+  if (rs && rs !== "none") {
+    switch (rs) {
+      case "return_requested": return "Return Requested";
+      case "return_approved": return "Return Approved";
+      case "return_pickup_assigned": return "Pickup Assigned";
+      case "return_pickup_verified": return "Pickup Verified";
+      case "returned": return "Return Delivered to Seller";
+      case "qc_passed": return "Return QC Passed";
+      case "qc_failed": return "Return QC Failed";
+      case "refund_completed": return "Returned & Refunded";
+      default: return rs.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
+    }
+  }
+
   const bucket = getLegacyStatusFromOrder(order);
   return DISPLAY_LABELS[bucket] || bucket.replace(/_/g, " ");
 }

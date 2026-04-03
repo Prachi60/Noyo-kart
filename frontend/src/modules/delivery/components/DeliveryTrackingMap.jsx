@@ -58,7 +58,24 @@ function distanceMeters(from, to) {
 }
 
 function destinationForPhase(order, phase) {
+  const isReturn = order?.returnStatus && order.returnStatus !== "none";
   if (phase === "pickup") {
+    if (isReturn) {
+      const loc = order?.address?.location;
+      if (
+        loc &&
+        typeof loc.lat === "number" &&
+        typeof loc.lng === "number" &&
+        Number.isFinite(loc.lat) &&
+        Number.isFinite(loc.lng)
+      ) {
+        return { lat: loc.lat, lng: loc.lng };
+      }
+      return null;
+    }
+    return coordsToLatLng(order?.seller?.location?.coordinates);
+  }
+  if (isReturn) {
     return coordsToLatLng(order?.seller?.location?.coordinates);
   }
   const loc = order?.address?.location;
@@ -197,6 +214,7 @@ const DeliveryTrackingMapComponent = ({
     return () => clearInterval(iv);
   }, [rider, fetchRoute, phase, orderId]);
 
+  const isReturn = order?.returnStatus && order.returnStatus !== "none";
   const dest = useMemo(() => destinationForPhase(order, phase), [order, phase]);
 
   useEffect(() => {
@@ -453,8 +471,24 @@ const DeliveryTrackingMapComponent = ({
         {dest && (
           <Marker
             position={dest}
-            title={phase === "pickup" ? "Pickup (store)" : "Drop (customer)"}
-            icon={phase === "pickup" ? storeMarkerIcon : customerMarkerIcon}
+            title={
+              phase === "pickup"
+                ? isReturn
+                  ? "Pickup (customer)"
+                  : "Pickup (store)"
+                : isReturn
+                  ? "Drop (seller)"
+                  : "Drop (customer)"
+            }
+            icon={
+              phase === "pickup"
+                ? isReturn
+                  ? customerMarkerIcon
+                  : storeMarkerIcon
+                : isReturn
+                  ? storeMarkerIcon
+                  : customerMarkerIcon
+            }
           />
         )}
       </GoogleMap>

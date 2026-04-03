@@ -164,6 +164,7 @@ export async function generateDeliveryOtp(orderId, deliveryLocation) {
       orderMongoId: order._id,
       type: 'delivery',
       codeHash,
+      code: otp,
       expiresAt,
       attempts: 0,
       maxAttempts: 3,
@@ -342,6 +343,7 @@ export async function generateReturnPickupOtp(orderId) {
       orderMongoId: order._id,
       type: 'return_pickup',
       codeHash,
+      code: otp,
       expiresAt,
       attempts: 0,
       maxAttempts: 3,
@@ -405,6 +407,112 @@ export async function validateReturnPickupOtp(orderId, enteredOtp) {
     return { valid: true, message: 'OTP validated successfully' };
   } catch (error) {
     console.error('Error validating return pickup OTP:', error);
+    return { valid: false, error: 'VALIDATION_FAILED', message: 'Internal error.' };
+  }
+}
+
+/**
+ * Generate OTP for return drop-off at seller location.
+ * Rider arrives at seller and requests OTP; seller receives it to confirm product receipt.
+ * @param {string} orderId
+ * @returns {Promise<Object>}
+ */
+export async function generateReturnDropOtp(orderId) {
+  try {
+    const order = await Order.findOne({ orderId });
+    if (!order) {
+      return { success: false, error: 'Order not found' };
+    }
+
+    const allowedStatuses = ['return_in_transit', 'return_drop_pending'];
+    if (!allowedStatuses.includes(order.returnStatus)) {
+      return {
+        success: false,
+        error: `Return must be in transit before drop-off. Current status: ${order.returnStatus}`,
+      };
+    }
+
+    const otp = String(crypto.randomInt(0, 10000)).padStart(4, '0');
+    const codeHash = OrderOtp.hashCode(otp);
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+    await OrderOtp.updateMany(
+      { orderId, type: 'return_drop', consumedAt: null },
+      { consumedAt: new Date() }
+    );
+
+    await OrderOtp.create({
+      orderId,
+      orderMongoId: order._id,
+      type: 'return_drop',
+      codeHash,
+      code: otp,
+      expiresAt,
+      attempts: 0,
+      maxAttempts: 3,
+      lastGeneratedAt: new Date(),
+    });
+
+    return { success: true, otp, expiresAt };
+  } catch (error) {
+    console.error('Error generating return drop OTP:', error);
+    return { success: false, error: 'Failed to generate return drop OTP.' };
+  }
+}
+
+/**
+ * Validate OTP entered by delivery person at seller drop-off.
+ * @param {string} orderId
+ * @param {string} enteredOtp
+ * @returns {Promise<Object>}
+ */
+export async function validateReturnDropOtp(orderId, enteredOtp) {
+  try {
+    if (!orderId || !enteredOtp) {
+      return { valid: false, error: 'INVALID_FORMAT', message: 'orderId and OTP are required' };
+    }
+
+    const otpRecord = await OrderOtp.findOne({ orderId, type: 'return_drop' }).sort({
+      lastGeneratedAt: -1,
+      createdAt: -1,
+    });
+
+    if (!otpRecord) {
+      return { valid: false, error: 'OTP_NOT_FOUND', message: 'No seller drop OTP found. Please request a new one.' };
+    }
+
+    if (otpRecord.consumedAt) {
+      return { valid: false, error: 'OTP_CONSUMED', message: 'OTP already consumed.' };
+    }
+
+    if (otpRecord.attempts >= otpRecord.maxAttempts) {
+      return { valid: false, error: 'MAX_ATTEMPTS_EXCEEDED', message: 'Max attempts exceeded.' };
+    }
+
+    if (isOtpExpired(otpRecord.expiresAt)) {
+      return { valid: false, error: 'OTP_EXPIRED', message: 'OTP expired. Please request a new one.' };
+    }
+
+    const enteredHash = OrderOtp.hashCode(enteredOtp);
+    const isMatch = enteredHash === otpRecord.codeHash;
+
+    if (!isMatch) {
+      otpRecord.attempts += 1;
+      await otpRecord.save();
+      return {
+        valid: false,
+        error: 'OTP_MISMATCH',
+        message: 'Invalid OTP.',
+        attemptsRemaining: otpRecord.maxAttempts - otpRecord.attempts,
+      };
+    }
+
+    otpRecord.consumedAt = new Date();
+    await otpRecord.save();
+
+    return { valid: true, message: 'Seller drop OTP validated successfully' };
+  } catch (error) {
+    console.error('Error validating return drop OTP:', error);
     return { valid: false, error: 'VALIDATION_FAILED', message: 'Internal error.' };
   }
 }

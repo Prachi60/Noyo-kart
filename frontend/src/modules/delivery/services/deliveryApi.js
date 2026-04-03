@@ -65,4 +65,10 @@ export const deliveryApi = {
     axiosInstance.post(`/orders/workflow/${orderId}/return-otp/request`, body),
   verifyReturnOtp: (orderId, body) =>
     axiosInstance.post(`/orders/workflow/${orderId}/return-otp/verify`, body),
+  uploadReturnPickupProof: (orderId, data) =>
+    axiosInstance.post(`/orders/returns/${orderId}/pickup-proof`, data),
+  requestReturnDropOtp: (orderId, body) =>
+    axiosInstance.post(`/orders/workflow/${orderId}/return-drop-otp/request`, body),
+  verifyReturnDropOtp: (orderId, body) =>
+    axiosInstance.post(`/orders/workflow/${orderId}/return-drop-otp/verify`, body),
 };

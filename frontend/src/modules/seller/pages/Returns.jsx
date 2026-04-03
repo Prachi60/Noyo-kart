@@ -9,12 +9,14 @@ import {
     HiOutlineInboxStack,
     HiOutlineEye,
     HiOutlineCalendarDays,
+    HiOutlineTruck,
 } from "react-icons/hi2";
 import { BlurFade } from "@/components/ui/blur-fade";
 import { MagicCard } from "@/components/ui/magic-card";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
+import { onReturnDropOtp } from "@core/services/orderSocket";
 
 const Returns = () => {
     const { showToast } = useToast();
@@ -27,6 +29,8 @@ const Returns = () => {
     const [rejectReason, setRejectReason] = useState("");
     const [submittingReject, setSubmittingReject] = useState(false);
     const [assigningPickup, setAssigningPickup] = useState(false);
+    const [activeOtps, setActiveOtps] = useState({}); // { orderId: { otp, expiresAt } }
+    const canManageReturns = true;
 
     const tabs = [
         "All",
@@ -35,6 +39,8 @@ const Returns = () => {
         "Rejected",
         "Pickup Assigned",
         "In Transit",
+        "QC Passed",
+        "QC Failed",
         "Completed",
     ];
 
@@ -50,6 +56,10 @@ const Returns = () => {
                 return "Pickup Assigned";
             case "return_in_transit":
                 return "In Transit";
+            case "qc_passed":
+                return "QC Passed";
+            case "qc_failed":
+                return "QC Failed";
             case "returned":
             case "refund_completed":
                 return "Completed";
@@ -69,6 +79,10 @@ const Returns = () => {
             case "return_pickup_assigned":
             case "return_in_transit":
                 return "secondary";
+            case "qc_passed":
+                return "success";
+            case "qc_failed":
+                return "error";
             case "refund_completed":
             case "returned":
                 return "success";
@@ -96,6 +110,21 @@ const Returns = () => {
 
     useEffect(() => {
         fetchReturns();
+        
+        // Listen for return drop OTPs (when rider arrives at seller)
+        const getToken = () => localStorage.getItem("auth_seller");
+        const unsubscribe = onReturnDropOtp(getToken, (payload) => {
+            const { orderId, otp, expiresAt } = payload;
+            setActiveOtps(prev => ({
+                ...prev,
+                [orderId]: { otp, expiresAt }
+            }));
+            showToast(`Rider arrived for Return #${orderId}. OTP: ${otp}`, "info");
+        });
+
+        return () => {
+            if (typeof unsubscribe === "function") unsubscribe();
+        };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -150,7 +179,6 @@ const Returns = () => {
     const handleAssignPickup = async (orderId) => {
         try {
             setAssigningPickup(true);
-            // Calling with empty body triggers backend auto-assignment
             await sellerApi.assignReturnDelivery(orderId, {});
             showToast("Riders notified for return pickup", "success");
             setIsDetailsOpen(false);
@@ -416,6 +444,81 @@ const Returns = () => {
                                     )}
                                 </div>
 
+                                {/* Quality Check Comparison (3-Way) */}
+                                <div className="space-y-3 pt-2">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">
+                                        Product Comparison (QC)
+                                    </p>
+                                    <div className="grid grid-cols-3 gap-3">
+                                        {/* 1. Original Listing Image */}
+                                        <div className="space-y-1.5 flex flex-col h-full group">
+                                            <div className="relative aspect-square rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-inner group-hover:border-slate-300 transition-colors">
+                                                <img
+                                                    src={selectedReturn.items?.[0]?.image || "https://placehold.co/400x400/f8fafc/64748b?text=Original"}
+                                                    alt="Original"
+                                                    className="h-full w-full object-cover"
+                                                />
+                                                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-900/60 to-transparent p-2">
+                                                    <p className="text-[9px] font-black text-white uppercase leading-none">Listing</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* 2. Initial Delivery Proof */}
+                                        <div className="space-y-1.5 flex flex-col h-full group">
+                                            <div className="relative aspect-square rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-inner group-hover:border-slate-300 transition-colors flex items-center justify-center">
+                                                {selectedReturn.deliveryProofImages?.[0] ? (
+                                                    <img
+                                                        src={selectedReturn.deliveryProofImages[0]}
+                                                        alt="Delivered"
+                                                        className="h-full w-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="flex flex-col items-center gap-1.5 text-slate-400 px-3 text-center">
+                                                        <HiOutlineTruck className="h-5 w-5" />
+                                                        <p className="text-[8px] font-bold leading-tight uppercase">No Delivery Photo</p>
+                                                    </div>
+                                                )}
+                                                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-sky-900/60 to-transparent p-2">
+                                                    <p className="text-[9px] font-black text-white uppercase leading-none">Delivered</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* 3. Return Pickup Proof */}
+                                        <div className="space-y-1.5 flex flex-col h-full group">
+                                            <div className="relative aspect-square rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-inner group-hover:border-slate-300 transition-colors flex items-center justify-center">
+                                                {selectedReturn.returnPickupImages?.[0] ? (
+                                                    <img
+                                                        src={selectedReturn.returnPickupImages[0]}
+                                                        alt="Return Pickup"
+                                                        className="h-full w-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="flex flex-col items-center gap-1.5 text-slate-400 px-3 text-center">
+                                                        <HiOutlineInboxStack className="h-5 w-5" />
+                                                        <p className="text-[8px] font-bold leading-tight uppercase">Not Picked Yet</p>
+                                                    </div>
+                                                )}
+                                                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-emerald-900/60 to-transparent p-2">
+                                                    <p className="text-[9px] font-black text-white uppercase leading-none">Return</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {selectedReturn.returnPickupCondition && (
+                                        <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-100 rounded-xl">
+                                            <div className={`h-2 w-2 rounded-full ${
+                                                selectedReturn.returnPickupCondition === 'good' ? 'bg-emerald-500' : 
+                                                selectedReturn.returnPickupCondition === 'damaged' ? 'bg-rose-500' : 'bg-amber-500'
+                                            }`} />
+                                            <p className="text-[11px] font-bold text-slate-600">
+                                                Rider Condition Report: <span className="uppercase text-slate-900">{selectedReturn.returnPickupCondition}</span>
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+
                                 <div className="space-y-2">
                                     <p className="text-xs font-bold text-slate-600 uppercase tracking-widest">
                                         Items
@@ -466,6 +569,25 @@ const Returns = () => {
                                         </span>
                                     </p>
                                 </div>
+
+                                {/* Active OTP Display */}
+                                {activeOtps[selectedReturn.orderId] && (
+                                    <div className="bg-brand-50 border-2 border-dashed border-brand-200 rounded-3xl p-6 text-center space-y-3 animate-in fade-in zoom-in duration-500">
+                                        <p className="text-[10px] font-black text-brand-600 uppercase tracking-[0.2em]">
+                                            Rider Arrived - Share OTP
+                                        </p>
+                                        <div className="flex items-center justify-center gap-3">
+                                            {activeOtps[selectedReturn.orderId].otp.split('').map((char, i) => (
+                                                <div key={i} className="h-14 w-12 bg-white rounded-xl shadow-sm border border-brand-100 flex items-center justify-center text-3xl font-black text-slate-900 border-b-4 border-b-brand-500">
+                                                    {char}
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <p className="text-[10px] font-bold text-slate-500 italic">
+                                            Sharing this code confirms you have received the product.
+                                        </p>
+                                    </div>
+                                )}
                             </div>
 
                              <div className="px-4 py-3 sm:px-6 sm:py-4 border-t border-slate-100 bg-slate-50 flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-center justify-end">
@@ -478,7 +600,7 @@ const Returns = () => {
                                     </button>
                                     
                                     {/* Action: Approve/Reject */}
-                                    {selectedReturn.returnStatus === "return_requested" && (
+                                    {canManageReturns && selectedReturn.returnStatus === "return_requested" && (
                                         <>
                                             <Button
                                                 variant="outline"
@@ -497,7 +619,7 @@ const Returns = () => {
                                     )}
 
                                     {/* Action: Assign Pickup */}
-                                    {(selectedReturn.returnStatus === "return_approved") && (
+                                    {canManageReturns && (selectedReturn.returnStatus === "return_approved") && (
                                         <Button
                                             className="text-xs font-bold bg-brand-600 hover:bg-brand-700"
                                             disabled={assigningPickup}
@@ -518,7 +640,7 @@ const Returns = () => {
                 )}
             </AnimatePresence>
             <AnimatePresence>
-                {isRejectModalOpen && (
+                {canManageReturns && isRejectModalOpen && (
                     <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
                         <motion.div
                             initial={{ opacity: 0 }}
@@ -574,4 +696,3 @@ const Returns = () => {
 };
 
 export default Returns;
-

@@ -53,7 +53,7 @@ const DeliveryLayout = () => {
   /** While working an active order, do not stack the global incoming-offer modal (fixes refresh on order details). */
   const suppressIncomingModal = useMemo(
     () =>
-      /\/delivery\/(order-details|confirm-delivery|navigation)/.test(location.pathname),
+      /\/delivery\/(confirm-delivery|navigation)/.test(location.pathname),
     [location.pathname],
   );
 
@@ -81,6 +81,7 @@ const DeliveryLayout = () => {
     shownOrderIdsRef.current = new Set(shownOrderIdsRef.current).add(payload.orderId);
     const total = typeof p.total === "number" ? p.total : Number(p.total) || 0;
     const dropLabel = typeof p.drop === "string" ? p.drop : String(p.drop);
+    const earnings = typeof p.earnings === "number" ? p.earnings : Math.round(total * 0.1);
     setActiveOrder({
       id: payload.orderId,
       mongoId: undefined,
@@ -89,9 +90,10 @@ const DeliveryLayout = () => {
       distance: "Nearby",
       estTime: "10-15 min",
       value: total,
-      earnings: Math.round(total * 0.1),
+      earnings: earnings,
       expiresAt: payload.deliverySearchExpiresAt || null,
-      isReturnPickup: payload.type === "RETURN_PICKUP",
+      isReturnPickup: payload.type === "RETURN_PICKUP" || payload.isReturnPickup === true,
+      items: payload.items || [],
     });
     const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
     audio.play().catch(() => {});
@@ -114,17 +116,24 @@ const DeliveryLayout = () => {
     if (!newOrder) return;
     shownOrderIdsRef.current = new Set(shownOrderIdsRef.current).add(newOrder.orderId);
     const total = newOrder.pricing?.total || 0;
+    const isReturnPickup = newOrder.isReturnPickup || false;
+    const earnings = newOrder.riderEarnings || Math.round(total * 0.1);
     setActiveOrder({
       id: newOrder.orderId,
       mongoId: newOrder._id,
-      pickup: newOrder.seller?.shopName || "Seller",
-      drop: newOrder.address?.address || "Customer Address",
+      pickup: isReturnPickup
+        ? newOrder.address?.address || "Customer Address"
+        : newOrder.seller?.shopName || "Seller",
+      drop: isReturnPickup
+        ? newOrder.seller?.shopName || "Seller Store"
+        : newOrder.address?.address || "Customer Address",
       distance: "Nearby",
       estTime: "10-15 min",
       value: total,
-      earnings: Math.round(total * 0.1),
+      earnings: earnings,
       expiresAt: newOrder.deliverySearchExpiresAt || null,
-      isReturnPickup: newOrder.isReturnPickup || false,
+      isReturnPickup,
+      items: newOrder.items || [],
     });
     const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
     audio.play().catch(() => {});
@@ -169,6 +178,7 @@ const DeliveryLayout = () => {
       throw error;
     } finally {
       if (availableOrdersRequestRef.current.controller === controller) {
+        availableOrdersRequestRef.current.controller.abort();
         availableOrdersRequestRef.current.controller = null;
         availableOrdersRequestRef.current.inFlight = false;
       }
@@ -499,8 +509,6 @@ const DeliveryLayout = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans max-w-md mx-auto relative shadow-2xl overflow-hidden border-x border-gray-100">
-      {/* Status Bar / Safe Area Placeholder - Removed as it's not defined and causes spacing issues */}
-
       {/* Full-screen order alert — portaled so it always stacks above nav/content */}
       {typeof document !== "undefined" &&
         createPortal(
@@ -529,10 +537,10 @@ const DeliveryLayout = () => {
                       id="delivery-order-alert-title"
                       className="text-xl font-black text-slate-900 mb-1"
                     >
-                      New order request
+                      {activeOrder.isReturnPickup ? "Return pickup request" : "New order request"}
                     </h2>
                     <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-4">
-                      Accept or reject
+                      {activeOrder.isReturnPickup ? "Collect return item" : "Accept or reject"}
                     </p>
                     <div className="flex items-center gap-2 mb-6">
                       <span className="text-2xl font-black text-brand-600">₹{activeOrder.earnings}</span>
@@ -542,19 +550,55 @@ const DeliveryLayout = () => {
                     </div>
 
                     <div className="w-full space-y-4 mb-6">
+                      {/* Return Items "Small Cart" */}
+                      {activeOrder.isReturnPickup && activeOrder.items?.length > 0 && (
+                        <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 flex flex-col gap-2">
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">
+                            Return Items ({activeOrder.items.length})
+                          </p>
+                          <div className="flex gap-2 overflow-x-auto no-scrollbar">
+                            {activeOrder.items.map((item, idx) => (
+                              <div key={idx} className="flex-shrink-0 flex items-center gap-3 bg-white p-2 rounded-xl border border-slate-100 shadow-sm min-w-[140px]">
+                                <div className="h-10 w-10 rounded-lg bg-slate-100 overflow-hidden flex-shrink-0">
+                                  {item.image ? (
+                                    <img src={item.image} alt="" className="h-full w-full object-cover" />
+                                  ) : (
+                                    <div className="h-full w-full flex items-center justify-center text-slate-300 font-bold text-[8px]">
+                                      NO IMG
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-[10px] font-bold text-slate-900 truncate mb-0.5">
+                                    {item.name}
+                                  </p>
+                                  <p className="text-[10px] font-black text-primary">
+                                    {item.quantity} Unit{item.quantity > 1 ? 's' : ''}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       <div className="flex items-start gap-3">
                         <div className="w-5 h-5 rounded-full bg-brand-100 flex items-center justify-center mt-1">
                           <div className="w-2 h-2 rounded-full bg-brand-600" />
                         </div>
                         <div>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase">Pickup</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">
+                            {activeOrder.isReturnPickup ? "Customer Pickup" : "Pickup"}
+                          </p>
                           <p className="text-sm font-bold text-slate-900">{activeOrder.pickup}</p>
                         </div>
                       </div>
                       <div className="flex items-start gap-3">
                         <MapPin className="h-5 w-5 text-rose-500 mt-1 shrink-0" />
                         <div>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase">Drop</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">
+                            {activeOrder.isReturnPickup ? "Return To Seller" : "Drop"}
+                          </p>
                           <p className="text-sm font-bold text-slate-900 line-clamp-2">{activeOrder.drop}</p>
                         </div>
                       </div>

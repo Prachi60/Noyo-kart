@@ -96,3 +96,57 @@ export async function getDeliveryPartnerIdsWithinSellerRadius(sellerId) {
     return [];
   }
 }
+
+/**
+ * Generic nearby rider search by coordinates.
+ */
+export async function getDeliveryPartnerIdsWithinRadius(lat, lng, radiusKm = 5) {
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return [];
+  
+  const maxDistanceM = radiusKm * 1000;
+  const base = buildDeliveryFilter();
+
+  let ids = [];
+  try {
+    const candidates = await Delivery.find({
+      ...base,
+      location: {
+        $near: {
+          $geometry: { type: "Point", coordinates: [lng, lat] },
+          $maxDistance: maxDistanceM,
+        },
+      },
+    })
+      .select("_id location")
+      .lean();
+
+    ids = filterByHaversine(candidates, lat, lng, maxDistanceM);
+  } catch (e) {
+    console.warn("[deliveryNearby] $near fallback search failed:", e.message);
+  }
+
+  if (ids.length) return ids;
+
+  try {
+    const rough = await Delivery.find({
+      ...base,
+      "location.coordinates": { $exists: true },
+    })
+      .select("_id location")
+      .limit(HAVERSINE_FALLBACK_LIMIT())
+      .lean();
+
+    return filterByHaversine(rough, lat, lng, maxDistanceM);
+  } catch (e) {
+    return [];
+  }
+}
+
+/**
+ * Finds riders near a customer's location for return pickup.
+ */
+export async function getDeliveryPartnerIdsWithinCustomerRadius(customerLocation, radiusKm = 5) {
+  const lat = customerLocation?.lat;
+  const lng = customerLocation?.lng;
+  return getDeliveryPartnerIdsWithinRadius(lat, lng, radiusKm);
+}
