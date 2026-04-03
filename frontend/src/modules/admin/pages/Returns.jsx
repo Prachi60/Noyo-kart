@@ -114,6 +114,20 @@ const Returns = () => {
     fetchReturns();
   }, []);
 
+  useEffect(() => {
+    if (isDetailsOpen || actionModal.open) {
+      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+      document.documentElement.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+      document.documentElement.style.overflow = "unset";
+    };
+  }, [isDetailsOpen, actionModal.open]);
+
   const filteredReturns = useMemo(() => {
     if (activeTab === "All") return returns;
     return returns.filter((r) => {
@@ -434,21 +448,22 @@ const Returns = () => {
 
       <AnimatePresence>
         {isDetailsOpen && selectedReturn && (
-          <div className="fixed inset-0 z-[100] flex items-stretch sm:items-center justify-center p-3 sm:p-6 lg:p-12">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 lg:p-8 overflow-hidden overscroll-none pointer-events-auto">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-slate-900/40 backdrop-blur-md"
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
               onClick={() => setIsDetailsOpen(false)}
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="w-full max-w-lg sm:max-w-2xl relative z-10 bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+              className="w-full max-w-2xl relative z-10 bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col"
+              style={{ maxHeight: 'calc(100vh - 2rem)' }}
             >
-              <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 border-b border-slate-100">
+              <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 border-b border-slate-100 shrink-0">
                 <div>
                   <h3 className="text-base font-black text-slate-900">
                     Return for Order #{selectedReturn.orderId}
@@ -470,7 +485,7 @@ const Returns = () => {
                 </button>
               </div>
 
-              <div className="px-4 py-4 sm:px-6 sm:py-5 overflow-y-auto scrollbar-hide flex-1 space-y-4">
+              <div className="px-4 py-4 sm:px-6 sm:py-5 overflow-y-auto overscroll-contain flex-1 min-h-0 space-y-4">
                 <div className="space-y-2">
                   <p className="text-xs font-bold text-slate-600 uppercase tracking-widest">
                     Customer
@@ -485,11 +500,41 @@ const Returns = () => {
 
                 <div className="space-y-2">
                   <p className="text-xs font-bold text-slate-600 uppercase tracking-widest">
-                    Return Reason
+                    Return Details
                   </p>
-                  <p className="text-sm text-slate-800 bg-slate-50 rounded-2xl p-3 border border-slate-100">
-                    {selectedReturn.returnReason || "No reason provided by customer."}
-                  </p>
+                  <div className="bg-slate-50 rounded-2xl p-3 border border-slate-100 space-y-2">
+                    <p className="text-sm font-bold text-slate-800">
+                      Reason: <span className="font-medium text-slate-600">{selectedReturn.returnReason || "N/A"}</span>
+                    </p>
+                    {selectedReturn.returnReasonDetail && (
+                      <p className="text-sm text-slate-700 italic border-l-2 border-slate-300 pl-2">
+                        {selectedReturn.returnReasonDetail}
+                      </p>
+                    )}
+                    {selectedReturn.returnConditionAssurance !== undefined && (
+                      <div className="flex items-start gap-1.5 pt-1">
+                        <div className={`mt-1 h-2 w-2 shrink-0 rounded-full ${selectedReturn.returnConditionAssurance ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                        <p className="text-xs font-semibold text-slate-600">
+                          {selectedReturn.returnConditionAssurance ? "Customer confirmed proper accessories & good condition." : "Customer did NOT confirm condition."}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {selectedReturn.returnImages?.length > 0 && (
+                    <div className="pt-2 space-y-2">
+                      <p className="text-xs font-bold text-slate-600 uppercase tracking-widest">
+                        Customer Photos ({selectedReturn.returnImages.length})
+                      </p>
+                      <div className="flex gap-2 overflow-x-auto pb-2">
+                        {selectedReturn.returnImages.map((img, idx) => (
+                           <div key={idx} className="relative aspect-square w-20 rounded-xl overflow-hidden border border-slate-200 shrink-0 cursor-pointer hover:border-slate-400" onClick={() => window.open(img, '_blank')}>
+                             <img src={img} alt={`Return ${idx}`} className="w-full h-full object-cover" />
+                           </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   {selectedReturn.returnRejectedReason && (
                     <p className="text-xs text-rose-600 font-semibold">
                       Rejection reason: {selectedReturn.returnRejectedReason}
@@ -568,12 +613,12 @@ const Returns = () => {
                     </div>
                 )}
 
-                {/* Quality Check Comparison (3-Way) */}
+                {/* Quality Check Comparison (2-Way) */}
                 <div className="space-y-3 pt-2">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">
                     Product Comparison (QC)
                   </p>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 gap-3">
                     {/* 1. Original Listing Image */}
                     <div className="space-y-1.5 flex flex-col h-full group">
                       <div className="relative aspect-square rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-inner group-hover:border-slate-300 transition-colors">
@@ -588,26 +633,6 @@ const Returns = () => {
                       </div>
                     </div>
 
-                    {/* 2. Initial Delivery Proof */}
-                    <div className="space-y-1.5 flex flex-col h-full group">
-                      <div className="relative aspect-square rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-inner group-hover:border-slate-300 transition-colors flex items-center justify-center">
-                        {selectedReturn.deliveryProofImages?.[0] ? (
-                          <img
-                            src={selectedReturn.deliveryProofImages[0]}
-                            alt="Delivered"
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <div className="flex flex-col items-center gap-1.5 text-slate-400 px-3 text-center">
-                            <HiOutlineTruck className="h-5 w-5" />
-                            <p className="text-[8px] font-bold leading-tight uppercase">No Delivery Photo</p>
-                          </div>
-                        )}
-                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-sky-900/60 to-transparent p-2">
-                          <p className="text-[9px] font-black text-white uppercase leading-none">Delivered</p>
-                        </div>
-                      </div>
-                    </div>
 
                     {/* 3. Return Pickup Proof */}
                     <div className="space-y-1.5 flex flex-col h-full group">
@@ -684,7 +709,7 @@ const Returns = () => {
                 </div>
               </div>
 
-              <div className="px-4 py-3 sm:px-6 sm:py-4 border-t border-slate-100 bg-slate-50 flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-center justify-end">
+              <div className="px-4 py-3 sm:px-6 sm:py-4 border-t border-slate-100 bg-slate-50 flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-center justify-end shrink-0">
                 <div className="flex gap-2 items-center flex-wrap">
                   <button
                     onClick={() => setIsDetailsOpen(false)}

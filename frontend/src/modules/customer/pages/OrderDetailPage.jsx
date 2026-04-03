@@ -24,6 +24,8 @@ import {
   Loader2,
   Store,
   Navigation2,
+  Camera,
+  X,
 } from "lucide-react";
 import { customerApi } from "../services/customerApi";
 import { toast } from "sonner";
@@ -137,7 +139,11 @@ const OrderDetailPage = () => {
   const [requestingReturn, setRequestingReturn] = useState(false);
   const [selectedReturnItems, setSelectedReturnItems] = useState({});
   const [returnReason, setReturnReason] = useState("");
+  const [returnReasonDetail, setReturnReasonDetail] = useState("");
+  const [returnConditionAssurance, setReturnConditionAssurance] = useState(false);
   const [returnImages, setReturnImages] = useState([]);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const fileInputRef = useRef(null);
   const [liveLocation, setLiveLocation] = useState(null);
   const [trail, setTrail] = useState([]);
   const [routePolyline, setRoutePolyline] = useState(null);
@@ -192,17 +198,12 @@ const OrderDetailPage = () => {
         setOrder(ord);
 
         try {
-<<<<<<< HEAD
-          const retRes = await customerApi.getReturnDetails(orderId);
+          const retRes = await customerApi.getReturnDetails(resolveOrderLookupId(ord));
           const ret = retRes.data.result;
           setReturnDetails(ret);
           if (ret?.returnPickupOtp) {
             setHandoffOtp(ret.returnPickupOtp);
           }
-=======
-          const retRes = await customerApi.getReturnDetails(resolveOrderLookupId(ord));
-          setReturnDetails(retRes.data.result);
->>>>>>> 4e9dc5d2792db297d5b3bd70a835c8adab9ec76b
         } catch {
           setReturnDetails(null);
         }
@@ -579,6 +580,14 @@ const OrderDetailPage = () => {
       toast.error("Please provide a reason for return.");
       return;
     }
+    if (!returnConditionAssurance) {
+      toast.error("Please confirm that the product is in good condition with accessories.");
+      return;
+    }
+    if (returnImages.length === 0) {
+      toast.error("Please upload at least 1 image of the product.");
+      return;
+    }
 
     const payload = {
       items: Object.entries(selectedReturnItems).map(([idx, val]) => ({
@@ -586,6 +595,8 @@ const OrderDetailPage = () => {
         quantity: val.quantity,
       })),
       reason: returnReason,
+      reasonDetail: returnReasonDetail,
+      conditionAssurance: returnConditionAssurance,
       images: returnImages,
     };
 
@@ -596,6 +607,8 @@ const OrderDetailPage = () => {
       setShowReturnModal(false);
       setSelectedReturnItems({});
       setReturnReason("");
+      setReturnReasonDetail("");
+      setReturnConditionAssurance(false);
       setReturnImages([]);
 
       const [orderRes, retRes] = await Promise.all([
@@ -612,6 +625,49 @@ const OrderDetailPage = () => {
     } finally {
       setRequestingReturn(false);
     }
+  };
+
+  const handleImageSelect = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    const remaining = 5 - returnImages.length;
+    const toProcess = files.slice(0, remaining);
+
+    setIsUploadingImage(true);
+    const newImages = [];
+
+    for (const file of toProcess) {
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        let url;
+        try {
+          const { default: axiosInstance } = await import("@core/api/axios");
+          const uploadRes = await axiosInstance.post("/media/upload", formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+          });
+          url = uploadRes.data?.data?.url || uploadRes.data?.url;
+        } catch {
+          url = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.readAsDataURL(file);
+          });
+        }
+        if (url) newImages.push(url);
+      } catch (err) {
+        toast.error("Failed to process image.");
+      }
+    }
+
+    setReturnImages((prev) => [...prev, ...newImages].slice(0, 5));
+    setIsUploadingImage(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const removeImage = (index) => {
+    setReturnImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleRetryPayment = async () => {
@@ -1095,17 +1151,91 @@ const OrderDetailPage = () => {
               })}
             </div>
 
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-600">
-                Reason for return
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-600">
+                  Reason for return
+                </label>
+                <select
+                  value={returnReason}
+                  onChange={(e) => setReturnReason(e.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900/10"
+                >
+                  <option value="" disabled>Select a reason...</option>
+                  <option value="Defective product">Defective product</option>
+                  <option value="Wrong item delivered">Wrong item delivered</option>
+                  <option value="Not as expected">Not as expected</option>
+                  <option value="Size issue">Size issue</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-600">
+                  Detailed Issue Mention
+                </label>
+                <textarea
+                  rows={2}
+                  value={returnReasonDetail}
+                  onChange={(e) => setReturnReasonDetail(e.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900/10"
+                  placeholder="Describe the issue with the product..."
+                />
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-slate-600 uppercase">
+                  Photos ({returnImages.length}/5) *
+                </p>
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {returnImages.map((img, index) => (
+                    <div key={index} className="relative w-16 h-16 rounded-xl overflow-hidden border border-slate-200 shrink-0">
+                      <img src={img} alt="proof" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="absolute top-1 right-1 w-5 h-5 bg-black/60 rounded-full flex items-center justify-center cursor-pointer hover:bg-black/80"
+                      >
+                        <X size={12} className="text-white" />
+                      </button>
+                    </div>
+                  ))}
+                  {returnImages.length < 5 && (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploadingImage}
+                      className="w-16 h-16 rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 transition-colors shrink-0"
+                    >
+                      {isUploadingImage ? (
+                        <Loader2 className="w-5 h-5 text-slate-400 animate-spin" />
+                      ) : (
+                        <Camera className="w-5 h-5 text-slate-400" />
+                      )}
+                    </button>
+                  )}
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageSelect}
+                  className="hidden"
+                />
+              </div>
+
+              <label className="flex items-start gap-3 p-3 rounded-2xl bg-amber-50 border border-amber-200 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={returnConditionAssurance}
+                  onChange={(e) => setReturnConditionAssurance(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-amber-300 text-amber-600"
+                />
+                <span className="text-xs font-semibold text-amber-900 leading-tight">
+                  I confirm the product is returned with proper accessories and is in good condition.
+                </span>
               </label>
-              <textarea
-                rows={3}
-                value={returnReason}
-                onChange={(e) => setReturnReason(e.target.value)}
-                className="w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900/10"
-                placeholder="Describe the issue with the product..."
-              />
             </div>
 
             <div className="flex justify-end gap-2 pt-2">

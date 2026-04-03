@@ -558,7 +558,7 @@ export const requestReturn = async (req, res) => {
   try {
     const { orderId } = req.params;
     const customerId = req.user.id;
-    const { items, reason, images } = req.body || {};
+    const { items, reason, images, reasonDetail, conditionAssurance } = req.body || {};
 
     if (!Array.isArray(items) || items.length === 0) {
       return handleResponse(
@@ -651,6 +651,8 @@ export const requestReturn = async (req, res) => {
 
     order.returnStatus = "return_requested";
     order.returnReason = reason.trim();
+    order.returnReasonDetail = reasonDetail?.trim() || "";
+    order.returnConditionAssurance = Boolean(conditionAssurance);
     order.returnImages = Array.isArray(images) ? images.slice(0, 5) : [];
     order.returnItems = selectedItems;
     order.returnRequestedAt = now;
@@ -666,6 +668,7 @@ export const requestReturn = async (req, res) => {
       sellerId: order.seller,
       data: {
         reason: order.returnReason,
+        reasonDetail: order.returnReasonDetail,
       },
     });
     emitToSeller(order.seller?.toString(), {
@@ -674,6 +677,7 @@ export const requestReturn = async (req, res) => {
         orderId: order.orderId,
         returnStatus: order.returnStatus,
         returnReason: order.returnReason,
+        returnReasonDetail: order.returnReasonDetail,
         returnRequestedAt: order.returnRequestedAt,
       },
     });
@@ -764,6 +768,8 @@ export const getReturnDetails = async (req, res) => {
       status: order.status,
       returnStatus: order.returnStatus,
       returnReason: order.returnReason,
+      returnReasonDetail: order.returnReasonDetail,
+      returnConditionAssurance: order.returnConditionAssurance,
       returnRejectedReason: order.returnRejectedReason,
       returnRequestedAt: order.returnRequestedAt,
       returnDeadline: order.returnDeadline,

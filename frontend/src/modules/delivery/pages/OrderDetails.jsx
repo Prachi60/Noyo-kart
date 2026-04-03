@@ -661,6 +661,17 @@ const OrderDetails = () => {
                     <div className="bg-indigo-900/30 rounded-xl p-3 border border-indigo-400/20 text-left">
                       <p className="text-[10px] uppercase font-bold text-indigo-200 mb-1">Reason for return</p>
                       <p className="text-xs text-white leading-relaxed line-clamp-2">{order.returnReason}</p>
+                      {order.returnReasonDetail && (
+                        <p className="text-[10px] text-indigo-100 italic mt-1 line-clamp-2">"{order.returnReasonDetail}"</p>
+                      )}
+                      
+                      {order.returnImages?.length > 0 && (
+                        <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+                          {order.returnImages.map((img, idx) => (
+                            <img key={idx} src={img} alt={`Return Proof ${idx}`} className="w-10 h-10 rounded-lg object-cover border border-white/20 shrink-0" />
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

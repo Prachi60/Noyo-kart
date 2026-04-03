@@ -363,6 +363,13 @@ const orderSchema = new mongoose.Schema(
     returnReason: {
       type: String,
     },
+    returnReasonDetail: {
+      type: String,
+    },
+    returnConditionAssurance: {
+      type: Boolean,
+      default: false,
+    },
     returnImages: [{ type: String }],
     returnItems: [
       {
