@@ -34,14 +34,19 @@ const CustomerManagement = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetchCustomers(1);
+        const timer = setTimeout(() => {
+            fetchCustomers(1);
+        }, 500);
+        return () => clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [pageSize]);
-
+    }, [pageSize, searchTerm, filterStatus]);
     const fetchCustomers = async (requestedPage = 1) => {
         try {
             setLoading(true);
-            const { data } = await adminApi.getUsers({ page: requestedPage, limit: pageSize });
+            const params = { page: requestedPage, limit: pageSize };
+            if (searchTerm.trim()) params.search = searchTerm.trim();
+            if (filterStatus !== 'all') params.status = filterStatus;
+            const { data } = await adminApi.getUsers(params);
             if (data.success) {
                 const payload = data.result || {};
                 const list = Array.isArray(payload.items) ? payload.items : (data.results || []);
@@ -236,12 +241,9 @@ const CustomerManagement = () => {
                                         <td className="ds-table-cell">
                                             <div className="flex items-center gap-3">
                                                 <img
-                                                    src={cust.avatar}
+                                                    src="https://cdn-icons-png.flaticon.com/512/149/149071.png"
                                                     alt=""
-                                                    className="h-10 w-10 rounded-lg bg-gray-100 ring-2 ring-white shadow-sm"
-                                                    onError={(e) => {
-                                                        e.target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${cust.name}`;
-                                                    }}
+                                                    className="h-10 w-10 rounded-lg bg-gray-100 ring-2 ring-white shadow-sm object-cover"
                                                 />
                                                 <div>
                                                     <p

@@ -127,9 +127,11 @@ const ReviewModeration = () => {
                             {/* User Info & Rating */}
                             <div className="lg:w-64 shrink-0 space-y-4">
                                 <div className="flex items-center gap-4">
-                                    <div className="h-12 w-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black ds-h2">
-                                        {r.user[0]}
-                                    </div>
+                                    <img 
+                                        src="https://cdn-icons-png.flaticon.com/512/149/149071.png" 
+                                        alt="" 
+                                        className="h-12 w-12 rounded-2xl bg-slate-50 ring-2 ring-white shadow-sm object-cover" 
+                                    />
                                     <div>
                                         <h4 className="text-sm font-black text-slate-900">{r.user}</h4>
                                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{r.date}</p>

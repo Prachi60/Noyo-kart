@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Card from '@shared/components/ui/Card';
 import Badge from '@shared/components/ui/Badge';
 import PageHeader from '@shared/components/ui/PageHeader';
@@ -44,13 +44,17 @@ const AdminWallet = () => {
     const [selectedTransaction, setSelectedTransaction] = useState(null);
     const [isExporting, setIsExporting] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [loadingId, setLoadingId] = useState(null);
 
     const fetchData = async (page = 1) => {
         try {
             setLoading(true);
+            const params = { page, limit: txnPageSize };
+            if (searchTerm.trim()) params.search = searchTerm.trim();
+            
             const [summaryRes, ledgerRes, requestsRes] = await Promise.all([
                 adminApi.getFinanceSummary(),
-                adminApi.getFinanceLedger({ page, limit: txnPageSize }),
+                adminApi.getFinanceLedger(params),
                 adminApi.getFinancePayouts({ seller: true, status: "PENDING", page: 1, limit: 100 })
             ]);
 
@@ -103,9 +107,18 @@ const AdminWallet = () => {
     };
 
     useEffect(() => {
+        const timer = setTimeout(() => {
+            fetchData(1);
+        }, 500);
+        return () => clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [txnPageSize, searchTerm]);
+
+    // Track the actual page change separately (no debounce needed for clicking next)
+    useEffect(() => {
         fetchData(txnPage);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [txnPage, txnPageSize]);
+    }, [txnPage]);
 
     const handleUpdateStatus = async (id, status, reason = "") => {
         try {
@@ -113,16 +126,19 @@ const AdminWallet = () => {
                 toast.error("Only payout completion is supported in this view");
                 return;
             }
+            setLoadingId(id);
             const res = await adminApi.processFinancePayouts({
                 payoutIds: [id],
                 remarks: reason || "",
             });
             if (res.data.success) {
-                toast.success(`Request ${status} successfully`);
+                toast.success(`Request processed successfully`);
                 fetchData(txnPage);
             }
         } catch (error) {
             toast.error(error.response?.data?.message || "Action failed");
+        } finally {
+            setLoadingId(null);
         }
     };
 
@@ -183,24 +199,60 @@ const AdminWallet = () => {
         }
     ];
 
-    const transactionsList = Array.isArray(walletData.transactions?.items) ? walletData.transactions.items : (Array.isArray(walletData.transactions) ? walletData.transactions : []);
-    const txnTotal = typeof walletData.transactions?.total === 'number' ? walletData.transactions.total : transactionsList.length;
+    const transactionsList = useMemo(() => 
+        Array.isArray(walletData.transactions?.items) ? walletData.transactions.items : (Array.isArray(walletData.transactions) ? walletData.transactions : []),
+    [walletData.transactions]);
 
-    const filteredTransactions = transactionsList.filter(txn => {
-        const matchesSearch = txn.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            txn.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            txn.sender.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            txn.recipient.toLowerCase().includes(searchTerm.toLowerCase());
+    const txnTotal = useMemo(() => 
+        typeof walletData.transactions?.total === 'number' ? walletData.transactions.total : transactionsList.length,
+    [walletData.transactions, transactionsList]);
 
-        const matchesTab = activeTab === 'all' ||
-            (activeTab === 'earnings' && txn.amount > 0) ||
-            (activeTab === 'payouts' && txn.amount < 0);
+    const filteredTransactions = useMemo(() => {
+        const query = searchTerm.toLowerCase().trim();
+        return transactionsList.filter(txn => {
+            const matchesSearch = 
+                (txn.id || '').toLowerCase().includes(query) ||
+                (txn.type || '').toLowerCase().includes(query) ||
+                (txn.sender || '').toLowerCase().includes(query) ||
+                (txn.recipient || '').toLowerCase().includes(query) ||
+                (txn.notes || '').toLowerCase().includes(query) ||
+                String(txn.amount || '').includes(query);
 
-        return matchesSearch && matchesTab;
-    });
+            const matchesTab = activeTab === 'all' ||
+                (activeTab === 'earnings' && txn.amount > 0) ||
+                (activeTab === 'payouts' && txn.amount < 0);
 
-    const requestsList = Array.isArray(sellerRequests) ? sellerRequests : [];
-    const pendingRequests = requestsList.filter(req => req.status === 'PENDING' || req.status === 'PROCESSING');
+            return matchesSearch && matchesTab;
+        });
+    }, [transactionsList, searchTerm, activeTab]);
+
+    const requestsList = useMemo(() => {
+        const list = Array.isArray(sellerRequests) ? sellerRequests : [];
+        if (!searchTerm) return list;
+        
+        const query = searchTerm.toLowerCase().trim();
+        return list.filter(req => {
+            const shopName = (req.beneficiary?.shopName || '').toLowerCase();
+            const ownerName = (req.beneficiary?.name || '').toLowerCase();
+            const phone = (req.beneficiary?.phone || '').toLowerCase();
+            const type = (req.payoutType || '').toLowerCase();
+            const id = (req.beneficiaryId || '').toLowerCase();
+            const amount = String(req.amount || '');
+
+            return shopName.includes(query) || 
+                   ownerName.includes(query) || 
+                   phone.includes(query) || 
+                   type.includes(query) ||
+                   amount.includes(query) ||
+                   id.includes(query);
+        });
+    }, [sellerRequests, searchTerm]);
+
+    const pendingRequests = useMemo(() => 
+        (Array.isArray(sellerRequests) ? sellerRequests : []).filter(req => 
+            (req.status || '').toUpperCase() === 'PENDING' || (req.status || '').toUpperCase() === 'PROCESSING'
+        ),
+    [sellerRequests]);
 
     const handleExport = async () => {
         try {
@@ -396,13 +448,18 @@ const AdminWallet = () => {
                                                         </Badge>
                                                     </td>
                                                     <td className="px-6 py-5 text-right pr-8">
-                                                        {req.status === 'PENDING' ? (
+                                                        {(req.status || '').toUpperCase() === 'PENDING' ? (
                                                             <div className="flex items-center justify-end gap-2">
                                                                 <button
+                                                                    disabled={isProcessing || loadingId === req._id}
                                                                     onClick={() => handleUpdateStatus(req._id, 'COMPLETED')}
-                                                                    className="px-3 py-1.5 bg-brand-500 text-white rounded-lg text-[10px] font-black uppercase hover:bg-brand-600 transition-all"
+                                                                    className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase hover:bg-indigo-700 transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed min-w-[100px] flex items-center justify-center"
                                                                 >
-                                                                    Approve
+                                                                    {loadingId === req._id ? (
+                                                                        <RotateCw className="h-3 w-3 animate-spin" />
+                                                                    ) : (
+                                                                        'Approve'
+                                                                    )}
                                                                 </button>
                                                             </div>
                                                         ) : (

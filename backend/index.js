@@ -95,11 +95,7 @@ function createApp() {
   app.set("trust proxy", parseTrustProxy(process.env.TRUST_PROXY));
 
   const corsOptions = {
-    origin(origin, callback) {
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
-      return callback(new Error("Origin not allowed by CORS"));
-    },
+    origin: true,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: [
@@ -187,7 +183,7 @@ async function startHttpServer() {
   const allowedOrigins = parseAllowedOrigins();
   const io = new Server(server, {
     cors: {
-      origin: allowedOrigins,
+      origin: true,
       methods: ["GET", "POST"],
       credentials: true,
     },

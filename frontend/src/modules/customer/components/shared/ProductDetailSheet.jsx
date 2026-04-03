@@ -239,8 +239,8 @@ const ProductDetailSheet = () => {
                             {icon}
                         </div>
                         <span className={cn(
-                            "font-black text-sm tracking-tight",
-                            isOpen ? "text-[#1A1A1A]" : "text-slate-600"
+                            "font-bold text-[13px] uppercase tracking-wider",
+                            isOpen ? "text-[#1A1A1A]" : "text-slate-500"
                         )}>{title}</span>
                     </div>
                     <motion.div
@@ -436,11 +436,11 @@ const ProductDetailSheet = () => {
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: 0.15 }}
                                         >
-                                            <h1 className="text-[19px] lg:text-[22px] font-[800] text-[#111827] leading-[1.2] tracking-tight mb-1">
+                                            <h1 className="text-[19px] lg:text-[22px] font-black text-[#111827] leading-[1.2] tracking-tight mb-1">
                                                 {selectedProduct.name}
                                             </h1>
                                             {selectedProduct.weight && (
-                                                <span className="text-[13px] text-gray-400 font-[600]">{selectedProduct.weight}</span>
+                                                <span className="text-[13px] text-gray-400 font-bold uppercase tracking-wider">{selectedProduct.weight}</span>
                                             )}
                                         </motion.div>
 
@@ -535,7 +535,7 @@ const ProductDetailSheet = () => {
                                                 transition={{ delay: 0.25 }}
                                                 className="bg-gray-50/60 rounded-xl p-3 border border-gray-100/70"
                                             >
-                                                <h4 className="text-[10px] font-[700] text-gray-400 uppercase tracking-[0.14em] mb-2.5">Select Variant</h4>
+                                                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2.5">Select Variant</h4>
                                                 <div className="flex gap-3 flex-wrap">
                                                     {selectedProduct.variants.map((v, idx) => (
                                                         <motion.button
@@ -566,7 +566,7 @@ const ProductDetailSheet = () => {
                                         {/* Variants Selection (Desktop) */}
                                         {selectedProduct.variants && selectedProduct.variants.length > 0 && (
                                             <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100/50 mt-4">
-                                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Select Variant</h4>
+                                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Select Variant</h4>
                                                 <div className="flex gap-2.5 flex-wrap">
                                                     {selectedProduct.variants.map((v, idx) => (
                                                         <motion.button
@@ -633,7 +633,7 @@ const ProductDetailSheet = () => {
                                             >
                                                 <div className="space-y-6 mt-2">
                                                     <div className="flex items-center justify-between mb-4">
-                                                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 text-orange-600 rounded-xl text-xs font-black border border-orange-100">
+                                                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-50 text-[#45B0E2] rounded-xl text-xs font-black border border-cyan-100">
                                                             <Star size={14} fill="currentColor" />
                                                             {reviews.length > 0 ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) : '4.8'}
                                                         </div>
@@ -656,7 +656,7 @@ const ProductDetailSheet = () => {
                                                                         onClick={() => setNewReview({ ...newReview, rating: s })}
                                                                         className={cn(
                                                                             'h-9 w-9 rounded-xl flex items-center justify-center transition-all shadow-sm',
-                                                                            newReview.rating >= s ? 'bg-orange-100 text-orange-500 border border-orange-200' : 'bg-white text-slate-300 border border-slate-100'
+                                                                            newReview.rating >= s ? 'bg-cyan-50 text-[#45B0E2] border border-cyan-100' : 'bg-white text-slate-300 border border-slate-100'
                                                                         )}
                                                                     >
                                                                         <Star size={15} className={cn(newReview.rating >= s && 'fill-current')} />
@@ -664,9 +664,9 @@ const ProductDetailSheet = () => {
                                                                 ))}
                                                             </div>
                                                             <textarea value={newReview.comment} onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })} placeholder="Share your experience..." className="w-full bg-white border border-slate-100 rounded-xl p-3 text-xs font-medium min-h-[80px] outline-none focus:border-[#45B0E2] transition-all resize-none shadow-sm" />
-                                                            <Button type="submit" disabled={isSubmittingReview} className="w-full h-10 bg-slate-900 hover:bg-black text-white font-black rounded-xl text-[11px] uppercase tracking-[0.1em] transition-all">
+                                                            <Button type="submit" disabled={isSubmittingReview} className="w-full h-10 bg-[#45B0E2] hover:opacity-90 text-white font-black rounded-xl text-[11px] uppercase tracking-[0.1em] transition-all shadow-lg shadow-cyan-100">
                                                                 {isSubmittingReview ? 'Submitting...' : 'Post Review'}
-                                                            </Button>
+                                                                </Button>
                                                         </form>
                                                     </div>
 
@@ -682,7 +682,7 @@ const ProductDetailSheet = () => {
                                                                             <div className="h-8 w-8 rounded-full bg-cyan-50 flex items-center justify-center text-[11px] font-black text-[#45B0E2] border border-cyan-100">{r.userId?.name?.[0] || 'A'}</div>
                                                                             <div>
                                                                                 <p className="text-[12px] font-black text-slate-800">{r.userId?.name || 'Anonymous'}</p>
-                                                                                <div className="flex gap-0.5">{[...Array(5)].map((_, i) => <Star key={i} size={9} className={cn(i < r.rating ? 'text-orange-400 fill-orange-400' : 'text-slate-200')} />)}</div>
+                                                                                <div className="flex gap-0.5">{[...Array(5)].map((_, i) => <Star key={i} size={9} className={cn(i < r.rating ? 'text-[#45B0E2] fill-[#45B0E2]' : 'text-slate-200')} />)}</div>
                                                                             </div>
                                                                         </div>
                                                                         <span className="text-[10px] font-bold text-slate-400">{new Date(r.createdAt).toLocaleDateString()}</span>
@@ -904,7 +904,7 @@ const ProductDetailSheet = () => {
                                     >
                                         <div className="space-y-6 mt-2">
                                             <div className="flex items-center justify-between mb-4">
-                                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 text-orange-600 rounded-xl text-xs font-black border border-orange-100">
+                                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-50 text-[#45B0E2] rounded-xl text-xs font-black border border-cyan-100">
                                                     <Star size={16} fill="currentColor" />
                                                     {reviews.length > 0 ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) : '4.8'}
                                                 </div>
@@ -923,7 +923,7 @@ const ProductDetailSheet = () => {
                                                                 onClick={() => setNewReview({ ...newReview, rating: s })}
                                                                 className={cn(
                                                                     "h-10 w-10 rounded-xl flex items-center justify-center transition-all shadow-sm",
-                                                                    newReview.rating >= s ? "bg-orange-100 text-orange-500 border border-orange-200" : "bg-white text-slate-300 border border-slate-100"
+                                                                    newReview.rating >= s ? "bg-cyan-50 text-[#45B0E2] border border-cyan-100" : "bg-white text-slate-300 border border-slate-100"
                                                                 )}
                                                             >
                                                                 <Star size={18} className={cn(newReview.rating >= s && "fill-current")} />
@@ -931,7 +931,7 @@ const ProductDetailSheet = () => {
                                                         ))}
                                                     </div>
                                                     <textarea value={newReview.comment} onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })} placeholder="Write your experience..." className="w-full bg-white border border-slate-100 rounded-2xl p-4 text-sm font-medium min-h-[100px] outline-none focus:border-[#45B0E2] transition-all resize-none shadow-sm" />
-                                                    <Button type="submit" disabled={isSubmittingReview} className="w-full h-12 bg-slate-900 hover:bg-black text-white font-black rounded-xl text-xs uppercase tracking-widest transition-all">
+                                                    <Button type="submit" disabled={isSubmittingReview} className="w-full h-12 bg-[#45B0E2] hover:opacity-90 text-white font-black rounded-xl text-xs uppercase tracking-widest transition-all shadow-lg shadow-cyan-100">
                                                         {isSubmittingReview ? "Submitting..." : "Post Review"}
                                                     </Button>
                                                 </form>
@@ -949,7 +949,7 @@ const ProductDetailSheet = () => {
                                                                     <div className="h-8 w-8 rounded-full bg-cyan-50 flex items-center justify-center text-[10px] font-black text-[#45B0E2] border border-cyan-100">{r.userId?.name?.[0] || 'A'}</div>
                                                                     <div>
                                                                         <p className="text-xs font-black text-slate-800">{r.userId?.name || 'Anonymous'}</p>
-                                                                        <div className="flex gap-0.5">{[...Array(5)].map((_, i) => <Star key={i} size={10} className={cn(i < r.rating ? 'text-orange-400 fill-orange-400' : 'text-slate-200')} />)}</div>
+                                                                        <div className="flex gap-0.5">{[...Array(5)].map((_, i) => <Star key={i} size={10} className={cn(i < r.rating ? 'text-[#45B0E2] fill-[#45B0E2]' : 'text-slate-200')} />)}</div>
                                                                     </div>
                                                                 </div>
                                                                 <span className="text-[10px] font-bold text-slate-400">{new Date(r.createdAt).toLocaleDateString()}</span>

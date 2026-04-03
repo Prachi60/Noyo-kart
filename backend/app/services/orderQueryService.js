@@ -173,7 +173,31 @@ function mergeAvailableOrders(v2Orders, legacyOrders, returnPickups, limit) {
 export async function fetchAvailableOrdersForDelivery({
   userId,
   requestedLimit,
+  type = "delivery",
 }) {
+  const limit = parseAvailableOrdersLimit(requestedLimit);
+  const showDeliveries = type === "delivery" || type === "all";
+  const showReturns = type === "return" || type === "all";
+
+  let assignedReturnPickups = [];
+  if (showReturns) {
+    const assignedReturnPickupsRaw = await Order.find({
+      returnStatus: "return_pickup_assigned",
+      returnDeliveryBoy: userId,
+      skippedBy: { $nin: [userId] },
+    })
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(limit)
+      .populate("customer", "name phone")
+      .populate("seller", "shopName address name location")
+      .lean();
+
+    assignedReturnPickups = assignedReturnPickupsRaw.map((rp) => ({
+      ...rp,
+      isReturnPickup: true,
+    }));
+  }
+
   const deliveryPartner = await Delivery.findById(userId);
   if (
     !deliveryPartner ||
@@ -181,62 +205,88 @@ export async function fetchAvailableOrdersForDelivery({
     !Array.isArray(deliveryPartner.location.coordinates)
   ) {
     return {
-      requiresLocation: true,
-      orders: [],
-      limit: parseAvailableOrdersLimit(requestedLimit),
+      requiresLocation: showDeliveries && assignedReturnPickups.length === 0,
+      orders: assignedReturnPickups,
+      limit,
     };
   }
 
   const { sellerIds } = await resolveNearbySellerIds(deliveryPartner, userId);
-  const limit = parseAvailableOrdersLimit(requestedLimit);
 
-  const v2OrdersRaw = await Order.find({
-    workflowVersion: { $gte: 2 },
-    workflowStatus: WORKFLOW_STATUS.DELIVERY_SEARCH,
-    deliveryBoy: null,
-    seller: { $in: sellerIds },
-    skippedBy: { $nin: [userId] },
-  })
-    .sort({ createdAt: -1, _id: -1 })
-    .limit(limit)
-    .populate("customer", "name phone")
-    .populate("seller", "shopName address name location serviceRadius")
-    .lean();
+  let v2Orders = [];
+  if (showDeliveries) {
+    const v2OrdersRaw = await Order.find({
+      workflowVersion: { $gte: 2 },
+      workflowStatus: WORKFLOW_STATUS.DELIVERY_SEARCH,
+      deliveryBoy: null,
+      seller: { $in: sellerIds },
+      skippedBy: { $nin: [userId] },
+    })
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(limit)
+      .populate("customer", "name phone")
+      .populate("seller", "shopName address name location serviceRadius")
+      .lean();
 
-  const v2Orders = filterV2OrdersByRadius(
-    v2OrdersRaw,
-    deliveryPartner.location.coordinates,
+    v2Orders = filterV2OrdersByRadius(
+      v2OrdersRaw,
+      deliveryPartner.location.coordinates,
+    );
+  }
+
+  let legacyOrders = [];
+  if (showDeliveries) {
+    legacyOrders = await Order.find({
+      $or: [
+        { workflowVersion: { $exists: false } },
+        { workflowVersion: { $lt: 2 } },
+      ],
+      status: { $in: ["confirmed", "packed"] },
+      deliveryBoy: null,
+      seller: { $in: sellerIds },
+      skippedBy: { $nin: [userId] },
+    })
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(limit)
+      .populate("customer", "name phone")
+      .populate("seller", "shopName address name location")
+      .lean();
+  }
+
+  let returnPickups = [];
+  if (showReturns) {
+    const returnPickupsRaw = await Order.find({
+      returnStatus: { $in: ["return_approved", "return_pickup_assigned"] },
+      skippedBy: { $nin: [userId] },
+      $or: [
+        {
+          returnDeliveryBoy: null,
+          seller: { $in: sellerIds },
+        },
+        {
+          returnDeliveryBoy: userId,
+        },
+      ],
+    })
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(limit)
+      .populate("customer", "name phone")
+      .populate("seller", "shopName address name location")
+      .lean();
+
+    returnPickups = returnPickupsRaw.map((rp) => ({
+      ...rp,
+      isReturnPickup: true,
+    }));
+  }
+
+  const orders = mergeAvailableOrders(
+    v2Orders,
+    legacyOrders,
+    [...assignedReturnPickups, ...returnPickups],
+    limit,
   );
 
-  const legacyOrders = await Order.find({
-    $or: [{ workflowVersion: { $exists: false } }, { workflowVersion: { $lt: 2 } }],
-    status: { $in: ["confirmed", "packed"] },
-    deliveryBoy: null,
-    seller: { $in: sellerIds },
-    skippedBy: { $nin: [userId] },
-  })
-    .sort({ createdAt: -1, _id: -1 })
-    .limit(limit)
-    .populate("customer", "name phone")
-    .populate("seller", "shopName address name location")
-    .lean();
-
-  const returnPickupsRaw = await Order.find({
-    returnStatus: { $in: ["return_approved", "return_pickup_assigned"] },
-    returnDeliveryBoy: null,
-    seller: { $in: sellerIds },
-    skippedBy: { $nin: [userId] },
-  })
-    .sort({ createdAt: -1, _id: -1 })
-    .limit(limit)
-    .populate("customer", "name phone")
-    .populate("seller", "shopName address name location")
-    .lean();
-
-  // Mark return pickups so frontend can distinguish
-  const returnPickups = returnPickupsRaw.map(rp => ({ ...rp, isReturnPickup: true }));
-
-  const orders = mergeAvailableOrders(v2Orders, legacyOrders, returnPickups, limit);
   return {
     requiresLocation: false,
     orders,

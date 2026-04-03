@@ -86,6 +86,8 @@ function applyMediaFields(productData) {
   } else if (mergedGallery.length > 0) {
     productData.mainImage = mergedGallery[0];
     mergedGallery.shift();
+  } else {
+    delete productData.mainImage;
   }
 
   if (mergedGallery.length > 0) {

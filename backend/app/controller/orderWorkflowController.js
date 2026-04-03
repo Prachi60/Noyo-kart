@@ -216,16 +216,6 @@ export const getOrderRoute = async (req, res) => {
 export const requestReturnPickupOtp = async (req, res) => {
   try {
     const { orderId } = req.params;
-    const { id: userId } = req.user;
-
-    const orderKey = orderMatchQueryFromRouteParam(orderId);
-    const order = await Order.findOne(orderKey).lean();
-    if (!order) return handleResponse(res, 404, "Order not found");
-
-    if (order.returnDeliveryBoy?.toString() !== userId) {
-      return handleResponse(res, 403, "Not assigned to this return pickup");
-    }
-
     const result = await generateReturnPickupOtp(orderId);
     if (!result.success) {
       return handleResponse(res, 400, result.error);
@@ -281,11 +271,15 @@ export const requestReturnPickupOtp = async (req, res) => {
 export const verifyReturnPickupOtp = async (req, res) => {
   try {
     const { orderId } = req.params;
-    const { otp, code } = req.body || {};
-    const enteredOtp = otp || code;
+    const { code, otp } = req.body || {};
+    const enteredCode = String(code || otp || "").trim();
     const { id: userId } = req.user;
 
-    const validation = await validateReturnPickupOtp(orderId, enteredOtp);
+    if (!enteredCode) {
+      return handleResponse(res, 400, "OTP code is required");
+    }
+
+    const validation = await validateReturnPickupOtp(orderId, enteredCode);
     if (!validation.valid) {
       return handleResponse(res, 400, validation.message, {
         error: validation.error,

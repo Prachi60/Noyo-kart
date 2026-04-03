@@ -34,14 +34,20 @@ const SupportTickets = () => {
     const [total, setTotal] = useState(0);
 
     useEffect(() => {
-        fetchTickets(1);
+        const timer = setTimeout(() => {
+            fetchTickets(1);
+        }, 500);
+        return () => clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [pageSize]);
+    }, [pageSize, searchTerm]);
 
     const fetchTickets = async (requestedPage = 1) => {
         try {
             setLoading(true);
-            const res = await adminApi.getTickets({ page: requestedPage, limit: pageSize });
+            const params = { page: requestedPage, limit: pageSize };
+            if (searchTerm.trim()) params.search = searchTerm.trim();
+
+            const res = await adminApi.getTickets(params);
             if (res.data.success) {
                 const payload = res.data.result || {};
                 const data = Array.isArray(payload.items) ? payload.items : (res.data.results || []);

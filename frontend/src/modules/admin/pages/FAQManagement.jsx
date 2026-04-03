@@ -68,14 +68,23 @@ const FAQManagement = () => {
     const [total, setTotal] = useState(0);
 
     useEffect(() => {
-        fetchFaqs(1);
+        const timer = setTimeout(() => {
+            fetchFaqs(1);
+        }, 500);
+        return () => clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [pageSize]);
+    }, [pageSize, searchTerm, activeCategory]);
 
     const fetchFaqs = async (requestedPage = 1) => {
         setIsLoading(true);
         try {
-            const response = await adminApi.getFAQs({ page: requestedPage, limit: pageSize });
+            const params = { 
+                page: requestedPage, 
+                limit: pageSize,
+                search: searchTerm.trim() || undefined,
+                category: activeCategory !== 'All' ? activeCategory : undefined
+            };
+            const response = await adminApi.getFAQs(params);
             const payload = response.data.result || {};
             const data = Array.isArray(payload.items) ? payload.items : (response.data.results || []);
             setFaqs(data);
@@ -98,12 +107,7 @@ const FAQManagement = () => {
 
     // Core Filtering and Sorting Logic
     const filteredAndSortedFaqs = useMemo(() => {
-        let result = faqs.filter(faq => {
-            const matchesSearch = faq.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                faq.answer.toLowerCase().includes(searchTerm.toLowerCase());
-            const matchesCategory = activeCategory === 'All' || faq.category === activeCategory;
-            return matchesSearch && matchesCategory;
-        });
+        let result = [...faqs];
 
         // Sorting Logic
         switch (sortBy) {

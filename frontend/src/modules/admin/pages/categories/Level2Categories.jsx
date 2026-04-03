@@ -64,7 +64,15 @@ const Level2Categories = () => {
     try {
       const res = await adminApi.getCategories();
       if (res.data.success) {
-        const allCats = res.data.results || res.data.result || [];
+        const payload = res.data.result;
+        const results = res.data.results;
+        const allCats = Array.isArray(results)
+          ? results
+          : Array.isArray(payload)
+            ? payload
+            : Array.isArray(payload?.items)
+              ? payload.items
+              : [];
         setCategories(allCats.filter((c) => c.type === "category"));
         setHeaderCategories(allCats.filter((c) => c.type === "header"));
       }
@@ -142,12 +150,19 @@ const Level2Categories = () => {
     try {
       const data = new FormData();
       data.append("type", "category");
+
+      // Only append fields that have actual values to avoid sending empty objects/junk
       Object.keys(formData).forEach((key) => {
-        if (key !== "type") data.append(key, formData[key]);
+        const val = formData[key];
+        if (key !== "type" && val !== undefined && val !== null && val !== "") {
+          data.append(key, val);
+        }
       });
 
       if (imageFile) {
         data.append("image", imageFile);
+      } else if (previewUrl && !previewUrl.startsWith("blob:")) {
+        data.append("image", previewUrl);
       }
 
       if (editingItem) {
@@ -162,7 +177,8 @@ const Level2Categories = () => {
       fetchCategories();
     } catch (error) {
       console.error(error);
-      toast.error(editingItem ? "Failed to update" : "Failed to create");
+      const errorMsg = error.response?.data?.message || (editingItem ? "Failed to update" : "Failed to create");
+      toast.error(errorMsg);
     } finally {
       setIsSaving(false);
     }
@@ -207,7 +223,7 @@ const Level2Categories = () => {
       type: "category",
       parentId: item.parentId?._id || item.parentId || "",
     });
-    setPreviewUrl(item.image?.url || item.image || null);
+    setPreviewUrl(item.image || null);
     setIsAddModalOpen(true);
   };
 
@@ -390,9 +406,9 @@ const Level2Categories = () => {
                     </td>
                     <td className="py-3 px-4">
                       <div className="w-10 h-10 rounded-lg bg-gray-100 overflow-hidden flex items-center justify-center border border-gray-200">
-                        {cat.image?.url || cat.image ? (
+                        {cat.image ? (
                           <img
-                            src={cat.image?.url || cat.image}
+                            src={typeof cat.image === 'string' ? cat.image : (cat.image.url || cat.image.secure_url || cat.image)}
                             alt={cat.name}
                             className="w-full h-full object-cover"
                           />

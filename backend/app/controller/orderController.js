@@ -44,11 +44,12 @@ import { createFinanceOrderSchema } from "../validation/financeValidation.js";
 import { placeOrderAtomic } from "../services/orderPlacementService.js";
 import { emitNotificationEvent } from "../modules/notifications/notification.emitter.js";
 import { NOTIFICATION_EVENTS } from "../modules/notifications/notification.constants.js";
-import { getDeliveryPartnerIdsWithinSellerRadius } from "../services/deliveryNearbyService.js";
 import {
   emitDeliveryBroadcastForSeller,
   emitReturnBroadcastForCustomer,
   retractDeliveryBroadcastForOrder,
+  emitToSeller,
+  emitToDelivery,
 } from "../services/orderSocketEmitter.js";
 import * as walletService from "../services/finance/walletService.js";
 import { OWNER_TYPE } from "../constants/finance.js";
@@ -399,7 +400,7 @@ export const getOrderDetails = async (req, res) => {
         workflowStatus: order.workflowStatus,
         timestamp: new Date().toISOString(),
       });
-      
+
       // Attempt to fetch order without populate to check raw customer field
       const rawOrder = await Order.findOne(orderKey).lean();
       if (rawOrder && rawOrder.customer) {
@@ -433,10 +434,10 @@ export const getOrderDetails = async (req, res) => {
       typeof order.seller === "object" && order.seller?._id
         ? order.seller._id.toString()
         : order.seller?.toString();
-    
+
     // BUGFIX: Normalize customer reference to handle both populated and unpopulated cases
     const customerIdStr = refToIdString(order.customer);
-    
+
     const isOwnerCustomer =
       (roleNorm === "customer" || roleNorm === "user") &&
       order.customer &&
@@ -447,12 +448,20 @@ export const getOrderDetails = async (req, res) => {
     const isAssignedDeliveryBoy =
       role === "delivery" &&
       (primaryRiderId === uid || returnRiderId === uid);
+    
+    // ALLOW view if it is a broadcasted delivery or return that is not yet assigned
+    const isBroadcastedOrder = 
+      role === "delivery" && 
+      ((!order.deliveryBoy && order.workflowStatus === WORKFLOW_STATUS.DELIVERY_SEARCH) || 
+       (!order.returnDeliveryBoy && ["return_approved", "return_pickup_assigned"].includes(order.returnStatus)));
+
     const isAdmin = role === "admin";
 
     if (
       !isOwnerCustomer &&
       !isOwnerSeller &&
       !isAssignedDeliveryBoy &&
+      !isBroadcastedOrder &&
       !isAdmin
     ) {
       // BUGFIX: Improved error message to distinguish authorization failure from missing order
@@ -659,6 +668,15 @@ export const requestReturn = async (req, res) => {
         reason: order.returnReason,
       },
     });
+    emitToSeller(order.seller?.toString(), {
+      event: "return:requested",
+      payload: {
+        orderId: order.orderId,
+        returnStatus: order.returnStatus,
+        returnReason: order.returnReason,
+        returnRequestedAt: order.returnRequestedAt,
+      },
+    });
 
     return handleResponse(
       res,
@@ -728,7 +746,7 @@ export const getReturnDetails = async (req, res) => {
         returnDeliveryCommission = 0;
       }
     }
-    
+
     // Fetch active OTP if in pickup assigned status
     let activeOtp = null;
     if (order.returnStatus === "return_pickup_assigned") {
@@ -1053,11 +1071,11 @@ export const approveReturnRequest = async (req, res) => {
         returnReason: order.returnReason || "",
         returnItems: Array.isArray(order.returnItems)
           ? order.returnItems.map((i) => ({
-              name: i.name || "",
-              quantity: i.quantity || 1,
-              price: i.price || 0,
-              image: i.image || "",
-            }))
+            name: i.name || "",
+            quantity: i.quantity || 1,
+            price: i.price || 0,
+            image: i.image || "",
+          }))
           : [],
       },
       deliverySearchExpiresAt: new Date(Date.now() + 60 * 1000).toISOString(),
@@ -1267,8 +1285,11 @@ export const assignReturnDelivery = async (req, res) => {
       );
     }
 
-    let riderId = deliveryBoyId;
-    
+    const riderId =
+      typeof deliveryBoyId === "string" && deliveryBoyId.trim().length > 0
+        ? deliveryBoyId.trim()
+        : null;
+
     // If Admin/Seller manually specified a rider
     if (riderId) {
       const partner = await Delivery.findById(riderId);
@@ -1279,7 +1300,7 @@ export const assignReturnDelivery = async (req, res) => {
     } else {
       // If undefined/empty object, we want nearby riders to pick it up via broadcast (available orders pool)
       // `orderQueryService` will serve orders where `returnStatus="return_pickup_assigned"` and `returnDeliveryBoy=null`
-      order.returnDeliveryBoy = null; 
+      order.returnDeliveryBoy = null;
     }
 
     order.returnStatus = "return_pickup_assigned";
@@ -1292,9 +1313,22 @@ export const assignReturnDelivery = async (req, res) => {
         sellerId: order.seller,
         customerId: order.customer,
       });
+      emitToDelivery(riderId, {
+        event: "delivery:broadcast",
+        payload: {
+          orderId: order.orderId,
+          type: "RETURN_PICKUP",
+          preview: {
+            pickup: "Customer Address",
+            drop: "Seller Store",
+            total: order.pricing?.total || 0,
+          },
+          deliverySearchExpiresAt: new Date(Date.now() + 60 * 1000).toISOString(),
+          at: new Date().toISOString(),
+        },
+      });
     } else {
       // Trigger broadcast for nearby riders
-      const previewText = `Return Pickup: ${order.orderId}`;
       const payload = {
         orderId: order.orderId,
         type: "RETURN_PICKUP",
@@ -1312,7 +1346,7 @@ export const assignReturnDelivery = async (req, res) => {
         },
         deliverySearchExpiresAt: new Date(Date.now() + 60 * 1000).toISOString(),
       };
-      
+
       // Trigger broadcast for nearby riders (Riders near Customer for returns)
       const customerLocation = order.address?.location;
       emitReturnBroadcastForCustomer(customerLocation, payload);
@@ -1409,8 +1443,8 @@ export const rejectReturnPickup = async (req, res) => {
       // If it's a broadcast order, add to skippedBy
       if (!order.returnDeliveryBoy) {
         if (!order.skippedBy.includes(userId)) {
-           order.skippedBy.push(userId);
-           await order.save();
+          order.skippedBy.push(userId);
+          await order.save();
         }
         return handleResponse(res, 200, "Return pickup skipped");
       }
@@ -1429,7 +1463,7 @@ export const rejectReturnPickup = async (req, res) => {
     if (!order.skippedBy.includes(userId)) {
       order.skippedBy.push(userId);
     }
-    order.returnStatus = "return_approved"; 
+    order.returnStatus = "return_approved";
     await order.save();
 
     // Notify seller
@@ -1459,9 +1493,9 @@ export const completeReturnAndRefund = async (order) => {
     order.returnRefundAmount ||
     (Array.isArray(order.returnItems)
       ? order.returnItems.reduce(
-          (sum, item) => sum + (item.price || 0) * (item.quantity || 0),
-          0,
-        )
+        (sum, item) => sum + (item.price || 0) * (item.quantity || 0),
+        0,
+      )
       : 0);
 
   const commission = order.returnDeliveryCommission || 0;
@@ -1489,8 +1523,8 @@ export const completeReturnAndRefund = async (order) => {
 
   // 2. Seller adjustment (cancel payout if on hold, else debit available balance)
   if (order.seller && (refundAmount > 0 || commission > 0)) {
-    const isHeld = 
-      order.settlementStatus?.sellerPayout === "HOLD" || 
+    const isHeld =
+      order.settlementStatus?.sellerPayout === "HOLD" ||
       order.financeFlags?.sellerPayoutHeld;
 
     if (isHeld) {
@@ -1740,6 +1774,7 @@ export const getAvailableOrders = async (req, res) => {
     const { requiresLocation, orders } = await fetchAvailableOrdersForDelivery({
       userId,
       requestedLimit: req.query.limit,
+      type: req.query.type || "delivery",
     });
 
     if (requiresLocation) {

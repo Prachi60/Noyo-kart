@@ -13,6 +13,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import Button from "@/shared/components/ui/Button";
 import Card from "@/shared/components/ui/Card";
 
@@ -24,6 +25,7 @@ const Dashboard = () => {
   const { user, refreshUser } = useAuth();
   const [isOnline, setIsOnline] = useState(user?.isOnline || false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [activeTab, setActiveTab] = useState("delivery"); // 'delivery' or 'return'
   const [availableOrders, setAvailableOrders] = useState([]);
   const [earnings, setEarnings] = useState({
     today: 0,
@@ -67,9 +69,8 @@ const Dashboard = () => {
 
   const fetchAvailableOrders = async () => {
     try {
-      const response = await deliveryApi.getAvailableOrders();
+      const response = await deliveryApi.getAvailableOrders({ type: activeTab });
       if (response.data.success) {
-        // Support both plural 'results' and singular 'result' from different backend versions
         const orders = response.data.results || response.data.result || [];
         setAvailableOrders(orders);
       }
@@ -82,7 +83,7 @@ const Dashboard = () => {
     fetchStats();
     fetchNotifications();
     if (isOnline) fetchAvailableOrders();
-  }, [isOnline]);
+  }, [isOnline, activeTab]);
 
   const handleOnlineToggle = async () => {
     const newStatus = !isOnline;
@@ -97,6 +98,20 @@ const Dashboard = () => {
       }
     } catch (error) {
       toast.error("Failed to update status");
+    }
+  };
+
+  const handleAcceptReturn = async (orderId) => {
+    try {
+      const response = await deliveryApi.acceptReturnPickup(orderId);
+      if (response.data.success) {
+        toast.success("Return pickup accepted!");
+        fetchAvailableOrders();
+        // Option: navigate to details
+        navigate(`/delivery/order-details/${orderId}`);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to accept return");
     }
   };
 
@@ -145,39 +160,105 @@ const Dashboard = () => {
 
       {/* Online/Offline Toggle */}
       <div className="px-6 py-6">
-        <motion.div
-          onClick={handleOnlineToggle}
-          className={`relative w-full h-16 rounded-full flex items-center p-1 cursor-pointer shadow-inner transition-colors duration-500 ${
-            isOnline
-              ? "bg-brand-500/10 border border-brand-200"
-              : "bg-red-500/10 border border-red-200"
-          }`}
-          whileTap={{ scale: 0.98 }}>
-          <div
-            className={`w-1/2 h-full flex items-center justify-center font-bold tracking-wide z-10 transition-all duration-300 ${isOnline ? "text-brand-700" : "text-gray-400 opacity-50"}`}>
-            ONLINE
+        <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 group">
+          <div className="flex items-center justify-between mb-3 px-1">
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Service Status</span>
+            <div className="flex items-center gap-1.5">
+              <div className={cn(
+                "w-1.5 h-1.5 rounded-full animate-pulse",
+                isOnline ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]"
+              )} />
+              <span className={cn(
+                "text-[11px] font-bold uppercase tracking-wider",
+                isOnline ? "text-emerald-600" : "text-rose-600"
+              )}>
+                {isOnline ? "Receiving Orders" : "Currently Offline"}
+              </span>
+            </div>
           </div>
+
           <div
-            className={`w-1/2 h-full flex items-center justify-center font-bold tracking-wide z-10 transition-all duration-300 ${!isOnline ? "text-red-600" : "text-gray-400 opacity-50"}`}>
-            OFFLINE
-          </div>
-          <motion.div
-            className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full shadow-lg flex items-center justify-center border transition-colors duration-300 ${
-              isOnline
-                ? "bg-brand-500 border-brand-400"
-                : "bg-red-500 border-red-400"
-            }`}
-            animate={{ x: isOnline ? "100%" : "0%" }}
-            transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            style={{ x: isOnline ? "2px" : "0" }} // Offset adjustment
+            className="relative w-full h-14 bg-gray-100/80 rounded-2xl flex items-center p-1.5 cursor-pointer shadow-inner overflow-hidden border border-gray-200/50"
+            onClick={handleOnlineToggle}
           >
-            {isOnline ? (
-              <CheckCircle className="text-white" size={24} />
-            ) : (
-              <XCircle className="text-white" size={24} />
+            {/* Background Labels */}
+            <div className="absolute inset-0 flex w-full">
+              <div className="w-1/2 flex items-center justify-center">
+                <span className={cn(
+                  "text-[10px] font-black tracking-widest transition-opacity duration-300",
+                  isOnline ? "opacity-0" : "opacity-40 text-gray-500"
+                )}>SLIDE TO GO ONLINE</span>
+              </div>
+              <div className="w-1/2 flex items-center justify-center">
+                <span className={cn(
+                  "text-[10px] font-black tracking-widest transition-opacity duration-300",
+                  !isOnline ? "opacity-0" : "opacity-40 text-gray-500"
+                )}>SLIDE TO GO OFFLINE</span>
+              </div>
+            </div>
+
+            <motion.div
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }} // We will use dragElastic for feel, but onDragEnd for logic
+              dragElastic={0.1}
+              onDragEnd={(_, info) => {
+                const swipePower = info.offset.x;
+                if (swipePower > 50 && !isOnline) {
+                  handleOnlineToggle();
+                } else if (swipePower < -50 && isOnline) {
+                  handleOnlineToggle();
+                }
+              }}
+              whileTap={{ scale: 0.98 }}
+              className={cn(
+                "w-1/2 h-full rounded-xl shadow-md flex items-center justify-center gap-2 z-10 border transition-all duration-500 cursor-grab active:cursor-grabbing",
+                isOnline 
+                  ? "bg-gradient-to-r from-[#45B0E2] to-[#38bdf8] border-[#389ecb] text-white" 
+                  : "bg-gradient-to-r from-slate-700 to-slate-800 border-slate-900 text-white"
+              )}
+              animate={{ x: isOnline ? "100%" : "0%" }}
+              transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            >
+              <motion.div
+                initial={false}
+                animate={{ rotate: isOnline ? 0 : 0 }}
+              >
+                {isOnline ? <CheckCircle size={18} strokeWidth={3} /> : <XCircle size={18} strokeWidth={3} />}
+              </motion.div>
+              <span className="text-xs font-black uppercase tracking-widest select-none">
+                {isOnline ? "ONLINE" : "OFFLINE"}
+              </span>
+            </motion.div>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="px-6 mb-2">
+        <div className="bg-gray-100 p-1.5 rounded-2xl flex gap-1 border border-gray-200">
+          <button
+            onClick={() => setActiveTab("delivery")}
+            className={cn(
+              "flex-1 py-3 px-4 rounded-xl text-center text-xs font-black transition-all duration-300 uppercase tracking-widest",
+              activeTab === "delivery"
+                ? "bg-white text-primary shadow-sm ring-1 ring-black/5"
+                : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"
             )}
-          </motion.div>
-        </motion.div>
+          >
+            Deliveries
+          </button>
+          <button
+            onClick={() => setActiveTab("return")}
+            className={cn(
+              "flex-1 py-3 px-4 rounded-xl text-center text-xs font-black transition-all duration-300 uppercase tracking-widest",
+              activeTab === "return"
+                ? "bg-white text-primary shadow-sm ring-1 ring-black/5"
+                : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"
+            )}
+          >
+            Returns
+          </button>
+        </div>
       </div>
 
       {/* Main Content */}
@@ -247,9 +328,26 @@ const Dashboard = () => {
 
         {/* Active Order / Status */}
         <AnimatePresence mode="wait">
-          {isOnline ? (
+          {!isOnline ? (
+            <motion.div
+              key="offline"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="bg-white rounded-2xl p-8 text-center shadow-sm border border-gray-100">
+              <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-gray-100">
+                <AlertCircle size={32} className="text-gray-400" />
+              </div>
+              <h3 className="ds-h3 mb-2">You are Offline</h3>
+              <p className="text-sm text-gray-500 max-w-[250px] mx-auto">
+                Go online to start receiving delivery requests and earning
+                money.
+              </p>
+            </motion.div>
+          ) : activeTab === 'delivery' ? (
             availableOrders.length > 0 ? (
               <motion.div
+                key="waiting"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-white rounded-2xl p-6 border-2 border-primary/25 shadow-md shadow-primary/5 text-center">
@@ -301,19 +399,70 @@ const Dashboard = () => {
             )
           ) : (
             <motion.div
-              key="offline"
+              key="returns-list"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="bg-white rounded-2xl p-8 text-center shadow-sm border border-gray-100">
-              <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-gray-100">
-                <AlertCircle size={32} className="text-gray-400" />
+              className="space-y-4"
+            >
+              <div className="flex justify-between items-center mb-1">
+                <h3 className="text-sm font-bold text-gray-800 tracking-tight">Available Return Pickups</h3>
+                <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full uppercase italic">Open for Acceptance</span>
               </div>
-              <h3 className="ds-h3 mb-2">You are Offline</h3>
-              <p className="text-sm text-gray-500 max-w-[250px] mx-auto">
-                Go online to start receiving delivery requests and earning
-                money.
-              </p>
+              {availableOrders.length > 0 ? (
+                availableOrders.map((order) => (
+                  <Card key={order._id} className="p-4 border-2 border-primary/5 hover:border-primary/20 transition-all shadow-sm">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <span className="text-[10px] font-black text-primary/60 uppercase tracking-widest mb-1 block">Return Task</span>
+                        <h4 className="font-bold text-gray-900">#{order.orderId}</h4>
+                      </div>
+                      <div className="text-right">
+                        <span className="block font-black text-brand-600 text-lg">₹{order.returnDeliveryCommission || 0}</span>
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Commission</span>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2 mb-5">
+                      <div className="flex items-center text-xs text-gray-600">
+                        <MapPin size={12} className="mr-2 text-gray-400" />
+                        <span className="truncate">{order.seller?.shopName || "Store"}</span>
+                      </div>
+                      <div className="flex items-center text-[11px] text-gray-500 font-medium">
+                        <Package size={12} className="mr-2 text-gray-400" />
+                        <span>Pickup from Customer & Return to Store</span>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                       <Button 
+                        variant="primary" 
+                        size="sm" 
+                        className="flex-1 font-black text-[10px] tracking-widest uppercase h-10 shadow-lg shadow-primary/20"
+                        onClick={() => handleAcceptReturn(order.orderId)}
+                      >
+                        Accept Pickup
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="px-4 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-gray-600 hover:bg-gray-100 h-10"
+                        onClick={() => navigate(`/delivery/order-details/${order.orderId}`)}
+                      >
+                        View
+                      </Button>
+                    </div>
+                  </Card>
+                ))
+              ) : (
+                <div className="bg-white rounded-2xl p-10 text-center border-2 border-dashed border-gray-100 flex flex-col items-center">
+                  <div className="w-14 h-14 bg-gray-50 rounded-full flex items-center justify-center mb-4 border border-gray-100 opacity-60">
+                    <Package size={20} className="text-gray-400" />
+                  </div>
+                  <h4 className="text-sm font-bold text-gray-800 mb-1">No returns nearby</h4>
+                  <p className="text-[11px] text-gray-400">Keep checking back for new return tasks.</p>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

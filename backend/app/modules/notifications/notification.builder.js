@@ -141,7 +141,8 @@ function eventDefinition(eventType) {
     case NOTIFICATION_EVENTS.NEW_ORDER:
       return {
         role: NOTIFICATION_ROLES.SELLER,
-        recipientIds: (payload) => normalizeIdList(payload.sellerId || payload.sellerIds),
+        recipientIds: (payload) =>
+          normalizeIdList(payload.sellerId || payload.sellerIds),
         title: () => "New Order",
         body: (payload) =>
           payload.orderId
@@ -192,7 +193,8 @@ function eventDefinition(eventType) {
     case NOTIFICATION_EVENTS.RETURN_APPROVED:
       return {
         role: NOTIFICATION_ROLES.CUSTOMER,
-        recipientIds: (payload) => normalizeIdList(payload.customerId || payload.userId),
+        recipientIds: (payload) =>
+          normalizeIdList(payload.customerId || payload.userId),
         title: () => "Return Approved ✅",
         body: (payload) =>
           payload.orderId
@@ -202,7 +204,8 @@ function eventDefinition(eventType) {
     case NOTIFICATION_EVENTS.RETURN_REJECTED:
       return {
         role: NOTIFICATION_ROLES.CUSTOMER,
-        recipientIds: (payload) => normalizeIdList(payload.customerId || payload.userId),
+        recipientIds: (payload) =>
+          normalizeIdList(payload.customerId || payload.userId),
         title: () => "Return Request Rejected",
         body: (payload) =>
           `Your return request for order #${payload.orderId || ""} was rejected.${
@@ -223,16 +226,19 @@ function eventDefinition(eventType) {
       return {
         role: NOTIFICATION_ROLES.DELIVERY,
         recipientIds: (payload) => normalizeIdList(payload.deliveryId),
-        title: () => "New Return Pickup Task 📦",
+        title: () => "Return Pickup Assigned",
         body: (payload) =>
-          `Return pickup for order #${payload.orderId || ""}. Commission: ₹${
-            payload.data?.commission || 0
-          }. Check app for details.`,
+          `Return pickup for order #${payload.orderId || ""}.${
+            payload.data?.commission
+              ? " Commission: ₹" + payload.data.commission + "."
+              : ""
+          } Check app for details.`,
       };
     case NOTIFICATION_EVENTS.RETURN_PICKUP_OTP:
       return {
         role: NOTIFICATION_ROLES.CUSTOMER,
-        recipientIds: (payload) => normalizeIdList(payload.customerId || payload.userId),
+        recipientIds: (payload) =>
+          normalizeIdList(payload.customerId || payload.userId),
         title: () => "Your Return Pickup OTP 🔐",
         body: (payload) =>
           payload.data?.otp
@@ -260,7 +266,8 @@ function eventDefinition(eventType) {
     case NOTIFICATION_EVENTS.RETURN_QC_PASSED:
       return {
         role: NOTIFICATION_ROLES.CUSTOMER,
-        recipientIds: (payload) => normalizeIdList(payload.customerId || payload.userId),
+        recipientIds: (payload) =>
+          normalizeIdList(payload.customerId || payload.userId),
         title: () => "QC Passed — Refund Initiated 💸",
         body: (payload) =>
           `Quality check passed for order #${payload.orderId || ""}. Refund of ₹${
@@ -270,7 +277,8 @@ function eventDefinition(eventType) {
     case NOTIFICATION_EVENTS.RETURN_QC_FAILED:
       return {
         role: NOTIFICATION_ROLES.CUSTOMER,
-        recipientIds: (payload) => normalizeIdList(payload.customerId || payload.userId),
+        recipientIds: (payload) =>
+          normalizeIdList(payload.customerId || payload.userId),
         title: () => "QC Failed — No Refund",
         body: (payload) =>
           `Quality check failed for order #${payload.orderId || ""}. No refund will be issued.${

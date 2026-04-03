@@ -383,7 +383,9 @@ const DeliveryLayout = () => {
         const notifications = result?.notifications || [];
         if (activeOrderRef.current) return;
         for (const n of notifications) {
-          if (n.type !== "order" || n.isRead || !n.data?.orderId) continue;
+          const isIncomingOrderType =
+            n.type === "order" || n.type === "RETURN_PICKUP_ASSIGNED";
+          if (!isIncomingOrderType || n.isRead || !n.data?.orderId) continue;
           const oid = n.data.orderId;
           if (shownOrderIdsRef.current.has(oid)) continue;
           const fromStored = applyFromBroadcastPayload({

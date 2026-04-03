@@ -122,6 +122,17 @@ const SellerProfile = () => {
     }
   };
 
+  const toggleStatus = async () => {
+    try {
+      const newStatus = !profile.isActive;
+      await sellerApi.updateProfile({ isActive: newStatus });
+      setProfile((prev) => ({ ...prev, isActive: newStatus }));
+      toast.success(`Shop is now ${newStatus ? "Active" : "Inactive"}`);
+    } catch (error) {
+      toast.error("Failed to update shop status");
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -159,11 +170,20 @@ const SellerProfile = () => {
               <span className="px-4 py-1.5 bg-white/10 backdrop-blur-xl text-white text-[10px] font-black uppercase tracking-[2px] rounded-full border border-white/20">
                 {profile?.role}
               </span>
-              <span
-                className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-[2px] rounded-full border ${profile?.isActive ? "bg-brand-500/10 text-brand-400 border-brand-500/20" : "bg-red-500/10 text-red-400 border-red-500/20"}`}
-                style={{ backdropFilter: "blur(12px)" }}>
+              <button
+                onClick={toggleStatus}
+                className={`group flex items-center gap-2 px-4 py-1.5 text-[10px] font-black uppercase tracking-[2px] rounded-full border transition-all hover:scale-105 active:scale-95 ${
+                  profile?.isActive
+                    ? "bg-emerald-500 text-white border-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.4)]"
+                    : "bg-rose-500 text-white border-rose-400 shadow-[0_0_20px_rgba(244,63,94,0.4)]"
+                }`}>
+                <div
+                  className={`w-2 h-2 rounded-full animate-pulse ${
+                    profile?.isActive ? "bg-emerald-200" : "bg-rose-200"
+                  }`}
+                />
                 {profile?.isActive ? "Active" : "Inactive"}
-              </span>
+              </button>
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tighter drop-shadow-sm mb-1 break-words">
               {profile?.name}

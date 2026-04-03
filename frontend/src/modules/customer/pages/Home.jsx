@@ -1066,14 +1066,14 @@ const Home = () => {
 
           {/* Promo Marquee Strip */}
           <div className="w-full -mt-[2px] md:-mt-[2px] mb-4">
-            <div className="relative overflow-hidden border-y border-[#e6ddc4] bg-[#f7f0df] shadow-[0_10px_30px_rgba(15,23,42,0.08)]">
-              <div className="absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-[#f7f0df] via-[#f7f0df]/90 to-transparent pointer-events-none" />
-              <div className="absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[#f7f0df] via-[#f7f0df]/90 to-transparent pointer-events-none" />
-              <div className="classic-marquee-track flex w-max items-center gap-4 px-3 md:px-6 py-4 text-sm md:text-base font-semibold text-[#4b463f] -translate-y-[4px]">
+            <div className="relative overflow-hidden border-y border-[#389ecb] bg-[#45B0E2] shadow-[0_10px_30px_rgba(15,23,42,0.08)]">
+              <div className="absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-[#45B0E2] via-[#45B0E2]/90 to-transparent pointer-events-none" />
+              <div className="absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[#45B0E2] via-[#45B0E2]/90 to-transparent pointer-events-none" />
+              <div className="classic-marquee-track flex w-max items-center gap-4 px-3 md:px-6 py-4 text-sm md:text-base font-semibold text-white -translate-y-[4px]">
                 {[...MARQUEE_MESSAGES, ...MARQUEE_MESSAGES].map((message, idx) => (
                   <React.Fragment key={`${message}-${idx}`}>
                     <span className="whitespace-nowrap">{message}</span>
-                    <span className="text-[#8a7f66]">•</span>
+                    <span className="text-white/60">•</span>
                   </React.Fragment>
                 ))}
                 <span className="whitespace-nowrap">❤️</span>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
@@ -28,9 +28,16 @@ function secondsLeftUntilSellerExpiry(order) {
 const isEarningsRoute = (path) =>
     path.includes('earnings') || path.includes('withdrawals') || path.includes('transactions');
 
+function playAlertSound() {
+    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+    audio.play().catch(() => { });
+}
+
 const DashboardLayout = ({ children, navItems, title }) => {
     const [newOrderAlert, setNewOrderAlert] = useState(null);
+    const [newReturnAlert, setNewReturnAlert] = useState(null);
     const [shownOrderIds, setShownOrderIds] = useState(() => new Set());
+    const [shownReturnOrderIds, setShownReturnOrderIds] = useState(() => new Set());
     const [timeLeft, setTimeLeft] = useState(0);
     /** Total seconds in this acceptance window (for progress bar), set when modal opens */
     const acceptWindowTotalRef = useRef(60);
@@ -38,6 +45,7 @@ const DashboardLayout = ({ children, navItems, title }) => {
     const [returnDropOtpAlert, setReturnDropOtpAlert] = useState(null); // { orderId, otp, expiresAt }
     const { user, logout, role } = useAuth();
     const location = useLocation();
+    const navigate = useNavigate();
 
     // Shared data for seller – single source, avoids duplicate API calls
     const [sellerOrders, setSellerOrders] = useState([]);
@@ -46,8 +54,10 @@ const DashboardLayout = ({ children, navItems, title }) => {
     const [earningsLoading, setEarningsLoading] = useState(false);
 
     const shownOrderIdsRef = useRef(new Set());
+    const shownReturnOrderIdsRef = useRef(new Set());
     const isFirstLoadRef = useRef(true);
     const newOrderAlertRef = useRef(null);
+    const newReturnAlertRef = useRef(null);
     const fetchOrdersRef = useRef(null);
     const earningsFetchedRef = useRef(false);
 
@@ -55,8 +65,14 @@ const DashboardLayout = ({ children, navItems, title }) => {
         shownOrderIdsRef.current = shownOrderIds;
     }, [shownOrderIds]);
     useEffect(() => {
+        shownReturnOrderIdsRef.current = shownReturnOrderIds;
+    }, [shownReturnOrderIds]);
+    useEffect(() => {
         newOrderAlertRef.current = newOrderAlert;
     }, [newOrderAlert]);
+    useEffect(() => {
+        newReturnAlertRef.current = newReturnAlert;
+    }, [newReturnAlert]);
 
     useEffect(() => {
         if (role !== 'seller') {
@@ -100,8 +116,7 @@ const DashboardLayout = ({ children, navItems, title }) => {
                 shownOrderIdsRef.current = new Set(shownOrderIdsRef.current).add(newOrder.orderId);
                 newOrderAlertRef.current = newOrder;
 
-                const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-                audio.play().catch(() => {});
+                playAlertSound();
             } catch (error) {
                 console.error("Polling Error:", error);
             } finally {
@@ -126,7 +141,7 @@ const DashboardLayout = ({ children, navItems, title }) => {
             console.log("[DashboardLayout] Received return drop OTP:", payload);
             setReturnDropOtpAlert(payload);
             const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-            audio.play().catch(() => {});
+            audio.play().catch(() => { });
         });
 
         return () => {

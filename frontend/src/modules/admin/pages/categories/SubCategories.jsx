@@ -65,7 +65,15 @@ const SubCategories = () => {
     try {
       const res = await adminApi.getCategories();
       if (res.data.success) {
-        const allCats = res.data.results || res.data.result || [];
+        const payload = res.data.result;
+        const results = res.data.results;
+        const allCats = Array.isArray(results)
+          ? results
+          : Array.isArray(payload)
+            ? payload
+            : Array.isArray(payload?.items)
+              ? payload.items
+              : [];
         setCategories(allCats.filter((c) => c.type === "subcategory"));
         setLevel2Categories(allCats.filter((c) => c.type === "category"));
         setHeaderCategories(allCats.filter((c) => c.type === "header"));
@@ -181,6 +189,10 @@ const SubCategories = () => {
 
       if (imageFile) {
         data.append("image", imageFile);
+      } else if (previewUrl && !previewUrl.startsWith("blob:")) {
+        // If no new file is chosen, but we have a preview URL that isn't a local blob,
+        // it means we have an existing image URL or a string.
+        data.append("image", previewUrl);
       }
 
       if (editingItem) {
@@ -240,7 +252,8 @@ const SubCategories = () => {
       type: "subcategory",
       parentId: item.parentId?._id || item.parentId || "",
     });
-    setPreviewUrl(item.image?.url || item.image || null);
+    const currentImage = item.image && typeof item.image === 'object' ? item.image.url : (item.image || null);
+    setPreviewUrl(currentImage);
     setIsAddModalOpen(true);
   };
 
@@ -408,9 +421,9 @@ const SubCategories = () => {
                       </td>
                       <td className="py-3 px-4">
                         <div className="w-10 h-10 rounded-lg bg-gray-100 overflow-hidden flex items-center justify-center border border-gray-200">
-                          {cat.image?.url || cat.image ? (
+                          {cat.image ? (
                             <img
-                              src={cat.image?.url || cat.image}
+                              src={typeof cat.image === 'string' ? cat.image : (cat.image.url || cat.image.secure_url || cat.image)}
                               alt={cat.name}
                               className="w-full h-full object-cover"
                             />
