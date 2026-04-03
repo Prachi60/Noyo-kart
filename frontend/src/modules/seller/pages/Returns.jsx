@@ -55,6 +55,7 @@ const Returns = () => {
             case "return_pickup_assigned":
                 return "Pickup Assigned";
             case "return_in_transit":
+            case "return_drop_pending":
                 return "In Transit";
             case "qc_passed":
                 return "QC Passed";
@@ -78,6 +79,7 @@ const Returns = () => {
                 return "error";
             case "return_pickup_assigned":
             case "return_in_transit":
+            case "return_drop_pending":
                 return "secondary";
             case "qc_passed":
                 return "success";
@@ -340,6 +342,20 @@ const Returns = () => {
                                                         {ret.returnReason ||
                                                             "No reason provided"}
                                                     </p>
+                                                    {/* Proper Data: Rider tracking for in-transit */}
+                                                    {(ret.returnStatus === "return_in_transit" || ret.returnStatus === "return_drop_pending" || ret.returnStatus === "return_pickup_assigned") && ret.returnDeliveryBoy && (
+                                                        <div className="mt-2 flex items-center gap-1.5 px-2 py-1 bg-sky-50 rounded-lg border border-sky-100 w-fit">
+                                                            <HiOutlineTruck className="h-3 w-3 text-sky-600" />
+                                                            <span className="text-[10px] font-bold text-sky-700">Rider: {ret.returnDeliveryBoy.name}</span>
+                                                        </div>
+                                                    )}
+                                                    {/* Proper Data: QC Note for passed/failed */}
+                                                    {(ret.returnStatus === "qc_passed" || ret.returnStatus === "qc_failed") && ret.returnQcNote && (
+                                                        <div className="mt-2 flex items-start gap-1.5 px-2 py-1 bg-slate-50 rounded-lg border border-slate-100 w-fit max-w-[200px]">
+                                                            <HiOutlineInboxStack className="h-3 w-3 text-slate-500 mt-0.5" />
+                                                            <span className="text-[10px] font-medium text-slate-600 italic line-clamp-2">QC: {ret.returnQcNote}</span>
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <div className="flex flex-col items-end gap-2 shrink-0">
                                                     <Badge
@@ -443,6 +459,72 @@ const Returns = () => {
                                         </p>
                                     )}
                                 </div>
+
+                                {/* Tracking Info Section */}
+                                {(selectedReturn.returnStatus === "return_pickup_assigned" || 
+                                  selectedReturn.returnStatus === "return_in_transit" || 
+                                  selectedReturn.returnStatus === "return_drop_pending") && selectedReturn.returnDeliveryBoy && (
+                                    <div className="bg-sky-50 rounded-2xl p-4 border border-sky-100 space-y-2">
+                                        <div className="flex items-center gap-2">
+                                            <div className="h-8 w-8 rounded-lg bg-sky-600 flex items-center justify-center text-white">
+                                                <HiOutlineTruck className="h-5 w-5" />
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] font-black text-sky-600 uppercase tracking-widest leading-none mb-1">Rider Assigned</p>
+                                                <p className="text-sm font-bold text-slate-900 leading-none">{selectedReturn.returnDeliveryBoy.name}</p>
+                                            </div>
+                                        </div>
+                                        {selectedReturn.returnDeliveryBoy.phone && (
+                                            <a 
+                                                href={`tel:${selectedReturn.returnDeliveryBoy.phone}`}
+                                                className="inline-flex items-center gap-1.5 text-[11px] font-bold text-sky-700 bg-white px-3 py-1.5 rounded-lg border border-sky-200 shadow-sm hover:bg-sky-100 transition-colors"
+                                            >
+                                                📞 {selectedReturn.returnDeliveryBoy.phone}
+                                            </a>
+                                        )}
+                                        {selectedReturn.returnStatus === "return_drop_pending" && (
+                                            <p className="text-[10px] font-bold text-sky-800 italic mt-1 bg-white/50 p-2 rounded-lg">
+                                                Rider is at your location. Please check the OTP below to confirm the drop.
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* QC Info Section */}
+                                {(selectedReturn.returnStatus === "qc_passed" || selectedReturn.returnStatus === "qc_failed") && (
+                                    <div className={`rounded-2xl p-4 border space-y-2 ${
+                                        selectedReturn.returnStatus === "qc_passed" ? "bg-emerald-50 border-emerald-100" : "bg-rose-50 border-rose-100"
+                                    }`}>
+                                        <div className="flex items-center gap-2">
+                                            <div className={`h-8 w-8 rounded-lg flex items-center justify-center text-white ${
+                                                selectedReturn.returnStatus === "qc_passed" ? "bg-emerald-600" : "bg-rose-600"
+                                            }`}>
+                                                <HiOutlineInboxStack className="h-5 w-5" />
+                                            </div>
+                                            <div>
+                                                <p className={`text-[10px] font-black uppercase tracking-widest leading-none mb-1 ${
+                                                    selectedReturn.returnStatus === "qc_passed" ? "text-emerald-600" : "text-rose-600"
+                                                }`}>Quality Check Results</p>
+                                                <p className="text-sm font-bold text-slate-900 leading-none">
+                                                    {selectedReturn.returnStatus === "qc_passed" ? "QC Passed" : "QC Failed"}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        {selectedReturn.returnQcNote && (
+                                            <div className="bg-white/60 p-3 rounded-xl border border-black/5">
+                                                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1">QC Decision Note:</p>
+                                                <p className="text-sm text-slate-800 italic leading-relaxed">
+                                                    "{selectedReturn.returnQcNote}"
+                                                </p>
+                                            </div>
+                                        )}
+                                        {selectedReturn.returnQcAt && (
+                                            <p className="text-[10px] font-medium text-slate-500">
+                                                Reviewed on: {new Date(selectedReturn.returnQcAt).toLocaleString()}
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
 
                                 {/* Quality Check Comparison (3-Way) */}
                                 <div className="space-y-3 pt-2">

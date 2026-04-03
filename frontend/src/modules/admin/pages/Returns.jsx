@@ -22,6 +22,7 @@ const Returns = () => {
   const [returns, setReturns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("All");
+  const [activeQcTab, setActiveQcTab] = useState("QC Requested");
   const [selectedReturn, setSelectedReturn] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [actionModal, setActionModal] = useState({ open: false, mode: null });
@@ -36,10 +37,11 @@ const Returns = () => {
     "Rejected",
     "Pickup Assigned",
     "In Transit",
-    "QC Passed",
-    "QC Failed",
+    "Quality Check",
     "Completed",
   ];
+
+  const qcTabs = ["QC Requested", "QC Passed", "QC Failed"];
 
   const mapReturnStatusLabel = (status) => {
     switch (status) {
@@ -52,12 +54,14 @@ const Returns = () => {
       case "return_pickup_assigned":
         return "Pickup Assigned";
       case "return_in_transit":
+      case "return_drop_pending":
         return "In Transit";
+      case "returned":
+        return "QC Requested";
       case "qc_passed":
         return "QC Passed";
       case "qc_failed":
         return "QC Failed";
-      case "returned":
       case "refund_completed":
         return "Completed";
       default:
@@ -75,13 +79,14 @@ const Returns = () => {
         return "error";
       case "return_pickup_assigned":
       case "return_in_transit":
+      case "return_drop_pending":
         return "secondary";
+      case "returned":
       case "qc_passed":
         return "success";
       case "qc_failed":
         return "error";
       case "refund_completed":
-      case "returned":
         return "success";
       default:
         return "secondary";
@@ -113,9 +118,12 @@ const Returns = () => {
     if (activeTab === "All") return returns;
     return returns.filter((r) => {
       const label = mapReturnStatusLabel(r.returnStatus);
+      if (activeTab === "Quality Check") {
+        return label === activeQcTab;
+      }
       return label === activeTab;
     });
-  }, [returns, activeTab]);
+  }, [returns, activeTab, activeQcTab]);
 
   const openDetails = (ret) => {
     setSelectedReturn(ret);
@@ -255,7 +263,7 @@ const Returns = () => {
       ) : (
         <>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            {["Requested", "Approved", "QC Failed", "Completed"].map((label, i) => {
+            {["Requested", "Approved", "QC Requested", "Completed"].map((label, i) => {
               const count = returns.filter(
                 (r) => mapReturnStatusLabel(r.returnStatus) === label,
               ).length;
@@ -311,6 +319,33 @@ const Returns = () => {
                 </div>
               </div>
 
+              {activeTab === "Quality Check" && (
+                <div className="border-b border-slate-100 bg-slate-50/10 overflow-x-auto scrollbar-hide">
+                  <div className="flex px-3 sm:px-6 items-center min-w-max">
+                    {qcTabs.map((tab) => (
+                      <button
+                        key={`qc-${tab}`}
+                        onClick={() => setActiveQcTab(tab)}
+                        className={cn(
+                          "relative py-2 sm:py-3 px-3 sm:px-4 text-xs font-bold whitespace-nowrap transition-all duration-300 rounded-t-lg",
+                          activeQcTab === tab
+                            ? "text-primary bg-primary/5"
+                            : "text-slate-500 hover:text-slate-700 hover:bg-slate-50/50"
+                        )}
+                      >
+                        {tab}
+                        {activeQcTab === tab && (
+                          <motion.div
+                            layoutId="returns-qc-tab-underline"
+                            className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary mx-2"
+                          />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="p-3 sm:p-4">
                 {filteredReturns.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-16 px-4">
@@ -355,6 +390,20 @@ const Returns = () => {
                           <p className="text-xs text-slate-500 mt-1 line-clamp-2">
                             {ret.returnReason || "No reason provided"}
                           </p>
+                          {/* Proper Data: Rider tracking for in-transit */}
+                          {(ret.returnStatus === "return_in_transit" || ret.returnStatus === "return_drop_pending" || ret.returnStatus === "return_pickup_assigned") && ret.returnDeliveryBoy && (
+                            <div className="mt-2 flex items-center gap-1.5 px-2 py-1 bg-sky-50 rounded-lg border border-sky-100 w-fit">
+                              <HiOutlineTruck className="h-3 w-3 text-sky-600" />
+                              <span className="text-[10px] font-bold text-sky-700">Rider: {ret.returnDeliveryBoy.name}</span>
+                            </div>
+                          )}
+                          {/* Proper Data: QC Note for passed/failed */}
+                          {(ret.returnStatus === "qc_passed" || ret.returnStatus === "qc_failed") && ret.returnQcNote && (
+                            <div className="mt-2 flex items-start gap-1.5 px-2 py-1 bg-slate-50 rounded-lg border border-slate-100 w-fit max-w-[200px]">
+                              <HiOutlineInboxStack className="h-3 w-3 text-slate-500 mt-0.5" />
+                              <span className="text-[10px] font-medium text-slate-600 italic line-clamp-2">QC: {ret.returnQcNote}</span>
+                            </div>
+                          )}
                         </div>
                         <div className="flex flex-col items-end gap-2 shrink-0">
                           <Badge
@@ -452,6 +501,72 @@ const Returns = () => {
                     </p>
                   )}
                 </div>
+
+                {/* Tracking Info Section */}
+                {(selectedReturn.returnStatus === "return_pickup_assigned" || 
+                  selectedReturn.returnStatus === "return_in_transit" || 
+                  selectedReturn.returnStatus === "return_drop_pending") && selectedReturn.returnDeliveryBoy && (
+                    <div className="bg-sky-50 rounded-2xl p-4 border border-sky-100 space-y-2">
+                        <div className="flex items-center gap-2">
+                            <div className="h-8 w-8 rounded-lg bg-sky-600 flex items-center justify-center text-white">
+                                <HiOutlineTruck className="h-5 w-5" />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black text-sky-600 uppercase tracking-widest leading-none mb-1">Rider Assigned</p>
+                                <p className="text-sm font-bold text-slate-900 leading-none">{selectedReturn.returnDeliveryBoy.name}</p>
+                            </div>
+                        </div>
+                        {selectedReturn.returnDeliveryBoy.phone && (
+                            <a 
+                                href={`tel:${selectedReturn.returnDeliveryBoy.phone}`}
+                                className="inline-flex items-center gap-1.5 text-[11px] font-bold text-sky-700 bg-white px-3 py-1.5 rounded-lg border border-sky-200 shadow-sm hover:bg-sky-100 transition-colors"
+                            >
+                                📞 {selectedReturn.returnDeliveryBoy.phone}
+                            </a>
+                        )}
+                        {selectedReturn.returnStatus === "return_drop_pending" && (
+                            <p className="text-[10px] font-bold text-sky-800 italic mt-1 bg-white/50 p-2 rounded-lg">
+                                Rider is at the seller location. Sharing the OTP will confirm the drop.
+                            </p>
+                        )}
+                    </div>
+                )}
+
+                {/* QC Info Section */}
+                {(selectedReturn.returnStatus === "qc_passed" || selectedReturn.returnStatus === "qc_failed") && (
+                    <div className={`rounded-2xl p-4 border space-y-2 ${
+                        selectedReturn.returnStatus === "qc_passed" ? "bg-emerald-50 border-emerald-100" : "bg-rose-50 border-rose-100"
+                    }`}>
+                        <div className="flex items-center gap-2">
+                            <div className={`h-8 w-8 rounded-lg flex items-center justify-center text-white ${
+                                selectedReturn.returnStatus === "qc_passed" ? "bg-emerald-600" : "bg-rose-600"
+                            }`}>
+                                <HiOutlineInboxStack className="h-5 w-5" />
+                            </div>
+                            <div>
+                                <p className={`text-[10px] font-black uppercase tracking-widest leading-none mb-1 ${
+                                    selectedReturn.returnStatus === "qc_passed" ? "text-emerald-600" : "text-rose-600"
+                                }`}>Quality Check Results</p>
+                                <p className="text-sm font-bold text-slate-900 leading-none">
+                                    {selectedReturn.returnStatus === "qc_passed" ? "QC Passed" : "QC Failed"}
+                                </p>
+                            </div>
+                        </div>
+                        {selectedReturn.returnQcNote && (
+                            <div className="bg-white/60 p-3 rounded-xl border border-black/5">
+                                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1">QC Decision Note:</p>
+                                <p className="text-sm text-slate-800 italic leading-relaxed">
+                                    "{selectedReturn.returnQcNote}"
+                                </p>
+                            </div>
+                        )}
+                        {selectedReturn.returnQcAt && (
+                            <p className="text-[10px] font-medium text-slate-500">
+                                Reviewed on: {new Date(selectedReturn.returnQcAt).toLocaleString()}
+                            </p>
+                        )}
+                    </div>
+                )}
 
                 {/* Quality Check Comparison (3-Way) */}
                 <div className="space-y-3 pt-2">
