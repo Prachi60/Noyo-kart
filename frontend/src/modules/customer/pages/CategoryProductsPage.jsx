@@ -39,50 +39,49 @@ const CategoryProductsPage = () => {
                 Number.isFinite(currentLocation?.latitude) &&
                 Number.isFinite(currentLocation?.longitude);
 
-            if (hasValidLocation) {
-                // Fetch products for this category
-                const prodRes = await customerApi.getProducts({
-                    categoryId: catId,
-                    lat: currentLocation.latitude,
-                    lng: currentLocation.longitude,
-                });
-                if (prodRes.data.success) {
-                    const rawResult = prodRes.data.result;
-                    const dbProds = Array.isArray(prodRes.data.results)
-                        ? prodRes.data.results
-                        : Array.isArray(rawResult?.items)
-                        ? rawResult.items
-                        : Array.isArray(rawResult)
-                        ? rawResult
-                        : [];
+            // Fetch products and categories in parallel instead of sequentially
+            const [prodRes, catRes] = await Promise.all([
+                hasValidLocation
+                    ? customerApi.getProducts({
+                        categoryId: catId,
+                        lat: currentLocation.latitude,
+                        lng: currentLocation.longitude,
+                    })
+                    : Promise.resolve({ data: { success: true, result: { items: [] } } }),
+                customerApi.getCategories({ tree: true }),
+            ]);
 
-                    const formattedProds = dbProds.map(p => ({
-                        ...p,
-                        id: p._id,
-                        image: p.mainImage || p.image || "https://images.unsplash.com/photo-1550989460-0adf9ea622e2",
-                        price: p.salePrice || p.price,
-                        originalPrice: p.price,
-                        weight: p.weight || "1 unit",
-                        deliveryTime: "8-15 mins"
-                    }));
-                    setProducts(Array.isArray(formattedProds) ? formattedProds : []);
-                }
+            if (prodRes.data.success) {
+                const rawResult = prodRes.data.result;
+                const dbProds = Array.isArray(prodRes.data.results)
+                    ? prodRes.data.results
+                    : Array.isArray(rawResult?.items)
+                    ? rawResult.items
+                    : Array.isArray(rawResult)
+                    ? rawResult
+                    : [];
+
+                const formattedProds = dbProds.map(p => ({
+                    ...p,
+                    id: p._id,
+                    image: p.mainImage || p.image || "https://images.unsplash.com/photo-1550989460-0adf9ea622e2",
+                    price: p.salePrice || p.price,
+                    originalPrice: p.price,
+                    weight: p.weight || "1 unit",
+                    deliveryTime: "8-15 mins"
+                }));
+                setProducts(Array.isArray(formattedProds) ? formattedProds : []);
             } else {
                 setProducts([]);
             }
 
-            // Fetch subcategories & header mapping
-            const catRes = await customerApi.getCategories({ tree: true });
             if (catRes.data.success) {
                 const tree = catRes.data.results || catRes.data.result || [];
-                // Find current category in tree
                 let currentCat = null;
-                let headerForCat = null;
                 for (const header of tree) {
                     const found = (header.children || []).find(c => c._id === catId);
                     if (found) {
                         currentCat = found;
-                        headerForCat = header;
                         break;
                     }
                 }
@@ -211,12 +210,6 @@ const CategoryProductsPage = () => {
 
             <style dangerouslySetInnerHTML={{
                 __html: `
-                    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
-                    
-                    body {
-                        font-family: 'Outfit', sans-serif;
-                        background-color: #f8f8f8;
-                    }
                     .hide-scrollbar::-webkit-scrollbar {
                         display: none;
                     }

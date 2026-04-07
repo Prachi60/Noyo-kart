@@ -102,12 +102,6 @@ function applyMediaFields(productData) {
 ================================ */
 export const getProducts = async (req, res) => {
   try {
-    // Debug logging
-    console.log('=== GET PRODUCTS REQUEST ===');
-    console.log('User:', req.user);
-    console.log('User Role:', req.user?.role);
-    console.log('Query params:', req.query);
-    
     const {
       search,
       category,
@@ -126,9 +120,6 @@ export const getProducts = async (req, res) => {
       lng,
     } = req.query;
     const enforceRadius = isCustomerVisibilityRequest(req);
-    
-    console.log('Enforce Radius:', enforceRadius);
-    console.log('===========================');
 
     const query = {};
     if (search) {
@@ -148,7 +139,6 @@ export const getProducts = async (req, res) => {
     const coords = parseCustomerCoordinates({ lat, lng });
     const shouldApplyLocationFilter = enforceRadius || coords.valid;
     if (enforceRadius && !coords.valid) {
-      console.log('❌ Blocking request - enforceRadius is true but coords invalid');
       return handleResponse(
         res,
         400,
@@ -235,20 +225,21 @@ export const getProducts = async (req, res) => {
     };
     const sortQuery = sortMap[String(sort || "newest").toLowerCase()] || sortMap.newest;
 
-    const products = await Product.find(query)
-      .select(
-        "name slug description sku price salePrice stock brand weight mainImage galleryImages headerId categoryId subcategoryId sellerId status isFeatured variants createdAt",
-      )
-      .populate("headerId", "name")
-      .populate("categoryId", "name")
-      .populate("subcategoryId", "name")
-      .populate("sellerId", "shopName")
-      .sort(sortQuery)
-      .skip(skip)
-      .limit(limit)
-      .lean();
-
-    const total = await Product.countDocuments(query);
+    const [products, total] = await Promise.all([
+      Product.find(query)
+        .select(
+          "name slug description sku price salePrice stock brand weight mainImage galleryImages headerId categoryId subcategoryId sellerId status isFeatured variants createdAt",
+        )
+        .populate("headerId", "name")
+        .populate("categoryId", "name")
+        .populate("subcategoryId", "name")
+        .populate("sellerId", "shopName")
+        .sort(sortQuery)
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Product.countDocuments(query),
+    ]);
 
     return handleResponse(res, 200, "Products fetched successfully", {
       items: products,
@@ -293,20 +284,21 @@ export const getSellerProducts = async (req, res) => {
     };
     const sortQuery = sortMap[String(sort || "newest").toLowerCase()] || sortMap.newest;
 
-    const products = await Product.find(query)
-      .select(
-        "name slug description sku price salePrice stock brand weight mainImage galleryImages headerId categoryId subcategoryId sellerId status isFeatured variants createdAt",
-      )
-      .populate("headerId", "name")
-      .populate("categoryId", "name")
-      .populate("subcategoryId", "name")
-      .populate("sellerId", "shopName")
-      .sort(sortQuery)
-      .skip(skip)
-      .limit(limit)
-      .lean();
-
-    const total = await Product.countDocuments(query);
+    const [products, total] = await Promise.all([
+      Product.find(query)
+        .select(
+          "name slug description sku price salePrice stock brand weight mainImage galleryImages headerId categoryId subcategoryId sellerId status isFeatured variants createdAt",
+        )
+        .populate("headerId", "name")
+        .populate("categoryId", "name")
+        .populate("subcategoryId", "name")
+        .populate("sellerId", "shopName")
+        .sort(sortQuery)
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Product.countDocuments(query),
+    ]);
 
     return handleResponse(res, 200, "Seller products fetched", {
       items: products,

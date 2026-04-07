@@ -51,11 +51,11 @@ async function throttleLocationUpdate(deliveryId, lat, lng) {
 export const getDeliveryStats = async (req, res) => {
     try {
         const deliveryBoyId = new mongoose.Types.ObjectId(req.user.id);
-        console.log(`[Stats] Fetching for Partner: ${deliveryBoyId}`);
 
-        const orders = await Order.find({ deliveryBoy: deliveryBoyId, status: 'delivered' });
+        const orders = await Order.find({ deliveryBoy: deliveryBoyId, status: 'delivered' })
+            .select("_id")
+            .lean();
         const totalDeliveries = orders.length;
-        console.log(`[Stats] Delivered Orders found: ${totalDeliveries}`);
 
         // Today's earnings - Using a more robust date check
         const startOfToday = new Date();
@@ -65,9 +65,7 @@ export const getDeliveryStats = async (req, res) => {
             user: deliveryBoyId,
             userModel: 'Delivery',
             createdAt: { $gte: startOfToday }
-        });
-
-        console.log(`Found ${allTransactions.length} transactions for today for user ${deliveryBoyId}`);
+        }).lean();
 
         const todayEarnings = allTransactions
             .filter(t => t.status === 'Settled' && (t.type === 'Delivery Earning' || t.type === 'Incentive' || t.type === 'Bonus'))
@@ -104,6 +102,7 @@ export const getDeliveryEarnings = async (req, res) => {
         const deliveryBoyId = new mongoose.Types.ObjectId(req.user.id);
         const transactions = await Transaction.find({ user: deliveryBoyId, userModel: 'Delivery' })
             .sort({ createdAt: -1 })
+            .limit(200)
             .populate("order", "orderId pricing paymentBreakdown");
         const wallet = await Wallet.findOne({
             ownerType: "DELIVERY_PARTNER",
