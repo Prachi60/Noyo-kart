@@ -58,9 +58,8 @@ export const registerPushToken = async (req, res) => {
   try {
     const userId = req?.user?.id;
     const role = resolveRole(req);
-    const token = String(req.body?.token || req.query?.token || "").trim();
+    const token = String(req.body?.token || "").trim();
     const platform = String(req.body?.platform || "web").trim().toLowerCase();
-    const device = String(req.body?.device || "").trim();
 
     if (!userId || !role) {
       return handleResponse(res, 401, "Unauthorized");
@@ -68,8 +67,8 @@ export const registerPushToken = async (req, res) => {
     if (!token) {
       return handleResponse(res, 400, "Push token is required");
     }
-    if (!["web", "android", "ios"].includes(platform)) {
-      return handleResponse(res, 400, "platform must be one of web, android, ios");
+    if (!["web", "app"].includes(platform)) {
+      return handleResponse(res, 400, "platform must be one of web, app");
     }
 
     const userModel = ROLE_TO_USER_MODEL[role];
@@ -82,7 +81,6 @@ export const registerPushToken = async (req, res) => {
           userModel,
           token,
           platform,
-          device,
           isActive: true,
           lastUsedAt: new Date(),
           invalidatedAt: null,
