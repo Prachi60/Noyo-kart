@@ -4,6 +4,10 @@ import PushToken from "./token.model.js";
 import NotificationPreference from "./preference.model.js";
 import handleResponse from "../../utils/helper.js";
 import getPagination from "../../utils/pagination.js";
+import User from "../../models/customer.js";
+import Seller from "../../models/seller.js";
+import Delivery from "../../models/delivery.js";
+import Admin from "../../models/admin.js";
 import {
   normalizeNotificationRole,
   ROLE_TO_USER_MODEL,
@@ -54,6 +58,60 @@ function normalizeNotification(doc = {}) {
   };
 }
 
+function resolveBearerToken(req) {
+  const header = String(req.headers?.authorization || "");
+  if (!header.toLowerCase().startsWith("bearer ")) return "";
+  return header.split(" ")[1] || "";
+}
+
+function normalizeLoginUser(doc) {
+  if (!doc) return null;
+
+  // Try to match the "user" shape expected by the client (best-effort across roles).
+  const walletAmount =
+    Number(doc.walletAmount ?? doc.walletBalance ?? doc.wallet ?? 0) || 0;
+  const status =
+    typeof doc.isActive === "boolean"
+      ? doc.isActive
+        ? "Active"
+        : "Inactive"
+      : String(doc.status || "").trim() || "Active";
+
+  return {
+    id: String(doc._id || doc.id || ""),
+    name: String(doc.name || ""),
+    phone: String(doc.phone || ""),
+    email: String(doc.email || ""),
+    walletAmount,
+    refCode: String(doc.refCode || doc.referralCode || ""),
+    status,
+  };
+}
+
+async function fetchLoginUser(userModelName, userId) {
+  // Note: customer model file exports model("User"), but is used as "Customer" elsewhere.
+  const MODEL_MAP = {
+    User,
+    Seller,
+    Delivery,
+    Admin,
+  };
+
+  const model = MODEL_MAP[userModelName];
+  if (!model) return null;
+
+  // Keep the projection small and safe.
+  const baseProjection = "name phone email role";
+  const projectionByModel = {
+    User: `${baseProjection} walletBalance isActive`,
+    Seller: `${baseProjection} isActive isVerified applicationStatus`,
+    Delivery: `${baseProjection} isOnline isVerified`,
+    Admin: `${baseProjection} isVerified`,
+  };
+
+  return model.findById(userId).select(projectionByModel[userModelName] || baseProjection).lean();
+}
+
 export const registerPushToken = async (req, res) => {
   try {
     const userId = req?.user?.id;
@@ -94,11 +152,24 @@ export const registerPushToken = async (req, res) => {
       },
     ).lean();
 
-    return handleResponse(res, 200, "Push token registered successfully", {
-      tokenId: tokenDoc?._id,
-      platform: tokenDoc?.platform,
-      isActive: tokenDoc?.isActive,
-      lastUsedAt: tokenDoc?.lastUsedAt,
+    const bearerToken = resolveBearerToken(req);
+    const userModelName = ROLE_TO_USER_MODEL[role];
+    const userDoc = await fetchLoginUser(userModelName, userId);
+
+    if (!userDoc) {
+      return handleResponse(res, 404, "User not found");
+    }
+
+    // Client expects a login-like response for this endpoint.
+    // We intentionally return the same token the client used (Bearer token),
+    // and a normalized user object.
+    return res.status(200).json({
+      success: true,
+      message: "Login successful",
+      data: {
+        token: bearerToken,
+        user: normalizeLoginUser(userDoc),
+      },
     });
   } catch (error) {
     return handleResponse(res, 500, error.message);
