@@ -921,12 +921,10 @@ export const updateOrderStatus = async (req, res) => {
       return handleResponse(res, 200, "Order status updated", refreshed || order);
     }
 
-    console.log("Saving order with new status:", status);
     await order.save();
 
     if (status === "confirmed" && role === "seller") {
       // This order is now 'Automatic' for delivery partners
-      console.log("Order confirmed, available for delivery.");
       emitNotificationEvent(NOTIFICATION_EVENTS.ORDER_CONFIRMED, {
         orderId: canonicalOrderId,
         customerId: order.customer,
@@ -1604,8 +1602,6 @@ export const completeReturnAndRefund = async (order) => {
       status: "Settled",
       reference: `RET-DEL-${order.orderId}`,
     });
-  } else if (commissionAlreadyPaid) {
-    console.log(`[ReturnFinance] Commission already paid at pickup for order ${order.orderId} — skipping duplicate credit.`);
   }
 
   order.returnStatus = "refund_completed";
@@ -1726,7 +1722,6 @@ export const getSellerOrders = async (req, res) => {
   try {
     const { id: userId, role } = req.user;
     const { startDate, endDate, status: statusParam } = req.query;
-    console.log("Fetching Orders - User role:", role, "User ID:", userId);
 
     const { page, limit, skip } = getPagination(req, {
       defaultLimit: 25,
@@ -1743,7 +1738,6 @@ export const getSellerOrders = async (req, res) => {
       limit,
     });
 
-    console.log("Fetched Orders Page:", page, "Count:", orders.length);
 
     return handleResponse(
       res,
@@ -1791,10 +1785,6 @@ export const getAvailableOrders = async (req, res) => {
         [],
       );
     }
-
-    console.log(
-      `Delivery Partner (${userId}) - Available orders found: ${orders.length}`,
-    );
 
     return handleResponse(
       res,

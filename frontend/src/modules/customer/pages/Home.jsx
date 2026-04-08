@@ -651,11 +651,21 @@ const Home = () => {
     fetchData();
   }, [currentLocation?.latitude, currentLocation?.longitude]); // Refetch when location changes
 
+  // Cache refs to avoid re-fetching on category tab switches
+  const headerSectionsCache = useRef({});
+  const heroConfigCache = useRef({});
+
   // Fetch header-specific experience sections when active header category changes
   useEffect(() => {
     const fetchHeaderSections = async () => {
       if (!activeCategory || activeCategory._id === "all") {
         setHeaderSections([]);
+        return;
+      }
+      const cacheKey = activeCategory._id;
+      // Use cached data if available
+      if (headerSectionsCache.current[cacheKey]) {
+        setHeaderSections(headerSectionsCache.current[cacheKey]);
         return;
       }
       try {
@@ -665,12 +675,13 @@ const Home = () => {
         });
         if (res.data.success) {
           const raw = res.data.result || res.data.results || res.data;
-          setHeaderSections(Array.isArray(raw) ? raw : []);
+          const sections = Array.isArray(raw) ? raw : [];
+          headerSectionsCache.current[cacheKey] = sections;
+          setHeaderSections(sections);
         } else {
           setHeaderSections([]);
         }
       } catch (e) {
-        console.error("Error fetching header experience sections:", e);
         setHeaderSections([]);
       }
     };
@@ -683,6 +694,14 @@ const Home = () => {
     const fetchHeroConfig = async () => {
       try {
         const isHeader = activeCategory && activeCategory._id !== "all";
+        const cacheKey = isHeader ? activeCategory._id : "__home__";
+
+        // Use cached data if available
+        if (heroConfigCache.current[cacheKey]) {
+          setHeroConfig(heroConfigCache.current[cacheKey]);
+          return;
+        }
+
         let payload = null;
         if (isHeader) {
           const res = await customerApi.getHeroConfig({
@@ -702,18 +721,17 @@ const Home = () => {
             payload = homeRes.data.result;
           }
         }
-        setHeroConfig(
-          payload &&
+        const resolved = payload &&
             (payload.banners?.items?.length > 0 ||
               payload.categoryIds?.length > 0)
             ? {
               banners: payload.banners || { items: [] },
               categoryIds: payload.categoryIds || [],
             }
-            : { banners: { items: [] }, categoryIds: [] },
-        );
+            : { banners: { items: [] }, categoryIds: [] };
+        heroConfigCache.current[cacheKey] = resolved;
+        setHeroConfig(resolved);
       } catch (e) {
-        console.error("Error fetching hero config:", e);
         setHeroConfig({ banners: { items: [] }, categoryIds: [] });
       }
     };

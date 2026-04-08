@@ -11,59 +11,156 @@ import Wallet from "../models/wallet.js";
 export const getSellerStats = async (req, res) => {
     try {
         const sellerId = req.user.id;
+        const sellerOid = new mongoose.Types.ObjectId(sellerId);
 
-        // 1. Basic Stats (Total Sales, Total Orders)
-        const orders = await Order.find({ seller: sellerId, status: { $ne: 'cancelled' } })
-            .select("pricing.total")
-            .lean();
+        // Date boundaries
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const fourteenDaysAgo = new Date();
+        fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
 
-        const totalSales = orders.reduce((acc, order) => acc + (order.pricing?.total || 0), 0);
-        const totalOrders = orders.length;
-        const avgOrderValue = totalOrders > 0 ? (totalSales / totalOrders) : 0;
-
-        // 2. Sales Trend (Dynamic Range)
+        // Sales Trend date range
         const { range = 'daily' } = req.query;
-        let startDate = new Date();
+        let trendStartDate = new Date();
         let aggregationFormat = "%Y-%m-%d";
-        let chartPoints = 7;
 
         if (range === 'monthly') {
-            startDate.setMonth(startDate.getMonth() - 6);
+            trendStartDate.setMonth(trendStartDate.getMonth() - 6);
             aggregationFormat = "%Y-%m";
-            chartPoints = 6;
         } else if (range === 'weekly') {
-            startDate.setDate(startDate.getDate() - 28);
-            aggregationFormat = "%Y-%U"; // Year-Week
-            chartPoints = 4;
+            trendStartDate.setDate(trendStartDate.getDate() - 28);
+            aggregationFormat = "%Y-%U";
         } else {
-            startDate.setDate(startDate.getDate() - 7);
+            trendStartDate.setDate(trendStartDate.getDate() - 7);
         }
 
-        const salesTrend = await Order.aggregate([
+        // Single aggregation pipeline with $facet — replaces 5 separate DB queries
+        const [statsResult] = await Order.aggregate([
             {
                 $match: {
-                    seller: new mongoose.Types.ObjectId(sellerId),
+                    seller: sellerOid,
                     status: { $ne: 'cancelled' },
-                    createdAt: { $gte: startDate }
                 }
             },
             {
-                $group: {
-                    _id: { $dateToString: { format: aggregationFormat, date: "$createdAt" } },
-                    sales: { $sum: "$pricing.total" },
-                    orders: { $sum: 1 }
+                $facet: {
+                    // Overview totals (replaces Order.find + in-memory reduce)
+                    overview: [
+                        {
+                            $group: {
+                                _id: null,
+                                totalSales: { $sum: { $ifNull: ["$pricing.total", 0] } },
+                                totalOrders: { $sum: 1 },
+                            }
+                        }
+                    ],
+                    // Current week stats (replaces Order.find with date filter)
+                    currentWeek: [
+                        { $match: { createdAt: { $gte: sevenDaysAgo } } },
+                        {
+                            $group: {
+                                _id: null,
+                                sales: { $sum: { $ifNull: ["$pricing.total", 0] } },
+                                count: { $sum: 1 },
+                            }
+                        }
+                    ],
+                    // Previous week stats (replaces second Order.find)
+                    prevWeek: [
+                        { $match: { createdAt: { $gte: fourteenDaysAgo, $lt: sevenDaysAgo } } },
+                        {
+                            $group: {
+                                _id: null,
+                                sales: { $sum: { $ifNull: ["$pricing.total", 0] } },
+                                count: { $sum: 1 },
+                            }
+                        }
+                    ],
+                    // Sales trend chart data
+                    salesTrend: [
+                        { $match: { createdAt: { $gte: trendStartDate } } },
+                        {
+                            $group: {
+                                _id: { $dateToString: { format: aggregationFormat, date: "$createdAt" } },
+                                sales: { $sum: { $ifNull: ["$pricing.total", 0] } },
+                                orders: { $sum: 1 }
+                            }
+                        },
+                        { $sort: { _id: 1 } }
+                    ],
+                    // Insights: top cities + peak hours
+                    topCities: [
+                        { $group: { _id: "$address.city", count: { $sum: 1 } } },
+                        { $sort: { count: -1 } },
+                        { $limit: 1 }
+                    ],
+                    peakHours: [
+                        { $project: { hour: { $hour: "$createdAt" } } },
+                        { $group: { _id: "$hour", count: { $sum: 1 } } },
+                        { $sort: { count: -1 } },
+                        { $limit: 1 }
+                    ],
+                    // Top products with trends (current + prev week via sub-facet)
+                    topProductsCurrent: [
+                        { $match: { createdAt: { $gte: sevenDaysAgo } } },
+                        { $unwind: "$items" },
+                        {
+                            $group: {
+                                _id: "$items.product",
+                                name: { $first: "$items.name" },
+                                sales: { $sum: "$items.quantity" },
+                                revenue: { $sum: { $multiply: ["$items.price", "$items.quantity"] } }
+                            }
+                        },
+                        { $sort: { sales: -1 } },
+                        { $limit: 10 }
+                    ],
+                    topProductsPrev: [
+                        { $match: { createdAt: { $gte: fourteenDaysAgo, $lt: sevenDaysAgo } } },
+                        { $unwind: "$items" },
+                        {
+                            $group: {
+                                _id: "$items.product",
+                                sales: { $sum: "$items.quantity" }
+                            }
+                        }
+                    ],
+                    // Traffic sources & devices
+                    trafficSources: [
+                        { $group: { _id: "$trafficSource", value: { $sum: 1 } } },
+                        { $project: { name: "$_id", value: 1, _id: 0 } }
+                    ],
+                    devices: [
+                        { $group: { _id: "$deviceType", count: { $sum: 1 } } },
+                        { $sort: { count: -1 } }
+                    ],
                 }
-            },
-            { $sort: { _id: 1 } }
+            }
         ]);
 
+        // Extract facet results
+        const overviewRaw = statsResult.overview[0] || { totalSales: 0, totalOrders: 0 };
+        const totalSales = overviewRaw.totalSales;
+        const totalOrders = overviewRaw.totalOrders;
+        const avgOrderValue = totalOrders > 0 ? (totalSales / totalOrders) : 0;
+
+        const currentSales = statsResult.currentWeek[0]?.sales || 0;
+        const prevSalesVal = statsResult.prevWeek[0]?.sales || 0;
+        const salesTrendPerc = prevSalesVal === 0 ? (currentSales > 0 ? 100 : 0) : (((currentSales - prevSalesVal) / prevSalesVal) * 100).toFixed(1);
+
+        const currentOrdersCount = statsResult.currentWeek[0]?.count || 0;
+        const prevOrdersCount = statsResult.prevWeek[0]?.count || 0;
+        const ordersTrendPerc = prevOrdersCount === 0 ? (currentOrdersCount > 0 ? 100 : 0) : (((currentOrdersCount - prevOrdersCount) / prevOrdersCount) * 100).toFixed(1);
+
+        // Format chart data
+        const salesTrend = statsResult.salesTrend;
         let chartData = [];
         if (range === 'monthly') {
             const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
             for (let i = 5; i >= 0; i--) {
                 const d = new Date();
                 d.setMonth(d.getMonth() - i);
-                const dateStr = d.toISOString().slice(0, 7); // YYYY-MM
+                const dateStr = d.toISOString().slice(0, 7);
                 const data = salesTrend.find(item => item._id === dateStr);
                 chartData.push({
                     name: monthNames[d.getMonth()],
@@ -73,24 +170,6 @@ export const getSellerStats = async (req, res) => {
                 });
             }
         } else if (range === 'weekly') {
-            for (let i = 3; i >= 0; i--) {
-                const d = new Date();
-                d.setDate(d.getDate() - (i * 7));
-                // Simplified week representation: "W1", "W2"...
-                const data = salesTrend.find(item => {
-                    const itemDate = new Date(item._id);
-                    // This is a bit complex for simple find, using a more direct approach
-                    return false; // placeholder for simpler logic below
-                });
-
-                // For simplicity, let's just use the last 4 week-ends or similar
-                chartData.push({
-                    name: `Week ${4 - i}`,
-                    sales: 0, // Will populate in a better way if needed or just use aggregated result
-                    orders: 0
-                });
-            }
-            // Better weekly logic: use the aggregate result directly but format names
             chartData = salesTrend.map((item, idx) => ({
                 name: `Week ${idx + 1}`,
                 sales: item.sales,
@@ -113,35 +192,9 @@ export const getSellerStats = async (req, res) => {
             }
         }
 
-        // Trends (Last 7 Days comparison) - Keep this static for overview cards
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        const fourteenDaysAgo = new Date();
-        fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-
-        const currentWeekOrders = await Order.find({
-            seller: sellerId,
-            status: { $ne: 'cancelled' },
-            createdAt: { $gte: sevenDaysAgo }
-        });
-
-        const prevWeekOrders = await Order.find({
-            seller: sellerId,
-            status: { $ne: 'cancelled' },
-            createdAt: { $gte: fourteenDaysAgo, $lt: sevenDaysAgo }
-        });
-
-        const currentSales = currentWeekOrders.reduce((acc, o) => acc + (o.pricing?.total || 0), 0);
-        const prevSales = prevWeekOrders.reduce((acc, o) => acc + (o.pricing?.total || 0), 0);
-        const salesTrendPerc = prevSales === 0 ? (currentSales > 0 ? 100 : 0) : (((currentSales - prevSales) / prevSales) * 100).toFixed(1);
-
-        const currentOrdersCount = currentWeekOrders.length;
-        const prevOrdersCount = prevWeekOrders.length;
-        const ordersTrendPerc = prevOrdersCount === 0 ? (currentOrdersCount > 0 ? 100 : 0) : (((currentOrdersCount - prevOrdersCount) / prevOrdersCount) * 100).toFixed(1);
-
-        // 3. Category Distribution (Radar Chart)
+        // Category distribution (separate pipeline — different collection)
         const categoryData = await Product.aggregate([
-            { $match: { sellerId: new mongoose.Types.ObjectId(sellerId) } },
+            { $match: { sellerId: sellerOid } },
             {
                 $lookup: {
                     from: "categories",
@@ -166,73 +219,25 @@ export const getSellerStats = async (req, res) => {
             }
         ]);
 
-        // 4. Insights (Peak Time, Top City)
-        const insightsData = await Order.aggregate([
-            { $match: { seller: new mongoose.Types.ObjectId(sellerId), status: { $ne: 'cancelled' } } },
-            {
-                $facet: {
-                    topCities: [
-                        { $group: { _id: "$address.city", count: { $sum: 1 } } },
-                        { $sort: { count: -1 } },
-                        { $limit: 1 }
-                    ],
-                    peakHours: [
-                        { $project: { hour: { $hour: "$createdAt" } } },
-                        { $group: { _id: "$hour", count: { $sum: 1 } } },
-                        { $sort: { count: -1 } },
-                        { $limit: 1 }
-                    ]
-                }
-            }
-        ]);
-
-        const topCity = insightsData[0].topCities[0]?._id || "N/A";
-        const peakHour = insightsData[0].peakHours[0]?._id;
+        // Format insights
+        const topCity = statsResult.topCities[0]?._id || "N/A";
+        const peakHour = statsResult.peakHours[0]?._id;
         const peakTime = peakHour !== undefined ? `${peakHour}:00 - ${peakHour + 2}:00` : "N/A";
 
-        // 5. Top Products with REAL Trends
-        const topProductsData = await Order.aggregate([
-            { $match: { seller: new mongoose.Types.ObjectId(sellerId), status: { $ne: 'cancelled' } } },
-            { $unwind: "$items" },
-            {
-                $facet: {
-                    currentWeek: [
-                        { $match: { createdAt: { $gte: sevenDaysAgo } } },
-                        {
-                            $group: {
-                                _id: "$items.product",
-                                name: { $first: "$items.name" },
-                                sales: { $sum: "$items.quantity" },
-                                revenue: { $sum: { $multiply: ["$items.price", "$items.quantity"] } }
-                            }
-                        }
-                    ],
-                    prevWeek: [
-                        { $match: { createdAt: { $gte: fourteenDaysAgo, $lt: sevenDaysAgo } } },
-                        {
-                            $group: {
-                                _id: "$items.product",
-                                sales: { $sum: "$items.quantity" }
-                            }
-                        }
-                    ]
-                }
-            }
-        ]);
-
-        const currentItems = topProductsData[0].currentWeek;
-        const prevItems = topProductsData[0].prevWeek;
+        // Format top products with trends
+        const currentItems = statsResult.topProductsCurrent;
+        const prevItems = statsResult.topProductsPrev;
 
         const formattedTopProducts = currentItems.map(item => {
             const prevItem = prevItems.find(p => p._id.toString() === item._id.toString());
             const currSales = item.sales;
-            const prevSales = prevItem ? prevItem.sales : 0;
+            const pSales = prevItem ? prevItem.sales : 0;
 
             let trend = 0;
-            if (prevSales === 0) {
+            if (pSales === 0) {
                 trend = currSales > 0 ? 100 : 0;
             } else {
-                trend = Math.round(((currSales - prevSales) / prevSales) * 100);
+                trend = Math.round(((currSales - pSales) / pSales) * 100);
             }
 
             return {
@@ -241,25 +246,9 @@ export const getSellerStats = async (req, res) => {
                 revenue: `₹${item.revenue.toLocaleString()}`,
                 trend: trend
             };
-        }).sort((a, b) => b.sales - a.sales).slice(0, 5);
+        }).slice(0, 5);
 
-        // 6. Traffic Sources & Device Stats
-        const trafficStats = await Order.aggregate([
-            { $match: { seller: new mongoose.Types.ObjectId(sellerId), status: { $ne: 'cancelled' } } },
-            {
-                $facet: {
-                    sources: [
-                        { $group: { _id: "$trafficSource", value: { $sum: 1 } } },
-                        { $project: { name: "$_id", value: 1, _id: 0 } }
-                    ],
-                    devices: [
-                        { $group: { _id: "$deviceType", count: { $sum: 1 } } },
-                        { $sort: { count: -1 } }
-                    ]
-                }
-            }
-        ]);
-
+        // Format traffic sources
         const sourceColors = {
             "Direct": "#3b82f6",
             "Search": "#10b981",
@@ -267,18 +256,17 @@ export const getSellerStats = async (req, res) => {
             "Referral": "#8b5cf6"
         };
 
-        const finalTrafficSources = (trafficStats[0].sources || []).map(s => ({
+        const finalTrafficSources = (statsResult.trafficSources || []).map(s => ({
             ...s,
             color: sourceColors[s.name] || "#CBD5E1"
         }));
 
-        // Fallback for empty traffic sources
         if (finalTrafficSources.length === 0 && totalOrders > 0) {
             finalTrafficSources.push({ name: "Direct", value: totalOrders, color: "#3b82f6" });
         }
 
-        const topDeviceType = trafficStats[0].devices[0]?._id || "Mobile";
-        const topDeviceCount = trafficStats[0].devices[0]?.count || 0;
+        const topDeviceType = statsResult.devices[0]?._id || "Mobile";
+        const topDeviceCount = statsResult.devices[0]?.count || 0;
         const devicePerc = totalOrders > 0 ? Math.round((topDeviceCount / totalOrders) * 100) : 0;
 
         return handleResponse(res, 200, "Stats fetched successfully", {
@@ -301,7 +289,6 @@ export const getSellerStats = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error("Stats Error:", error);
         return handleResponse(res, 500, error.message);
     }
 };
