@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
 import { customerApi } from "../services/customerApi";
 import { useAuth } from "../../../core/context/AuthContext";
 
@@ -265,18 +265,20 @@ export const CartProvider = ({ children }) => {
   }, 0);
   const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
 
+  const cartValue = useMemo(() => ({
+    cart,
+    addToCart,
+    removeFromCart,
+    updateQuantity,
+    clearCart,
+    cartTotal,
+    cartCount,
+    loading,
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [cart, cartTotal, cartCount, loading]);
+
   return (
-    <CartContext.Provider
-      value={{
-        cart,
-        addToCart,
-        removeFromCart,
-        updateQuantity,
-        clearCart,
-        cartTotal,
-        cartCount,
-        loading,
-      }}>
+    <CartContext.Provider value={cartValue}>
       {children}
     </CartContext.Provider>
   );

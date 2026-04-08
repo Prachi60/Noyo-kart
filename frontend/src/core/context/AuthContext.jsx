@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import axiosInstance from '@core/api/axios';
 import { getWithDedupe } from '@core/api/dedupe';
 
@@ -170,18 +170,21 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const value = useMemo(() => ({
+        user,
+        token,
+        role: currentRole,
+        isAuthenticated,
+        isLoading,
+        authData,
+        login,
+        logout,
+        refreshUser
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }), [user, token, currentRole, isAuthenticated, isLoading, authData]);
+
     return (
-        <AuthContext.Provider value={{
-            user,
-            token, // Added token to context
-            role: currentRole,
-            isAuthenticated,
-            isLoading,
-            authData,
-            login,
-            logout,
-            refreshUser
-        }}>
+        <AuthContext.Provider value={value}>
             {children}
         </AuthContext.Provider>
     );

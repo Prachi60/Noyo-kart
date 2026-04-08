@@ -4,6 +4,7 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useMemo,
 } from "react";
 import { customerApi } from "../services/customerApi";
 
@@ -312,18 +313,20 @@ export const LocationProvider = ({ children }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const locationValue = useMemo(() => ({
+    currentLocation,
+    savedAddresses,
+    updateLocation,
+    addAddress,
+    refreshAddresses,
+    isFetchingLocation,
+    locationError,
+    refreshLocation: fetchAndCacheLocation,
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [currentLocation, savedAddresses, isFetchingLocation, locationError, refreshAddresses]);
+
   return (
-    <LocationContext.Provider
-      value={{
-        currentLocation,
-        savedAddresses,
-        updateLocation,
-        addAddress,
-        refreshAddresses,
-        isFetchingLocation,
-        locationError,
-        refreshLocation: fetchAndCacheLocation,
-      }}>
+    <LocationContext.Provider value={locationValue}>
       {children}
     </LocationContext.Provider>
   );
