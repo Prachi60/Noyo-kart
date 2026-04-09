@@ -97,10 +97,7 @@ export const appendTrailPoint = async (orderId, point) => {
 export const writeRoutePolyline = async (orderId, routeData) => {
   try {
     const db = getFirebaseRealtimeDb();
-    if (!db) {
-      console.log(`[Firebase] writeRoutePolyline skipped - no DB for order ${orderId}`);
-      return { orderId, routeData, skipped: true };
-    }
+    if (!db) return { orderId, routeData, skipped: true };
 
     const routeCache = {
       polyline: routeData.polyline,
@@ -112,11 +109,10 @@ export const writeRoutePolyline = async (orderId, routeData) => {
       duration: routeData.duration,
       bounds: routeData.bounds,
       cachedAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 minutes
+      expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
     };
 
     await db.ref(trackingPaths.orderRoute(orderId)).set(routeCache);
-    console.log(`[Firebase] ✓ Route cached for order ${orderId} at path /orders/${orderId}/route`);
     return { orderId, routeCache };
   } catch (err) {
     console.error("writeRoutePolyline error:", err.message);
@@ -127,29 +123,19 @@ export const writeRoutePolyline = async (orderId, routeData) => {
 export const getRoutePolyline = async (orderId) => {
   try {
     const db = getFirebaseRealtimeDb();
-    if (!db) {
-      console.log(`[Firebase] getRoutePolyline skipped - no DB for order ${orderId}`);
-      return null;
-    }
+    if (!db) return null;
 
     const snapshot = await db.ref(trackingPaths.orderRoute(orderId)).once('value');
     const routeData = snapshot.val();
 
-    if (!routeData) {
-      console.log(`[Firebase] No cached route found for order ${orderId}`);
-      return null;
-    }
+    if (!routeData) return null;
 
-    // Check if route is expired
     const expiresAt = new Date(routeData.expiresAt);
     if (expiresAt < new Date()) {
-      // Route expired, delete it
-      console.log(`[Firebase] Route expired for order ${orderId}, removing cache`);
       await db.ref(trackingPaths.orderRoute(orderId)).remove();
       return null;
     }
 
-    console.log(`[Firebase] ✓ Route cache hit for order ${orderId}`);
     return routeData;
   } catch (err) {
     console.error("getRoutePolyline error:", err.message);

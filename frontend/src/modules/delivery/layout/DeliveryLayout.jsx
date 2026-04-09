@@ -163,7 +163,7 @@ const DeliveryLayout = () => {
     availableOrdersRequestRef.current.controller = controller;
 
     try {
-      return await deliveryApi.getAvailableOrders({
+      return await deliveryApi.getAvailableOrders({}, {
         signal: controller.signal,
         timeout: 15000,
       });

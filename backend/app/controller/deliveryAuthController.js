@@ -82,16 +82,6 @@ export const signupDelivery = async (req, res) => {
             await sendSmsIndiaHubOtp({ phone, otp });
         }
 
-        console.log("-------------------");
-        console.log("Delivery Signup Request Received");
-        console.log("Data:", { name, phone, vehicleType, email });
-        if (useRealSMS()) {
-            console.log("OTP dispatched via SMS provider");
-        } else {
-            console.log("OTP (mock mode): use 1234");
-        }
-        console.log("-------------------");
-
         return handleResponse(res, 200, "OTP sent successfully");
     } catch (error) {
         return handleResponse(res, 500, error.message);
@@ -127,16 +117,6 @@ export const loginDelivery = async (req, res) => {
         if (useRealSMS()) {
             await sendSmsIndiaHubOtp({ phone, otp });
         }
-
-        console.log("-------------------");
-        console.log("Delivery Login Request Received");
-        console.log("Phone:", phone);
-        if (useRealSMS()) {
-            console.log("OTP dispatched via SMS provider");
-        } else {
-            console.log("OTP (mock mode): use 1234");
-        }
-        console.log("-------------------");
 
         return handleResponse(res, 200, "OTP sent successfully");
     } catch (error) {

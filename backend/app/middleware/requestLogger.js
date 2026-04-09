@@ -4,8 +4,9 @@ import logger from "../services/logger.js";
 import { incrementCounter, recordHistogram } from "../services/metrics.js";
 import { getProcessRole } from "../core/processRole.js";
 
-function shouldLogRequest(pathname = "") {
+function shouldLogRequest(pathname = "", method = "") {
   if (!pathname) return true;
+  if (method === "OPTIONS") return false;
   return !pathname.startsWith("/health") && !pathname.startsWith("/metrics");
 }
 
@@ -34,7 +35,7 @@ export function structuredRequestLogger(req, res, next) {
   const start = req.requestStartedAt || Date.now();
   
   res.on("finish", () => {
-    if (!shouldLogRequest(req.path)) return;
+    if (!shouldLogRequest(req.path, req.method)) return;
     
     const durationMs = Date.now() - start;
     const durationSeconds = durationMs / 1000;

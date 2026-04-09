@@ -146,7 +146,7 @@ async function refreshOrderCounts() {
     });
     
     await updateDashboardStat("order_counts", data);
-    logger.info(`[DashboardSummary] Refreshed order counts: ${data.totalOrders} total`);
+    logger.debug(`[DashboardSummary] Refreshed order counts: ${data.totalOrders} total`);
     
   } catch (error) {
     logger.error("[DashboardSummary] Error refreshing order counts:", error);
@@ -202,7 +202,7 @@ async function refreshSellerMetrics(date = new Date()) {
     
     if (bulkOps.length > 0) {
       await SellerMetrics.bulkWrite(bulkOps);
-      logger.info(`[DashboardSummary] Refreshed seller metrics for ${date.toISOString().split('T')[0]}: ${metrics.length} sellers`);
+      logger.debug(`[DashboardSummary] Refreshed seller metrics for ${date.toISOString().split('T')[0]}: ${metrics.length} sellers`);
     }
     
   } catch (error) {
@@ -267,7 +267,7 @@ async function refreshFinanceReports(date = new Date()) {
       }
     );
     
-    logger.info(`[DashboardSummary] Refreshed finance report for ${date.toISOString().split('T')[0]}: ${data.orderCount} orders, ${data.totalRevenue} revenue`);
+    logger.debug(`[DashboardSummary] Refreshed finance report for ${date.toISOString().split('T')[0]}: ${data.orderCount} orders, ${data.totalRevenue} revenue`);
     
   } catch (error) {
     logger.error("[DashboardSummary] Error refreshing finance reports:", error);
@@ -291,7 +291,7 @@ export async function refreshAllSummaries() {
       refreshFinanceReports(today),
     ]);
     
-    logger.info("[DashboardSummary] All summaries refreshed successfully");
+    logger.debug("[DashboardSummary] All summaries refreshed successfully");
     
   } catch (error) {
     logger.error("[DashboardSummary] Error refreshing all summaries:", error);

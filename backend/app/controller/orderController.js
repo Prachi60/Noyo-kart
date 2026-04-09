@@ -226,8 +226,10 @@ export const placeOrder = async (req, res) => {
         orders: placement.orders,
         checkoutGroup: placement.checkoutGroup,
         paymentRef:
+          (Array.isArray(placement.orders) && placement.orders.length > 1
+            ? placement.checkoutGroup?.checkoutGroupId
+            : placement.order?.orderId) ||
           placement.checkoutGroup?.checkoutGroupId ||
-          placement.order?.orderId ||
           null,
       },
     );

@@ -115,7 +115,7 @@ export async function searchProducts(query) {
     // Cache result
     await cacheService.set(cacheKey, result, SEARCH_CACHE_TTL);
     
-    logger.info(`[SearchService] Search completed: ${result.total} results in ${result.took}ms`);
+    logger.debug(`[SearchService] Search completed: ${result.total} results in ${result.took}ms`);
     
     return result;
     
@@ -205,7 +205,7 @@ export async function bulkIndexProducts(products) {
     const backend = getBackend();
     const result = await backend.bulkIndex(products);
     
-    logger.info(`[SearchService] Bulk indexed ${result.indexed} products, ${result.failed} failed`);
+    logger.debug(`[SearchService] Bulk indexed ${result.indexed} products, ${result.failed} failed`);
     
     // Invalidate search cache
     await cacheService.delPattern("cache:search:products:*");

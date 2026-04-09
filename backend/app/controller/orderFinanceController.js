@@ -39,6 +39,7 @@ export const previewCheckoutFinance = async (req, res) => {
       orderItems: payload.items,
       address: payload.address,
       tipAmount: payload.tipAmount,
+      discountTotal: payload.discountTotal || 0,
     });
 
     const sellerBreakdowns = pricingSnapshot.sellerBreakdownEntries.map((entry) => ({
@@ -84,6 +85,7 @@ export const createOrderWithFinancialSnapshot = async (req, res) => {
       taxTotal: validated.taxTotal || 0,
       tipAmount: validated.tipAmount || 0,
       walletAmount: validated.walletAmount || 0,
+      couponId: validated.couponId || null,
     };
     const idempotencyKey = String(req.headers["idempotency-key"] || "").trim() || null;
 
@@ -104,8 +106,10 @@ export const createOrderWithFinancialSnapshot = async (req, res) => {
         orders: placement.orders,
         checkoutGroup: placement.checkoutGroup,
         paymentRef:
+          (Array.isArray(placement.orders) && placement.orders.length > 1
+            ? placement.checkoutGroup?.checkoutGroupId
+            : placement.order?.orderId) ||
           placement.checkoutGroup?.checkoutGroupId ||
-          placement.order?.orderId ||
           null,
       },
     );

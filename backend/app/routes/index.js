@@ -34,7 +34,6 @@ const setupRoutes = (app) => {
 
     router.use("/customer", customerRoute);
     router.use("/delivery", deliveryRoute);
-    console.log("Registered /api/delivery routes");
     router.use("/admin/categories", categoryRoute);
     router.use("/admin", adminRoute);
     router.use("/seller", sellerRoute);

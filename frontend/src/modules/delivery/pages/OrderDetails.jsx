@@ -28,6 +28,12 @@ import {
   getCachedDeliveryPartnerLocation,
   getCurrentPositionWithCache,
 } from "../utils/deliveryLastLocation";
+import {
+  getOrderSocket,
+  joinOrderRoom,
+  leaveOrderRoom,
+  onOrderStatusUpdate,
+} from "@/core/services/orderSocket";
 
 const getPublicStatusStage = (internalStep) => {
   if (internalStep >= 4) return 3;
@@ -195,6 +201,27 @@ const OrderDetails = () => {
     const iv = setInterval(() => setClockTick(Date.now()), 30000);
     return () => clearInterval(iv);
   }, []);
+
+  // Listen for order:status:update — immediately hide map when delivered
+  useEffect(() => {
+    if (!orderId) return undefined;
+    const getToken = () => localStorage.getItem("auth_delivery");
+    getOrderSocket(getToken);
+    joinOrderRoom(orderId, getToken);
+
+    const off = onOrderStatusUpdate(getToken, (payload) => {
+      const ws = String(payload?.workflowStatus || "").toUpperCase();
+      if (ws === "DELIVERED") {
+        setStep(4);
+        setOrder((prev) => prev ? { ...prev, status: "delivered", workflowStatus: "DELIVERED" } : prev);
+      }
+    });
+
+    return () => {
+      off();
+      leaveOrderRoom(orderId, getToken);
+    };
+  }, [orderId]);
 
   const steps = useMemo(() => {
 
@@ -476,20 +503,30 @@ const OrderDetails = () => {
   };
 
   const handleOtpValidationSuccess = (data) => {
-    // Return pickup OTP success → backend sets return_in_transit → show step 3 (navigate to seller)
     const updatedOrder = data?.result || data?.data?.result;
-    
-    // Reset local transitional states first for instant visual feedback
+
     setShowOtpInput(false);
-    setPickupProofSubmitted(false); // Reset for the next delivery/drop-off proof if needed
+    setPickupProofSubmitted(false);
     setIsSlideComplete(false);
     setDragX(0);
-    setStep(3); // Optimistic step update
 
-    if (updatedOrder) setOrder(updatedOrder);
-    
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    toast.success("✅ Pickup verified! Navigate to seller for drop-off.");
+    if (isReturn) {
+      // Return pickup OTP → navigate to seller for drop-off
+      setStep(3);
+      if (updatedOrder) setOrder(updatedOrder);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      toast.success("✅ Pickup verified! Navigate to seller for drop-off.");
+    } else {
+      // Standard delivery OTP → order is delivered, hide map immediately
+      setStep(4);
+      if (updatedOrder) {
+        setOrder({ ...updatedOrder, status: "delivered", workflowStatus: "DELIVERED" });
+      } else {
+        setOrder((prev) => prev ? { ...prev, status: "delivered", workflowStatus: "DELIVERED" } : prev);
+      }
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      toast.success("✅ Order delivered successfully!");
+    }
   };
 
   const handleOtpValidationError = (error) => {

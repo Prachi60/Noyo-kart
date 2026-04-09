@@ -42,8 +42,8 @@ export const deliveryApi = {
     axiosInstance.post(`/delivery/orders/${orderId}/generate-otp`, body),
   validateDeliveryOtp: (orderId, body) =>
     axiosInstance.post(`/delivery/orders/${orderId}/validate-otp`, body),
-  getOrderRoute: (orderId, params) =>
-    axiosInstance.get(`/orders/workflow/${orderId}/route`, { params }),
+  getOrderRoute: (orderId, params, config = {}) =>
+    axiosInstance.get(`/orders/workflow/${orderId}/route`, { params, ...config }),
   getOrderDetails: (orderId) =>
     axiosInstance.get(
       `/orders/details/${encodeURIComponent(String(orderId))}`,

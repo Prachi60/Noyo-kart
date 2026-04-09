@@ -15,6 +15,7 @@ const ROUTE_REFRESH_THRESHOLD_M = 150;
 const ROUTE_REFRESH_INTERVAL_MS = 10 * 60 * 1000;
 const RECENTER_INTERVAL_MS = 15000;
 const RIDER_FOCUS_RADIUS_M = 500;
+const LOCATION_POST_INTERVAL_MS = 5000;
 
 // Container style will be 100% to fill parent
 const containerStyle = {
@@ -109,11 +110,19 @@ const DeliveryTrackingMapComponent = ({
     const c = getCachedDeliveryPartnerLocation();
     return c ? { lat: c.lat, lng: c.lng } : null;
   });
+  // Initialize riderRef from cache so fetchRoute works immediately on mount
+  const riderRef = useRef((() => {
+    const c = getCachedDeliveryPartnerLocation();
+    return c ? { lat: c.lat, lng: c.lng } : null;
+  })());
   const [routeData, setRouteData] = useState(null);
   const [routeLoading, setRouteLoading] = useState(false);
   const lastFetchRef = useRef({ at: 0, phase: null, orderId: null });
   const routeOriginRef = useRef(null);
   const watchIdRef = useRef(null);
+  const lastLocationPostRef = useRef(0);
+  const locationInFlightRef = useRef(false);
+  const locationAbortRef = useRef(null);
 
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
 
@@ -135,17 +144,26 @@ const DeliveryTrackingMapComponent = ({
         
         saveDeliveryPartnerLocation(lat, lng);
         setRider({ lat, lng });
+        riderRef.current = { lat, lng };
         
-        // Send location update to backend
-        deliveryApi.postLocation({
-          lat,
-          lng,
-          accuracy,
-          heading,
-          speed,
-          orderId: orderId || null,
-        }).catch((err) => {
-          console.error("Failed to send location update:", err);
+        // Throttle location POSTs to once every 5s and skip if one is already in-flight
+        const now = Date.now();
+        if (now - lastLocationPostRef.current < LOCATION_POST_INTERVAL_MS) return;
+        if (locationInFlightRef.current) return;
+        lastLocationPostRef.current = now;
+        locationInFlightRef.current = true;
+
+        // Abort any previous stale request
+        if (locationAbortRef.current) locationAbortRef.current.abort();
+        const controller = new AbortController();
+        locationAbortRef.current = controller;
+
+        deliveryApi.postLocation(
+          { lat, lng, accuracy, heading, speed, orderId: orderId || null },
+          { signal: controller.signal, timeout: 8000 },
+        ).catch(() => {}).finally(() => {
+          locationInFlightRef.current = false;
+          if (locationAbortRef.current === controller) locationAbortRef.current = null;
         });
       },
       () => {},
@@ -155,22 +173,30 @@ const DeliveryTrackingMapComponent = ({
       if (watchIdRef.current != null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
       }
+      if (locationAbortRef.current) {
+        locationAbortRef.current.abort();
+        locationAbortRef.current = null;
+      }
+      locationInFlightRef.current = false;
     };
   }, [orderId]);
 
+  const routeAbortRef = useRef(null);
+  const routeInFlightRef = useRef(false);
+
   const fetchRoute = useCallback(async () => {
-    if (!orderId || !rider) return;
+    const currentRider = riderRef.current;
+    if (!orderId || !currentRider) return;
+    if (routeInFlightRef.current) return;
     const now = Date.now();
     const sameRouteContext =
       lastFetchRef.current.phase === phase &&
       lastFetchRef.current.orderId === orderId;
     const originDrift =
-      routeOriginRef.current && rider
-        ? distanceMeters(routeOriginRef.current, rider)
+      routeOriginRef.current && currentRider
+        ? distanceMeters(routeOriginRef.current, currentRider)
         : null;
 
-    // Keep the 10 minute throttle only while the route context stays the same
-    // and the rider has not moved far enough to make the cached path stale.
     if (
       sameRouteContext &&
       lastFetchRef.current.at &&
@@ -181,25 +207,34 @@ const DeliveryTrackingMapComponent = ({
     }
 
     lastFetchRef.current = { at: now, phase, orderId };
+    routeInFlightRef.current = true;
+
+    if (routeAbortRef.current) routeAbortRef.current.abort();
+    const controller = new AbortController();
+    routeAbortRef.current = controller;
+
     setRouteLoading(true);
     try {
       const res = await deliveryApi.getOrderRoute(orderId, {
         phase,
-        originLat: rider.lat,
-        originLng: rider.lng,
+        originLat: currentRider.lat,
+        originLng: currentRider.lng,
         _t: now,
-      });
+      }, { signal: controller.signal });
       if (res.data?.success) {
         const nextRoute = res.data.result || res.data.data || null;
         setRouteData(nextRoute);
-        routeOriginRef.current = rider ? { lat: rider.lat, lng: rider.lng } : null;
+        routeOriginRef.current = { lat: currentRider.lat, lng: currentRider.lng };
       }
     } catch {
       setRouteData((prev) => prev || { degraded: true });
     } finally {
+      routeInFlightRef.current = false;
+      if (routeAbortRef.current === controller) routeAbortRef.current = null;
       setRouteLoading(false);
     }
-  }, [orderId, phase, rider]);
+  // Stable — uses riderRef so GPS ticks don't recreate this callback
+  }, [orderId, phase]);
 
   useEffect(() => {
     setRouteData((prev) => (prev?.phase === phase ? prev : null));
@@ -211,11 +246,31 @@ const DeliveryTrackingMapComponent = ({
     if (!rider) return undefined;
     fetchRoute();
     const iv = setInterval(fetchRoute, ROUTE_REFRESH_INTERVAL_MS);
-    return () => clearInterval(iv);
-  }, [rider, fetchRoute, phase, orderId]);
+    return () => {
+      clearInterval(iv);
+      if (routeAbortRef.current) {
+        routeAbortRef.current.abort();
+        routeAbortRef.current = null;
+      }
+      routeInFlightRef.current = false;
+    };
+  // rider in deps only to trigger initial fetch when location first becomes available
+  // fetchRoute is stable (doesn't depend on rider state)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [!!rider, fetchRoute, phase, orderId]);
 
   const isReturn = order?.returnStatus && order.returnStatus !== "none";
-  const dest = useMemo(() => destinationForPhase(order, phase), [order, phase]);
+  // Use order address location, fall back to the destination resolved by the route API
+  const dest = useMemo(() => {
+    const fromOrder = destinationForPhase(order, phase);
+    if (fromOrder) return fromOrder;
+    // routeData may contain the resolved destination (set by backend geocode fallback)
+    const rd = routeData?.destination;
+    if (rd && typeof rd.lat === "number" && typeof rd.lng === "number") {
+      return { lat: rd.lat, lng: rd.lng };
+    }
+    return null;
+  }, [order, phase, routeData]);
 
   useEffect(() => {
     if (typeof onRouteStatsChange !== "function") return undefined;
@@ -232,15 +287,15 @@ const DeliveryTrackingMapComponent = ({
 
   const decodedPath = useMemo(() => {
     const encoded = routeData?.polyline;
-    if (!encoded || !isLoaded || !window.google?.maps?.geometry?.encoding) {
-      return null;
-    }
+    if (!encoded || !isLoaded || !mapInstance) return null;
     try {
-      return window.google.maps.geometry.encoding.decodePath(encoded);
+      const decode = window.google?.maps?.geometry?.encoding?.decodePath;
+      if (!decode) return null;
+      return decode(encoded);
     } catch {
       return null;
     }
-  }, [routeData?.polyline, isLoaded]);
+  }, [routeData?.polyline, isLoaded, mapInstance]);
 
   /** Only the road polyline from the API — never a 2-point geodesic “fallback”. */
   const linePath = useMemo(() => {
@@ -310,6 +365,7 @@ const DeliveryTrackingMapComponent = ({
   useEffect(() => {
     if (!isLoaded || !mapInstance || !window.google?.maps) return undefined;
 
+    // Clear previous polyline
     if (routePolylineRef.current) {
       routePolylineRef.current.setMap(null);
       routePolylineRef.current = null;
@@ -319,10 +375,11 @@ const DeliveryTrackingMapComponent = ({
 
     const pl = new window.google.maps.Polyline({
       path: linePath,
-      strokeColor,
+      strokeColor: "#2563eb",
       strokeOpacity: 0.95,
-      strokeWeight: 4,
+      strokeWeight: 5,
       map: mapInstance,
+      zIndex: 10,
     });
     routePolylineRef.current = pl;
 
@@ -332,7 +389,7 @@ const DeliveryTrackingMapComponent = ({
         routePolylineRef.current = null;
       }
     };
-  }, [isLoaded, mapInstance, linePath, strokeColor]);
+  }, [isLoaded, mapInstance, linePath]);
 
   useEffect(() => {
     const map = mapRef.current;

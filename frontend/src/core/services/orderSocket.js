@@ -39,13 +39,18 @@ export function getOrderSocket(getToken) {
     const s = io(url, {
       autoConnect: false,
       auth: { token },
-      transports: ["websocket", "polling"],
+      transports: ["polling", "websocket"],
       reconnection: true,
-      reconnectionDelay: 1000,
+      reconnectionDelay: 2000,
+      reconnectionDelayMax: 10000,
     });
 
     s.on("connect", () => {
       console.log("[orderSocket] Socket connected, ID:", s.id);
+      // Re-join any order rooms that were registered before reconnect
+      if (Array.isArray(s._orderRooms)) {
+        s._orderRooms.forEach((roomId) => s.emit("join_order", roomId));
+      }
     });
 
     s.on("disconnect", (reason) => {
@@ -61,10 +66,17 @@ export function getOrderSocket(getToken) {
     return socket;
   }
 
-  // Refresh auth token and ensure we're connected, but never recreate the socket just because
-  // `connected` is currently false (prevents repeated connections during rapid calls / StrictMode).
-  socket.auth = { token };
-  if (socket.disconnected) {
+  // Refresh auth token — if token changed (different role), force reconnect
+  if (socket.auth?.token !== token) {
+    socket.auth = { token };
+    // If already connected with a different token, reconnect so server re-authenticates
+    if (socket.connected) {
+      socket.disconnect();
+      socket.connect();
+    } else if (socket.disconnected) {
+      socket.connect();
+    }
+  } else if (socket.disconnected) {
     socket.connect();
   }
   
@@ -87,12 +99,17 @@ export function disconnectOrderSocket() {
 export function joinOrderRoom(orderId, getToken) {
   const s = getOrderSocket(getToken);
   if (!s || !orderId) return;
+  if (!Array.isArray(s._orderRooms)) s._orderRooms = [];
+  if (!s._orderRooms.includes(orderId)) s._orderRooms.push(orderId);
   s.emit("join_order", orderId);
 }
 
 export function leaveOrderRoom(orderId, getToken) {
   const s = getOrderSocket(getToken);
   if (!s || !orderId) return;
+  if (Array.isArray(s._orderRooms)) {
+    s._orderRooms = s._orderRooms.filter((id) => id !== orderId);
+  }
   s.emit("leave_order", orderId);
 }
 

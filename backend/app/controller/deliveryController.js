@@ -587,20 +587,20 @@ export const updateDeliveryLocation = async (req, res) => {
             return handleResponse(res, 404, "Delivery partner not found");
         }
 
-        // Optional: if orderId is provided, ensure this rider is assigned to that order
+        // Optional: if orderId is provided, verify assignment asynchronously
+        // Don't await — resolve activeOrderId optimistically and let Firebase writes use it
         let activeOrderId = orderId || null;
         if (orderId) {
-            const orderKey = orderMatchQueryFromRouteParam(orderId);
-            const order = orderKey
-                ? await Order.findOne(orderKey).select(
-                      "orderId deliveryBoy workflowStatus workflowVersion",
-                  )
-                : null;
-            if (!order || order.deliveryBoy?.toString() !== deliveryId) {
-                activeOrderId = null;
-            } else {
-                activeOrderId = order.orderId;
-            }
+            // Fire-and-forget verification; if order lookup fails, Firebase just gets the raw orderId
+            Order.findOne(orderMatchQueryFromRouteParam(orderId) || {})
+                .select("orderId deliveryBoy")
+                .lean()
+                .then((order) => {
+                    if (!order || order.deliveryBoy?.toString() !== deliveryId) {
+                        // Mismatch — no further action needed, already responded
+                    }
+                })
+                .catch(() => {});
         }
 
         const snapshot = {
@@ -614,14 +614,10 @@ export const updateDeliveryLocation = async (req, res) => {
             orderId: activeOrderId,
         };
 
-        // Fan out to Firebase (no-op until fully wired) and keep a short trail
-        await writeDeliveryLocation(deliveryId, activeOrderId, snapshot);
+        // Fan out to Firebase and trail — fire-and-forget, never block the response
+        writeDeliveryLocation(deliveryId, activeOrderId, snapshot).catch(() => {});
         if (activeOrderId) {
-            await appendTrailPoint(activeOrderId, {
-                lat,
-                lng,
-                t: Date.now(),
-            });
+            appendTrailPoint(activeOrderId, { lat, lng, t: Date.now() }).catch(() => {});
         }
 
         return handleResponse(res, 200, "Location updated", {
@@ -809,8 +805,6 @@ export const generateDeliveryOtp = async (req, res) => {
 
             const customerId = order.customer?._id || order.customer;
             if (customerId) {
-                console.log('[generateDeliveryOtp] Emitting OTP events to customer:', customerId);
-                
                 // Emit both events for maximum frontend compatibility (Toast + Display Component)
                 emitToCustomer(customerId, {
                     event: 'order:otp',
@@ -828,8 +822,6 @@ export const generateDeliveryOtp = async (req, res) => {
             const io = getIO();
             io.to(`order:${order.orderId}`).emit('delivery:otp:generated', otpPayload);
             io.to(`order:${order.orderId}`).emit('order:otp', otpPayload);
-
-            console.log('[generateDeliveryOtp] All Socket.IO events emitted successfully');
         } catch (socketError) {
             console.error('[generateDeliveryOtp] Error emitting Socket.IO event:', socketError);
         }

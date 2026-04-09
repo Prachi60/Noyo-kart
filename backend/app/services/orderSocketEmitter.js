@@ -90,15 +90,7 @@ export async function emitDeliveryBroadcastForSeller(sellerId, payload) {
 
   const ids = await getDeliveryPartnerIdsWithinSellerRadius(sid);
   if (!ids.length) {
-    console.warn(
-      "[emitDeliveryBroadcastForSeller] No riders in seller service radius",
-      sid,
-    );
-    if (process.env.NODE_ENV === "production") return;
-    if (s) {
-      console.warn(
-        "[emitDeliveryBroadcastForSeller] DEV fallback: delivery:online",
-      );
+    if (process.env.NODE_ENV !== "production" && s) {
       s.to("delivery:online").emit("delivery:broadcast", {
         ...payload,
         at: new Date().toISOString(),
@@ -108,14 +100,7 @@ export async function emitDeliveryBroadcastForSeller(sellerId, payload) {
     return;
   }
 
-  console.log(
-    `[emitDeliveryBroadcastForSeller] ${ids.length} rider(s) in radius for seller ${sid} order ${payload.orderId}`,
-  );
-
-  const body = {
-    ...payload,
-    at: new Date().toISOString(),
-  };
+  const body = { ...payload, at: new Date().toISOString() };
 
   if (s) {
     for (const id of ids) {
@@ -255,20 +240,13 @@ export async function emitReturnBroadcastForCustomer(customerLocation, payload) 
 
   const ids = await getDeliveryPartnerIdsWithinCustomerRadius(customerLocation);
   if (!ids.length) {
-    console.warn("[emitReturnBroadcastForCustomer] No riders in customer radius", customerLocation);
-    // If DEV/Test, fallback to all online riders if no one near
     if (process.env.NODE_ENV !== "production" && s) {
-        s.to("delivery:online").emit("delivery:broadcast", { ...payload, at: new Date().toISOString() });
+      s.to("delivery:online").emit("delivery:broadcast", { ...payload, at: new Date().toISOString() });
     }
     return;
   }
 
-  console.log(`[emitReturnBroadcastForCustomer] ${ids.length} rider(s) near customer for return ${payload.orderId}`);
-
-  const body = {
-    ...payload,
-    at: new Date().toISOString(),
-  };
+  const body = { ...payload, at: new Date().toISOString() };
 
   if (s) {
     for (const id of ids) {

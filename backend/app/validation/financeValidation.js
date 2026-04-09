@@ -36,6 +36,7 @@ export const checkoutPreviewSchema = Joi.object({
   tipAmount: Joi.number().min(0).default(0),
   paymentMode: Joi.string().valid("ONLINE", "COD").default("COD"),
   timeSlot: Joi.string().allow("", null),
+  couponId: Joi.string().allow("", null).optional(),
 });
 
 export const createFinanceOrderSchema = checkoutPreviewSchema.keys({

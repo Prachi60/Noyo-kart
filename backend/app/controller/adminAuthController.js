@@ -109,36 +109,17 @@ export const signupAdmin = async (req, res) => {
 
 export const loginAdmin = async (req, res) => {
   try {
-    // Debug logging
-    console.log('=== LOGIN ATTEMPT ===');
-    console.log('Request Body:', JSON.stringify(req.body, null, 2));
-    console.log('Email received:', req.body?.email);
-    console.log('Password received:', req.body?.password ? '[REDACTED - Length: ' + req.body.password.length + ']' : 'undefined');
-    console.log('====================');
-
     const payload = validateSchema(loginAdminSchema, req.body || {});
-
-    console.log('After validation:');
-    console.log('Email (validated):', payload.email);
-    console.log('Password (validated):', payload.password ? '[REDACTED - Length: ' + payload.password.length + ']' : 'undefined');
 
     const admin = await Admin.findOne({ email: payload.email }).select("+password");
     if (!admin) {
-      console.log('❌ Admin not found with email:', payload.email);
       return handleResponse(res, 401, "Invalid credentials");
     }
-
-    console.log('✓ Admin found:', admin.email);
 
     const isMatch = await admin.comparePassword(payload.password);
-    console.log('Password match result:', isMatch);
-    
     if (!isMatch) {
-      console.log('❌ Password does not match');
       return handleResponse(res, 401, "Invalid credentials");
     }
-
-    console.log('✅ Login successful for:', admin.email);
 
     admin.lastLogin = new Date();
     await admin.save();
@@ -149,7 +130,6 @@ export const loginAdmin = async (req, res) => {
       admin: sanitizeAdmin(admin),
     });
   } catch (error) {
-    console.error('Login error:', error);
     return handleResponse(res, error.statusCode || 500, error.message);
   }
 };

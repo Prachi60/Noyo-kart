@@ -72,7 +72,20 @@ const DeliveryOtpDisplay = ({ orderId, checkoutGroupId = null }) => {
 
     console.log(`[DeliveryOtpDisplay] Setting up Socket.IO listeners for order ${orderId}`);
 
-    const getToken = () => localStorage.getItem("auth_customer");
+    const getToken = () => {
+      const raw = localStorage.getItem("auth_customer");
+      if (!raw) return null;
+      const trimmed = String(raw).trim();
+      if (!trimmed) return null;
+      if (trimmed.startsWith("{")) {
+        try {
+          return JSON.parse(trimmed)?.token || null;
+        } catch {
+          return trimmed;
+        }
+      }
+      return trimmed;
+    };
     const socket = getOrderSocket(getToken);
     
     console.log(`[DeliveryOtpDisplay] Socket connection status:`, socket?.connected);

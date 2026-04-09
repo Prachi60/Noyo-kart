@@ -22,8 +22,6 @@ const connectDB = async () => {
 
         await mongoose.connect(mongoUri, options);
         
-        console.log('✓ MongoDB connected successfully');
-        
         // Connection event listeners
         mongoose.connection.on('disconnected', () => {
             console.warn('⚠ MongoDB disconnected');
