@@ -700,7 +700,10 @@ const OrderDetailPage = () => {
           const uploadRes = await axiosInstance.post("/media/upload", formData, {
             headers: { "Content-Type": "multipart/form-data" },
           });
-          url = uploadRes.data?.data?.url || uploadRes.data?.url;
+          url =
+            uploadRes.data?.result?.url ||
+            uploadRes.data?.data?.url ||
+            uploadRes.data?.url;
         } catch {
           url = await new Promise((resolve) => {
             const reader = new FileReader();

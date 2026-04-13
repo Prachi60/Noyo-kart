@@ -5,6 +5,7 @@ import OtpVerification from "../models/otpVerification.js";
 import { getRedisClient } from "../config/redis.js";
 import { sendSmsIndiaHubOtp } from "./smsIndiaHubService.js";
 import { MOCK_OTP, useRealSMS } from "../utils/otp.js";
+import { sendSellerVerificationOtpEmail, useRealEmailOTP } from "./emailService.js";
 
 const SELLER_SIGNUP_PURPOSE = "seller_signup";
 const OTP_EXPIRY_MINUTES = () =>
@@ -42,13 +43,6 @@ function verificationSecret() {
   );
 }
 
-function isDevelopmentEmailMode() {
-  return (
-    process.env.USE_REAL_EMAIL_OTP === "true" ||
-    process.env.USE_REAL_EMAIL_OTP === "1"
-  );
-}
-
 function randomOtp(length) {
   const min = Math.pow(10, length - 1);
   const max = Math.pow(10, length) - 1;
@@ -58,7 +52,7 @@ function randomOtp(length) {
 function generateSellerOtp(channel) {
   const production = process.env.NODE_ENV === "production";
   const useRealDelivery =
-    channel === "email" ? isDevelopmentEmailMode() : useRealSMS();
+    channel === "email" ? useRealEmailOTP() : useRealSMS();
 
   if (production && !useRealDelivery) {
     const error = new Error(
@@ -184,42 +178,16 @@ async function ensureTargetAvailable(channel, target) {
 }
 
 async function dispatchEmailOtp({ email, otp }) {
-  if (!isDevelopmentEmailMode()) {
-    console.log(`[SellerEmailOTP][mock] ${email} -> ${otp}`);
-    return;
-  }
-
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM_EMAIL || process.env.MAIL_FROM;
-
-  if (!apiKey || !from) {
-    throw new Error("Email OTP provider is not configured");
-  }
-
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from,
-      to: [email],
-      subject: "Verify your seller signup email",
-      html: `
-        <div style="font-family: Arial, sans-serif; color: #0f172a;">
-          <p>Your seller signup verification code is:</p>
-          <p style="font-size: 28px; font-weight: 700; letter-spacing: 6px;">${otp}</p>
-          <p>This code expires in ${OTP_EXPIRY_MINUTES()} minutes.</p>
-        </div>
-      `,
-    }),
-  });
-
-  if (!response.ok) {
-    const errorBody = await response.text();
-    const error = new Error(`Failed to send email OTP: ${errorBody}`);
-    error.statusCode = 502;
+  try {
+    await sendSellerVerificationOtpEmail({
+      email,
+      otp,
+      expiresInMinutes: OTP_EXPIRY_MINUTES(),
+    });
+  } catch (error) {
+    if (!error.statusCode) {
+      error.statusCode = 502;
+    }
     throw error;
   }
 }
@@ -372,7 +340,7 @@ export async function issueSellerVerificationOtp({
       ipAddress,
       mode:
         normalizedChannel === "email"
-          ? isDevelopmentEmailMode()
+          ? useRealEmailOTP()
             ? "real"
             : "mock"
           : useRealSMS()

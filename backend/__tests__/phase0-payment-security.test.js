@@ -1,4 +1,3 @@
-import crypto from "crypto";
 import { jest } from "@jest/globals";
 
 const mockOrderFindOne = jest.fn();
@@ -17,8 +16,9 @@ const mockHandleOnlineOrderFinance = jest.fn();
 const mockAfterPlaceOrderV2 = jest.fn();
 const mockReleaseReservedStockForOrder = jest.fn();
 
-const mockRazorpayOrdersCreate = jest.fn();
-const mockRazorpayPaymentsFetch = jest.fn();
+const mockPhonePePay = jest.fn();
+const mockPhonePeGetOrderStatus = jest.fn();
+const mockPhonePeValidateCallback = jest.fn();
 
 jest.unstable_mockModule("../app/models/order.js", () => ({
   default: {
@@ -56,18 +56,45 @@ jest.unstable_mockModule("../app/services/stockService.js", () => ({
   releaseReservedStockForOrder: mockReleaseReservedStockForOrder,
 }));
 
-jest.unstable_mockModule("razorpay", () => ({
-  default: class Razorpay {
-    constructor() {
-      this.orders = { create: mockRazorpayOrdersCreate };
-      this.payments = { fetch: mockRazorpayPaymentsFetch };
-    }
+jest.unstable_mockModule("@phonepe-pg/pg-sdk-node", () => ({
+  Env: {
+    PRODUCTION: "PRODUCTION",
+    SANDBOX: "SANDBOX",
+  },
+  StandardCheckoutClient: {
+    getInstance: jest.fn(() => ({
+      pay: mockPhonePePay,
+      getOrderStatus: mockPhonePeGetOrderStatus,
+      validateCallback: mockPhonePeValidateCallback,
+    })),
+  },
+  StandardCheckoutPayRequest: {
+    builder: jest.fn(() => {
+      const request = {};
+      return {
+        merchantOrderId(value) {
+          request.merchantOrderId = value;
+          return this;
+        },
+        amount(value) {
+          request.amount = value;
+          return this;
+        },
+        redirectUrl(value) {
+          request.redirectUrl = value;
+          return this;
+        },
+        build() {
+          return request;
+        },
+      };
+    }),
   },
 }));
 
 const {
   createPaymentOrderForOrderRef,
-  processRazorpayWebhook,
+  processPhonePeWebhook,
 } = await import("../app/services/paymentService.js");
 
 describe("Phase 0 payment hardening", () => {
@@ -76,6 +103,10 @@ describe("Phase 0 payment hardening", () => {
     process.env.RAZORPAY_KEY_ID = "rzp_test_key";
     process.env.RAZORPAY_KEY_SECRET = "rzp_test_secret";
     process.env.RAZORPAY_WEBHOOK_SECRET = "rzp_wh_secret";
+    process.env.PHONEPE_CLIENT_ID = "phonepe-client";
+    process.env.PHONEPE_CLIENT_SECRET = "phonepe-secret";
+    process.env.PHONEPE_CLIENT_VERSION = "1";
+    process.env.FRONTEND_URL = "https://frontend.test";
 
     mockPaymentFindOne.mockImplementation((query) => {
       if (query?.idempotencyKey) {
@@ -99,12 +130,8 @@ describe("Phase 0 payment hardening", () => {
       paymentBreakdown: { grandTotal: 499 },
     });
     mockPaymentCountDocuments.mockResolvedValue(0);
-    mockRazorpayOrdersCreate.mockResolvedValue({
-      id: "order_gateway_1",
-      amount: 49900,
-      currency: "INR",
-      status: "created",
-      entity: "order",
+    mockPhonePePay.mockResolvedValue({
+      redirectUrl: "https://pay.test/checkout",
     });
     mockPaymentCreate.mockResolvedValue({
       _id: "payment-1",
@@ -115,6 +142,9 @@ describe("Phase 0 payment hardening", () => {
       currency: "INR",
       status: "PENDING",
       attemptCount: 1,
+      rawGatewayResponse: {
+        redirectUrl: "https://pay.test/checkout",
+      },
     });
 
     const result = await createPaymentOrderForOrderRef({
@@ -124,10 +154,9 @@ describe("Phase 0 payment hardening", () => {
       correlationId: "corr-1",
     });
 
-    expect(mockRazorpayOrdersCreate).toHaveBeenCalledWith(
+    expect(mockPhonePePay).toHaveBeenCalledWith(
       expect.objectContaining({
         amount: 49900,
-        currency: "INR",
       }),
     );
     expect(result.payment.amount).toBe(49900);
@@ -174,29 +203,20 @@ describe("Phase 0 payment hardening", () => {
   it("treats duplicate webhook event id as idempotent", async () => {
     mockWebhookEventCreate.mockRejectedValueOnce({ code: 11000 });
 
-    const payload = Buffer.from(
+    const callbackPayload = Buffer.from(
       JSON.stringify({
-        event: "payment.captured",
-        payload: {
-          payment: {
-            entity: {
-              order_id: "gateway-order-1",
-              id: "pay_1",
-              status: "captured",
-            },
-          },
-        },
+        state: "COMPLETED",
+        merchantOrderId: "gateway-order-1",
+        transactionId: "pay_1",
       }),
-    );
+    ).toString("base64");
 
-    const signature = crypto
-      .createHmac("sha256", process.env.RAZORPAY_WEBHOOK_SECRET)
-      .update(payload)
-      .digest("hex");
+    const payload = Buffer.from(JSON.stringify({ response: callbackPayload }));
+    mockPhonePeValidateCallback.mockResolvedValue(true);
 
-    const result = await processRazorpayWebhook({
+    const result = await processPhonePeWebhook({
       rawBody: payload,
-      signature,
+      authorization: "phonepe-auth",
       eventId: "event-duplicate-1",
       correlationId: "corr-webhook",
     });

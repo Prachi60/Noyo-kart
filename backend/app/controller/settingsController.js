@@ -2,6 +2,7 @@ import Joi from "joi";
 import Setting from "../models/setting.js";
 import handleResponse from "../utils/helper.js";
 import { buildKey, getOrSet, getTTL, invalidate } from "../services/cacheService.js";
+import { uploadToCloudinary } from "../services/mediaService.js";
 
 /** Allowed keys for settings update (strip unknown keys) */
 const ALLOWED_KEYS = [
@@ -186,15 +187,25 @@ export const updateSettings = async (req, res) => {
  */
 export const uploadSettingsImage = async (req, res) => {
   try {
+    const type = (req.query.type || "logo").toLowerCase();
+    if (type !== "logo" && type !== "favicon") {
+      return handleResponse(res, 400, "type must be logo or favicon");
+    }
+
+    if (req.file) {
+      const url = await uploadToCloudinary(req.file.buffer, "settings", {
+        mimeType: req.file.mimetype,
+        resourceType: "image",
+      });
+      await invalidate("cache:platform:settings:*");
+      return handleResponse(res, 200, "Image uploaded", { url, type });
+    }
+
     const providedUrl = String(req.body?.url || req.body?.imageUrl || "").trim();
     if (!providedUrl || !/^https?:\/\//i.test(providedUrl)) {
       return handleResponse(res, 400, "A valid image URL is required");
     }
 
-    const type = (req.query.type || "logo").toLowerCase();
-    if (type !== "logo" && type !== "favicon") {
-      return handleResponse(res, 400, "type must be logo or favicon");
-    }
     await invalidate("cache:platform:settings:*");
     return handleResponse(res, 200, "Image URL accepted", { url: providedUrl, type });
   } catch (error) {

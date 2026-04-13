@@ -159,7 +159,10 @@ export const createCategory = async (req, res) => {
     // Handle Images
     if (req.file) {
       try {
-        const url = await uploadToCloudinary(req.file.buffer, "categories");
+        const url = await uploadToCloudinary(req.file.buffer, "categories", {
+          mimeType: req.file.mimetype,
+          resourceType: "image",
+        });
         categoryData.image = url;
       } catch (err) {
         console.error("Cloudinary upload failed for category:", err);
@@ -234,7 +237,10 @@ export const updateCategory = async (req, res) => {
 
     if (req.file) {
       try {
-        const url = await uploadToCloudinary(req.file.buffer, "categories");
+        const url = await uploadToCloudinary(req.file.buffer, "categories", {
+          mimeType: req.file.mimetype,
+          resourceType: "image",
+        });
         categoryData.image = url;
       } catch (err) {
         console.error("Cloudinary upload failed for category update:", err);

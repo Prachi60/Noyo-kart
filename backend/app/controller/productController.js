@@ -385,10 +385,16 @@ export const createProduct = async (req, res) => {
       for (const file of files) {
         try {
           if (file.fieldname === "mainImage") {
-            const url = await uploadToCloudinary(file.buffer, "products");
+            const url = await uploadToCloudinary(file.buffer, "products", {
+              mimeType: file.mimetype,
+              resourceType: "image",
+            });
             productData.mainImage = url;
           } else if (file.fieldname === "galleryImages") {
-            const url = await uploadToCloudinary(file.buffer, "products");
+            const url = await uploadToCloudinary(file.buffer, "products", {
+              mimeType: file.mimetype,
+              resourceType: "image",
+            });
             galleryUrls.push(url);
           }
         } catch (err) {
@@ -504,10 +510,16 @@ export const updateProduct = async (req, res) => {
       for (const file of files) {
         try {
           if (file.fieldname === "mainImage") {
-            const url = await uploadToCloudinary(file.buffer, "products");
+            const url = await uploadToCloudinary(file.buffer, "products", {
+              mimeType: file.mimetype,
+              resourceType: "image",
+            });
             productData.mainImage = url;
           } else if (file.fieldname === "galleryImages") {
-            const url = await uploadToCloudinary(file.buffer, "products");
+            const url = await uploadToCloudinary(file.buffer, "products", {
+              mimeType: file.mimetype,
+              resourceType: "image",
+            });
             galleryUrls.push(url);
           }
         } catch (err) {

@@ -263,7 +263,7 @@ and all code is wired together before the phase ends.
       `CheckoutCartSummary`; no other sub-component should receive it
     - _Requirements: 12.2, 12.3, 12.4, 12.5_
 
-- [ ] 14. Reduce Framer Motion `animate` on list items across the customer module
+- [x] 14. Reduce Framer Motion `animate` on list items across the customer module
   - Audit all `motion.div` wrappers on list items in the customer module
     (`frontend/src/modules/customer/`) — focus on product grids, cart item lists, and order
     history rows that render more than 5 items
@@ -309,7 +309,7 @@ and all code is wired together before the phase ends.
     and pass `value` to the Provider
   - _Requirements: 15.1, 15.2, 15.3, 15.4_
 
-- [-] 17. Add `IntersectionObserver` guard to `useTransform` scroll listeners in `Home.jsx`
+- [x] 17. Add `IntersectionObserver` guard to `useTransform` scroll listeners in `Home.jsx`
   - Add `const heroRef = useRef(null)` and `const [heroVisible, setHeroVisible] = useState(true)`
   - Add a `useEffect` that creates an `IntersectionObserver` with `rootMargin: "0px"` on
     `heroRef.current`; update `heroVisible` on intersection change; disconnect on unmount
@@ -320,14 +320,14 @@ and all code is wired together before the phase ends.
   - Attach `ref={heroRef}` to the hero container
   - _Requirements: 16.1, 16.2, 16.3, 16.4_
 
-- [~] 18. Checkpoint — Phase 2 complete
+- [x] 18. Checkpoint — Phase 2 complete
   - Ensure all tests pass, ask the user if questions arise.
 
 ---
 
 ## Phase 3 — Build & Bundle
 
-- [~] 19. Update `frontend/vite.config.js` with `manualChunks`, `minify`, and `sourcemap`
+- [x] 19. Update `frontend/vite.config.js` with `manualChunks`, `minify`, and `sourcemap`
   - Add a `build` key to the `defineConfig` object with:
     - `minify: "esbuild"`
     - `sourcemap: false`
@@ -340,15 +340,15 @@ and all code is wired together before the phase ends.
   - Preserve all existing `plugins` and `resolve.alias` configuration
   - _Requirements: 17.1, 17.2, 17.5_
 
-- [-] 20. Consolidate icon library usage in the customer module
-  - [~] 20.1 Audit `react-icons` usage across the entire frontend
+- [x] 20. Consolidate icon library usage in the customer module
+  - [x] 20.1 Audit `react-icons` usage across the entire frontend
     - Search `frontend/src/modules/customer/` for any `react-icons` imports
     - **Finding from pre-implementation audit:** the customer module contains zero `react-icons`
       imports — all `react-icons` usage is in the seller module, admin module, and shared layout
       components (`Topbar.jsx`, `Sidebar.jsx`, `NotificationPopup.jsx`)
     - _Requirements: 18.1_
 
-  - [~] 20.2 Confirm customer module uses only `lucide-react` for icons
+  - [x] 20.2 Confirm customer module uses only `lucide-react` for icons
     - Verify that all icon imports in `frontend/src/modules/customer/` use `lucide-react` or
       MUI icons exclusively
     - If any stray `react-icons` import is found, replace it with the `lucide-react` equivalent
@@ -403,14 +403,14 @@ and all code is wired together before the phase ends.
       a brief placeholder is acceptable
     - _Requirements: 19.1, 19.2, 19.4_
 
-- [~] 22. Checkpoint — Phase 3 complete
+- [x] 22. Checkpoint — Phase 3 complete
   - Ensure all tests pass, ask the user if questions arise.
 
 ---
 
 ## Phase 4 — Backend
 
-- [~] 23. Add all new TTL types to `TTL_CONFIG` in `cacheService.js` (Req 22)
+- [x] 23. Add all new TTL types to `TTL_CONFIG` in `cacheService.js` (Req 22)
   - Add the following entries to `TTL_CONFIG` (consolidating additions from tasks 9.1, 10, 11.1):
     ```js
     orders:        parseInt(process.env.CACHE_ORDERS_TTL         || "60",   10),
@@ -470,7 +470,7 @@ and all code is wired together before the phase ends.
       `await invalidateSellerName(sellerId)` after any seller `shopName` update
     - _Requirements: 20.3_
 
-- [~] 25. Fix `structuredRequestLogger` middleware in `requestLogger.js`
+- [x] 25. Fix `structuredRequestLogger` middleware in `requestLogger.js`
   - Wrap the entire body of the `res.on("finish", () => { ... })` callback in a `try/catch`
     block; in the `catch`, call `console.error("[RequestLogger] Error in finish handler:", err)`
   - Verify that `next()` is called at the end of `structuredRequestLogger` (it already is —
@@ -479,7 +479,7 @@ and all code is wired together before the phase ends.
     called (it already is — confirm and leave unchanged)
   - _Requirements: 21.1, 21.2, 21.3, 21.4, 21.5_
 
-- [~] 26. Final checkpoint — Phase 4 complete
+- [x] 26. Final checkpoint — Phase 4 complete
   - Ensure all tests pass, ask the user if questions arise.
 
 ---

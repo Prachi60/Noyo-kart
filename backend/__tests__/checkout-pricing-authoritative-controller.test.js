@@ -95,7 +95,7 @@ describe("orderFinanceController server-authoritative payload", () => {
       201,
       "Order created with financial snapshot",
       expect.objectContaining({
-        paymentRef: "CHK-01JSRAAAAAAAATEST0000001",
+        paymentRef: "ORD-01JSRAAAAAAAATEST0000001",
       }),
     );
   });

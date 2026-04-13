@@ -79,20 +79,22 @@ describe('deliveryOtpService', () => {
 
       // Verify previous OTPs were invalidated
       expect(mockOrderOtpUpdateMany).toHaveBeenCalledWith(
-        { orderId: validOrderId, consumedAt: null },
+        { orderId: validOrderId, type: 'delivery', consumedAt: null },
         { consumedAt: expect.any(Date) }
       );
 
       // Verify new OTP was created
-      expect(mockOrderOtpCreate).toHaveBeenCalledWith({
+      expect(mockOrderOtpCreate).toHaveBeenCalledWith(expect.objectContaining({
         orderId: validOrderId,
         orderMongoId: 'order-mongo-id',
+        type: 'delivery',
         codeHash: 'hashed-otp-value',
+        code: expect.stringMatching(/^\d{4}$/),
         expiresAt: expect.any(Date),
         attempts: 0,
         maxAttempts: 3,
         lastGeneratedAt: expect.any(Date)
-      });
+      }));
     });
 
     it('should fail when orderId is missing', async () => {
@@ -493,7 +495,8 @@ describe('deliveryOtpService', () => {
       await validateDeliveryOtp(validOrderId, validOtp);
 
       expect(mockOrderOtpFindOne).toHaveBeenCalledWith({
-        orderId: validOrderId
+        orderId: validOrderId,
+        type: 'delivery'
       });
       expect(mockSort).toHaveBeenCalledWith({
         lastGeneratedAt: -1,

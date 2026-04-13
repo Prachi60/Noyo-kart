@@ -9,12 +9,37 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-export const uploadToCloudinary = async (fileBuffer, folder = 'categories') => {
+const getOptimizedImageFormat = () =>
+    String(process.env.CLOUDINARY_IMAGE_UPLOAD_FORMAT || 'webp').trim().toLowerCase();
+
+const getOptimizedImageQuality = () =>
+    String(process.env.CLOUDINARY_IMAGE_UPLOAD_QUALITY || 'auto:good').trim();
+
+const isImageMimeType = (mimeType = '') =>
+    String(mimeType || '').trim().toLowerCase().startsWith('image/');
+
+const getImageUploadOptions = () => {
+    const format = getOptimizedImageFormat();
+    const quality = getOptimizedImageQuality();
+    return {
+        ...(format ? { format } : {}),
+        ...(quality ? { transformation: `q_${quality}` } : {}),
+    };
+};
+
+export const uploadToCloudinary = async (fileBuffer, folder = 'categories', options = {}) => {
+    const mimeType = String(options.mimeType || '').trim().toLowerCase();
+    const resourceType = String(options.resourceType || '').trim().toLowerCase();
+    const shouldOptimizeImage =
+        options.optimize !== false &&
+        (resourceType === 'image' || isImageMimeType(mimeType));
+
     return new Promise((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
             {
                 folder,
-                resource_type: 'auto',
+                resource_type: shouldOptimizeImage ? 'image' : 'auto',
+                ...(shouldOptimizeImage ? getImageUploadOptions() : {}),
             },
             (error, result) => {
                 if (error) {
