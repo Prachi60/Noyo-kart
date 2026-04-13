@@ -301,9 +301,7 @@ const MainLocationHeader = ({
           isProductDetailOpen && "hidden md:block",
         )}>
         <motion.div
-          initial={{ y: -50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
+          initial={false}
           style={{
             paddingTop: headerTopPadding,
             paddingBottom: headerBottomPadding,
@@ -312,7 +310,7 @@ const MainLocationHeader = ({
             opacity: bgOpacity,
             backgroundImage: headerGradient,
           }}
-          className="px-4 shadow-[0_4px_20px_rgba(0,0,0,0.15)] overflow-hidden transition-all duration-300 sticky top-0">
+          className="px-4 shadow-[0_4px_20px_rgba(0,0,0,0.15)] overflow-hidden transform-gpu will-change-transform">
           {/* Subtle Glow Overlay */}
           <div className="absolute inset-0 bg-white/8 pointer-events-none" />
 

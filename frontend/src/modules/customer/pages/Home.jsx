@@ -1125,7 +1125,7 @@ const Home = () => {
           {/* Hero Banners (mobile): admin-configured or static fallback */}
           <motion.div
             ref={heroRef}
-            className="block md:hidden -mt-[26px] will-change-transform"
+            className="block md:hidden -mt-[14px] will-change-transform"
             style={{ opacity, y, scale, pointerEvents }}>
             <div>
               <div className="relative w-full overflow-hidden">
@@ -1255,7 +1255,7 @@ const Home = () => {
             <div className="relative overflow-hidden border-y border-[#389ecb] bg-[#45B0E2] shadow-[0_10px_30px_rgba(15,23,42,0.08)]">
               <div className="absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-[#45B0E2] via-[#45B0E2]/90 to-transparent pointer-events-none" />
               <div className="absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[#45B0E2] via-[#45B0E2]/90 to-transparent pointer-events-none" />
-              <div className="classic-marquee-track flex w-max items-center gap-4 px-3 md:px-6 py-4 text-sm md:text-base font-semibold text-white -translate-y-[4px]">
+              <div className="classic-marquee-track flex w-max items-center gap-4 px-3 py-1.5 text-sm font-semibold text-white -translate-y-[5px] md:px-6 md:py-2 md:text-base">
                 {[...MARQUEE_MESSAGES, ...MARQUEE_MESSAGES].map(
                   (message, idx) => (
                     <React.Fragment key={`${message}-${idx}`}>
