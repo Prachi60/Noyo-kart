@@ -6,6 +6,7 @@ import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useToast } from '@shared/components/ui/Toast';
 import { cn } from '@/lib/utils';
+import { applyCloudinaryTransform } from '@/core/utils/imageUtils';
 
 import ProductCard from '../components/shared/ProductCard';
 import ProductDetailSheet from '../components/shared/ProductDetailSheet';
@@ -16,7 +17,6 @@ import SectionRenderer from "../components/experience/SectionRenderer";
 import { useLocation as useAppLocation } from '../context/LocationContext';
 import { useSettings } from '@core/context/SettingsContext';
 import Lottie from 'lottie-react';
-import noServiceAnimation from '@/assets/lottie/animation.json';
 
 const CategoryProductsPage = () => {
     const { categoryName: catId } = useParams();
@@ -31,6 +31,14 @@ const CategoryProductsPage = () => {
     const [subCategories, setSubCategories] = useState([{ id: 'all', name: 'All', icon: 'https://cdn-icons-png.flaticon.com/128/2321/2321831.png' }]);
     const [products, setProducts] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [noServiceData, setNoServiceData] = useState(null);
+
+    // Dynamically load no-service Lottie on mount
+    useEffect(() => {
+        import('@/assets/lottie/animation.json')
+            .then((m) => setNoServiceData(m.default))
+            .catch(() => {});
+    }, []);
 
     const fetchData = async () => {
         setIsLoading(true);
@@ -147,7 +155,11 @@ const CategoryProductsPage = () => {
                 {(safeProducts.length === 0 && !isLoading) ? (
                     <div className="w-full flex-1 py-20 px-8 flex flex-col items-center justify-center text-center">
                         <div className="w-64 h-64 mb-6">
-                            <Lottie animationData={noServiceAnimation} loop={true} />
+                            {noServiceData ? (
+                                <Lottie animationData={noServiceData} loop={true} />
+                            ) : (
+                                <div className="w-64 h-64" />
+                            )}
                         </div>
                         <h3 className="text-3xl font-[1000] text-slate-800 tracking-tighter mb-4 uppercase">
                             Service <span className="text-[#45B0E2]">Unavailable</span>
@@ -181,7 +193,7 @@ const CategoryProductsPage = () => {
                                         "w-14 h-14 rounded-2xl flex items-center justify-center p-1.5 transition-all duration-300",
                                         selectedSubCategory === cat.id ? "scale-110" : "opacity-100"
                                     )}>
-                                        <img src={cat.icon} alt={cat.name} className="w-full h-full object-contain" />
+                                        <img src={applyCloudinaryTransform(cat.icon)} alt={cat.name} loading="lazy" className="w-full h-full object-contain" />
                                     </div>
                                     <span className={cn(
                                         "text-[10px] text-center font-bold font-sans leading-tight px-1",

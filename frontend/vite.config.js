@@ -63,4 +63,28 @@ export default defineConfig({
       '@modules': path.resolve(__dirname, './src/modules'),
     },
   },
+  build: {
+    minify: 'esbuild',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return
+
+          if (
+            id.includes('@mui/material') ||
+            id.includes('@mui/icons-material') ||
+            id.includes('@emotion/react') ||
+            id.includes('@emotion/styled')
+          ) {
+            return 'vendor-mui'
+          }
+
+          if (id.includes('framer-motion')) return 'vendor-motion'
+          if (id.includes('firebase')) return 'vendor-firebase'
+          if (id.includes('recharts')) return 'vendor-charts'
+        },
+      },
+    },
+  },
 })

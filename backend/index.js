@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import http from "http";
 import cors from "cors";
 import helmet from "helmet";
+import compression from "compression";
 import path from "path";
 import { fileURLToPath } from "url";
 import { Server } from "socket.io";
@@ -112,6 +113,13 @@ function createApp() {
   app.use(correlationIdMiddleware);
   app.use(structuredRequestLogger);
   app.use(trackInFlightRequests);
+  app.use(compression({
+    threshold: 1024, // only compress responses > 1KB
+    filter: (req, res) => {
+      if (req.headers["x-no-compression"]) return false;
+      return compression.filter(req, res);
+    },
+  }));
   app.use(helmet());
   app.use(cors(corsOptions));
   app.use(globalApiRateLimiter);

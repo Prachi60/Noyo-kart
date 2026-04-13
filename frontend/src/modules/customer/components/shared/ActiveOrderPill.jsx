@@ -2,6 +2,7 @@ import React from 'react';
 import { ChevronRight, Package } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { applyCloudinaryTransform } from '@/core/utils/imageUtils';
 
 const ActiveOrderPill = ({ order }) => {
     if (!order) return null;
@@ -39,8 +40,9 @@ const ActiveOrderPill = ({ order }) => {
                                     style={{ zIndex: 10 - index }}
                                 >
                                     <img
-                                        src={item.image}
+                                        src={applyCloudinaryTransform(item.image)}
                                         alt={item.name}
+                                        loading="lazy"
                                         className="w-full h-full object-contain p-0.5"
                                     />
                                 </div>

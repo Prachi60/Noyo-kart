@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useInViewAnimation } from "@/core/hooks/useInViewAnimation";
 import {
   Star,
   ChevronDown,
@@ -60,12 +61,12 @@ import ExperienceBannerCarousel from "../components/experience/ExperienceBannerC
 import { useLocation } from "../context/LocationContext";
 import { useSettings } from "@core/context/SettingsContext";
 import Lottie from "lottie-react";
-import noServiceAnimation from "@/assets/lottie/animation.json";
 import {
   getSideImageByKey,
   getBackgroundColorByValue,
   getBackgroundGradientByValue,
 } from "@/shared/constants/offerSectionOptions";
+import { applyCloudinaryTransform } from "@/core/utils/imageUtils";
 
 const DEFAULT_CATEGORY_THEME = {
   gradient: "linear-gradient(to bottom, #45B0E2, #38bdf8)",
@@ -403,6 +404,29 @@ const Home = () => {
   const navigate = useNavigate();
   const quickCatsRef = useRef(null);
 
+  // useInViewAnimation for floating particle containers
+  const { ref: particleContainerRef, isVisible: particlesVisible } =
+    useInViewAnimation();
+
+  // Hero section IntersectionObserver guard for useTransform scroll listeners
+  const heroRef = useRef(null);
+  const [heroVisible, setHeroVisible] = useState(true);
+
+  useEffect(() => {
+    if (typeof IntersectionObserver === "undefined") {
+      setHeroVisible(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setHeroVisible(entry.isIntersecting),
+      { rootMargin: "0px" },
+    );
+    const el = heroRef.current;
+    if (el) observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   const [categories, setCategories] = useState([ALL_CATEGORY]);
   const [activeCategory, setActiveCategory] = useState(ALL_CATEGORY);
   const [products, setProducts] = useState([]);
@@ -420,6 +444,16 @@ const Home = () => {
   const [subcategoryMap, setSubcategoryMap] = useState({});
   const [pendingReturn, setPendingReturn] = useState(null);
   const [offerSections, setOfferSections] = useState([]);
+  const [noServiceData, setNoServiceData] = useState(null);
+
+  // Dynamically load no-service Lottie when products are empty and not loading
+  useEffect(() => {
+    if (products.length === 0 && !isLoading) {
+      import("@/assets/lottie/animation.json")
+        .then((m) => setNoServiceData(m.default))
+        .catch(() => {});
+    }
+  }, [products.length === 0 && !isLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const scrollQuickCats = (direction) => {
     if (quickCatsRef.current) {
@@ -481,11 +515,11 @@ const Home = () => {
           .catch(() => null),
         hasValidLocation
           ? customerApi
-            .getOfferSections({
-              lat: currentLocation.latitude,
-              lng: currentLocation.longitude,
-            })
-            .catch(() => ({ data: {} }))
+              .getOfferSections({
+                lat: currentLocation.latitude,
+                lng: currentLocation.longitude,
+              })
+              .catch(() => ({ data: {} }))
           : Promise.resolve({ data: { results: [] } }),
       ]);
 
@@ -514,17 +548,17 @@ const Home = () => {
             // Theme / banner still come from local metadata for now
             const meta = CATEGORY_METADATA[catName] ||
               CATEGORY_METADATA[
-              catName.charAt(0).toUpperCase() + catName.slice(1).toLowerCase()
+                catName.charAt(0).toUpperCase() + catName.slice(1).toLowerCase()
               ] ||
               CATEGORY_METADATA[catName.toUpperCase()] || {
-              icon: Sparkles,
-              theme: DEFAULT_CATEGORY_THEME,
-              banner: {
-                title: catName.toUpperCase(),
-                subtitle: "TOP PICKS",
-                floatingElements: "sparkles",
-              },
-            };
+                icon: Sparkles,
+                theme: DEFAULT_CATEGORY_THEME,
+                banner: {
+                  title: catName.toUpperCase(),
+                  subtitle: "TOP PICKS",
+                  floatingElements: "sparkles",
+                },
+              };
 
             // Icon is fully driven by admin-chosen iconId, mapped to MUI
             const IconComp =
@@ -552,12 +586,12 @@ const Home = () => {
 
         const mergedAllCategory = allHeaderFromAdmin
           ? {
-            ...ALL_CATEGORY,
-            // Preserve special id/_id used in UI logic, but take color and icon from admin
-            headerColor:
-              allHeaderFromAdmin.headerColor || ALL_CATEGORY.headerColor,
-            icon: allHeaderFromAdmin.icon || ALL_CATEGORY.icon,
-          }
+              ...ALL_CATEGORY,
+              // Preserve special id/_id used in UI logic, but take color and icon from admin
+              headerColor:
+                allHeaderFromAdmin.headerColor || ALL_CATEGORY.headerColor,
+              icon: allHeaderFromAdmin.icon || ALL_CATEGORY.icon,
+            }
           : ALL_CATEGORY;
 
         const headersWithoutAll = formattedHeaders.filter(
@@ -586,7 +620,7 @@ const Home = () => {
               );
               if (match) setActiveCategory(match);
             }
-          } catch (e) { }
+          } catch (e) {}
         }
 
         // 2. Process Quick Navigation Categories (Horizontal Scroll)
@@ -721,13 +755,14 @@ const Home = () => {
             payload = homeRes.data.result;
           }
         }
-        const resolved = payload &&
-            (payload.banners?.items?.length > 0 ||
-              payload.categoryIds?.length > 0)
+        const resolved =
+          payload &&
+          (payload.banners?.items?.length > 0 ||
+            payload.categoryIds?.length > 0)
             ? {
-              banners: payload.banners || { items: [] },
-              categoryIds: payload.categoryIds || [],
-            }
+                banners: payload.banners || { items: [] },
+                categoryIds: payload.categoryIds || [],
+              }
             : { banners: { items: [] }, categoryIds: [] };
         heroConfigCache.current[cacheKey] = resolved;
         setHeroConfig(resolved);
@@ -819,10 +854,22 @@ const Home = () => {
 
   // Fade out banner as user scrolls (0 to 100px)
   // Parallax effect for banner - moves slower than scroll
-  const opacity = useTransform(scrollY, [0, 300], [1, 0.6]);
-  const y = useTransform(scrollY, [0, 300], [0, 80]); // Positive Y moves down as we scroll up = Parallax
-  const scale = useTransform(scrollY, [0, 300], [1, 0.95]);
-  const pointerEvents = useTransform(scrollY, [0, 100], ["auto", "none"]);
+  // When heroVisible is false, use [0,0] input range so transforms produce a static value
+  const opacity = useTransform(
+    scrollY,
+    heroVisible ? [0, 300] : [0, 0],
+    [1, 0.6],
+  );
+  const y = useTransform(scrollY, heroVisible ? [0, 300] : [0, 0], [0, 80]); // Positive Y moves down as we scroll up = Parallax
+  const scale = useTransform(
+    scrollY,
+    heroVisible ? [0, 300] : [0, 0],
+    [1, 0.95],
+  );
+  const pointerEvents = useTransform(scrollY, heroVisible ? [0, 100] : [0, 0], [
+    "auto",
+    "none",
+  ]);
   // When returning from a category page, scroll back to the section that was clicked
   useEffect(() => {
     if (!pendingReturn?.sectionId) return;
@@ -845,7 +892,8 @@ const Home = () => {
   }, [headerSections, experienceSections, pendingReturn]);
 
   // Helper to render dynamic floating elements
-  const renderFloatingElements = (type) => {
+  // isVisible: when false, animations are paused (idle state) to save CPU
+  const renderFloatingElements = (type, isVisible = true) => {
     const count = 10; // Optimized count for performance
 
     const getParticleContent = (index) => {
@@ -908,18 +956,26 @@ const Home = () => {
             opacity: 0.1 * depth,
             zIndex: Math.floor(depth * 10),
           }}
-          animate={{
-            x: [0, 50, -50, 0],
-            y: [0, -100, -50, 0],
-            rotate: [0, 360],
-            scale: [depth, depth * 1.2, depth],
-          }}
-          transition={{
-            duration: duration / depth,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: delay,
-          }}>
+          animate={
+            isVisible
+              ? {
+                  x: [0, 50, -50, 0],
+                  y: [0, -100, -50, 0],
+                  rotate: [0, 360],
+                  scale: [depth, depth * 1.2, depth],
+                }
+              : { x: 0, y: 0, rotate: 0, scale: depth }
+          }
+          transition={
+            isVisible
+              ? {
+                  duration: duration / depth,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: delay,
+                }
+              : { duration: 0 }
+          }>
           <div className="transform-gpu">{getParticleContent(i)}</div>
         </motion.div>
       );
@@ -927,7 +983,8 @@ const Home = () => {
   };
 
   return (
-    <div className={`min-h-screen pt-[216px] md:pt-[250px] ${products.length === 0 && !isLoading ? "bg-white" : "bg-[#F5F7F8]"}`}>
+    <div
+      className={`min-h-screen pt-[216px] md:pt-[250px] ${products.length === 0 && !isLoading ? "bg-white" : "bg-[#F5F7F8]"}`}>
       {/* Top Dynamic Gradient Section */}
       <div
         className={cn("contents", isProductDetailOpen && "hidden md:contents")}>
@@ -942,27 +999,34 @@ const Home = () => {
       {products.length === 0 && !isLoading ? (
         <div className="flex flex-col items-center justify-center pt-24 pb-48 animate-in fade-in zoom-in duration-700">
           <div className="w-64 h-64 md:w-96 md:h-96 mb-8">
-            <Lottie animationData={noServiceAnimation} loop={true} />
+            {noServiceData ? (
+              <Lottie animationData={noServiceData} loop={true} />
+            ) : (
+              <div className="w-64 h-64 md:w-96 md:h-96" />
+            )}
           </div>
           <h3 className="text-3xl md:text-5xl font-[1000] text-slate-800 tracking-tighter mb-4 text-center px-4 uppercase">
             Service <span className="text-[#45B0E2]">Unavailable</span>
           </h3>
           <p className="text-slate-500 font-bold max-w-md text-center px-10 text-sm md:text-lg leading-relaxed opacity-80">
-            Ah! We haven't reached your neighborhood yet. We're expanding rapidly to bring {settings?.appName || "Noyo"} to every corner.
+            Ah! We haven't reached your neighborhood yet. We're expanding
+            rapidly to bring {settings?.appName || "Noyo"} to every corner.
           </p>
-          <motion.button 
+          <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => window.location.reload()}
-            className="mt-12 px-10 py-4 bg-[#45B0E2] text-white font-[1000] rounded-[24px] uppercase text-[13px] tracking-[0.2em] transition-all"
-          >
+            className="mt-12 px-10 py-4 bg-[#45B0E2] text-white font-[1000] rounded-[24px] uppercase text-[13px] tracking-[0.2em] transition-all">
             Check Again
           </motion.button>
         </div>
       ) : (
         <>
           {/* Hero Banners (mobile): admin-configured or static fallback */}
-          <div className="block md:hidden -mt-[26px]">
+          <motion.div
+            ref={heroRef}
+            className="block md:hidden -mt-[26px] will-change-transform"
+            style={{ opacity, y, scale, pointerEvents }}>
             <div>
               <div className="relative w-full overflow-hidden">
                 {heroConfig.banners?.items?.length ? (
@@ -977,7 +1041,7 @@ const Home = () => {
                     className={cn(
                       "flex",
                       !isInstantBannerJump &&
-                      "transition-transform duration-500 ease-out",
+                        "transition-transform duration-500 ease-out",
                     )}
                     style={{
                       transform: `translateX(-${mobileBannerIndex * 100}%)`,
@@ -991,7 +1055,8 @@ const Home = () => {
                         <div className="relative z-10 w-3/5 flex flex-col items-start gap-2">
                           <div className="flex flex-col gap-0.5">
                             <h4 className="text-2xl font-[1000] text-[#1A1A1A] tracking-tighter leading-none">
-                              Get <span className="text-[#45B0E2]">Products</span>
+                              Get{" "}
+                              <span className="text-[#45B0E2]">Products</span>
                             </h4>
                             <div className="flex items-center gap-1.5 mt-1">
                               <span className="text-sm font-black text-gray-700">
@@ -1031,6 +1096,7 @@ const Home = () => {
                         <img
                           src={CardBanner}
                           alt="Promotion"
+                          loading="lazy"
                           className="w-full h-full object-fill"
                         />
                         <div className="absolute inset-0 bg-linear-to-t from-black/5 to-transparent pointer-events-none" />
@@ -1044,7 +1110,8 @@ const Home = () => {
                         <div className="relative z-10 w-3/5 flex flex-col items-start gap-2">
                           <div className="flex flex-col gap-0.5">
                             <h4 className="text-2xl font-[1000] text-[#1A1A1A] tracking-tighter leading-none">
-                              Get <span className="text-[#45B0E2]">Products</span>
+                              Get{" "}
+                              <span className="text-[#45B0E2]">Products</span>
                             </h4>
                             <div className="flex items-center gap-1.5 mt-1">
                               <span className="text-sm font-black text-gray-700">
@@ -1070,6 +1137,7 @@ const Home = () => {
                           <img
                             src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=400"
                             alt="Promo"
+                            loading="lazy"
                             className="w-full h-full object-contain rotate-3 scale-110"
                           />
                         </div>
@@ -1080,7 +1148,7 @@ const Home = () => {
                 )}
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Promo Marquee Strip */}
           <div className="w-full -mt-[2px] md:-mt-[2px] mb-4">
@@ -1088,12 +1156,14 @@ const Home = () => {
               <div className="absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-[#45B0E2] via-[#45B0E2]/90 to-transparent pointer-events-none" />
               <div className="absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[#45B0E2] via-[#45B0E2]/90 to-transparent pointer-events-none" />
               <div className="classic-marquee-track flex w-max items-center gap-4 px-3 md:px-6 py-4 text-sm md:text-base font-semibold text-white -translate-y-[4px]">
-                {[...MARQUEE_MESSAGES, ...MARQUEE_MESSAGES].map((message, idx) => (
-                  <React.Fragment key={`${message}-${idx}`}>
-                    <span className="whitespace-nowrap">{message}</span>
-                    <span className="text-white/60">•</span>
-                  </React.Fragment>
-                ))}
+                {[...MARQUEE_MESSAGES, ...MARQUEE_MESSAGES].map(
+                  (message, idx) => (
+                    <React.Fragment key={`${message}-${idx}`}>
+                      <span className="whitespace-nowrap">{message}</span>
+                      <span className="text-white/60">•</span>
+                    </React.Fragment>
+                  ),
+                )}
                 <span className="whitespace-nowrap">❤️</span>
                 <span className="whitespace-nowrap">🎁</span>
               </div>
@@ -1153,8 +1223,9 @@ const Home = () => {
                             style={{ backgroundColor: palette.glowColor }}
                           />
                           <img
-                            src={cat.image}
+                            src={applyCloudinaryTransform(cat.image)}
                             alt={cat.name}
+                            loading="lazy"
                             className="absolute left-1/2 top-3 z-10 h-[68px] w-[68px] -translate-x-1/2 object-contain drop-shadow-[0_5px_12px_rgba(0,0,0,0.10)] mix-blend-multiply group-hover/item:scale-110 transition-transform duration-500"
                           />
                           <div className="absolute inset-x-2 bottom-1.5 z-20 text-center">
@@ -1206,10 +1277,13 @@ const Home = () => {
                     onClick={() => navigate("/category/all")}
                     whileHover={{ x: 5, scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="flex items-center gap-1 bg-white px-2.5 py-1 md:px-4 md:py-2 rounded-full text-[#45B0E2] font-black text-[11px] md:text-sm cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.05)] md:shadow-md border border-[#45B0E2]/10 transition-all whitespace-nowrap"
-                  >
+                    className="flex items-center gap-1 bg-white px-2.5 py-1 md:px-4 md:py-2 rounded-full text-[#45B0E2] font-black text-[11px] md:text-sm cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.05)] md:shadow-md border border-[#45B0E2]/10 transition-all whitespace-nowrap">
                     See all
-                    <ChevronRight size={12} className="ml-0.5" strokeWidth={3} />
+                    <ChevronRight
+                      size={12}
+                      className="ml-0.5"
+                      strokeWidth={3}
+                    />
                   </motion.button>
                 </div>
 
@@ -1285,15 +1359,17 @@ const Home = () => {
                             .filter(Boolean)
                             .join(", ") ||
                             section.categoryId?.name) && (
-                              <p className="text-xs md:text-sm font-semibold text-black/75 mt-1">
-                                {(section.categoryIds || [])
-                                  .map((c) =>
-                                    typeof c === "object" && c?.name ? c.name : null,
-                                  )
-                                  .filter(Boolean)
-                                  .join(", ") || section.categoryId?.name}
-                              </p>
-                            )}
+                            <p className="text-xs md:text-sm font-semibold text-black/75 mt-1">
+                              {(section.categoryIds || [])
+                                .map((c) =>
+                                  typeof c === "object" && c?.name
+                                    ? c.name
+                                    : null,
+                                )
+                                .filter(Boolean)
+                                .join(", ") || section.categoryId?.name}
+                            </p>
+                          )}
                         </div>
                         <motion.div
                           whileHover={{ y: -4, rotate: -4, scale: 1.06 }}
@@ -1306,8 +1382,11 @@ const Home = () => {
                           {sectionProducts[0]?.image ? (
                             <>
                               <img
-                                src={sectionProducts[0].image}
+                                src={applyCloudinaryTransform(
+                                  sectionProducts[0].image,
+                                )}
                                 alt={section.title}
+                                loading="lazy"
                                 className="absolute inset-0 w-full h-full object-cover scale-110"
                               />
                               <div className="absolute inset-0 bg-gradient-to-tr from-black/60 via-black/20 to-transparent" />
@@ -1337,7 +1416,14 @@ const Home = () => {
                           {sectionProducts.length === 0 ? (
                             <div className="w-full py-10 flex flex-col items-center justify-center text-center">
                               <div className="w-32 h-32 mb-3">
-                                <Lottie animationData={noServiceAnimation} loop={true} />
+                                {noServiceData ? (
+                                  <Lottie
+                                    animationData={noServiceData}
+                                    loop={true}
+                                  />
+                                ) : (
+                                  <div className="w-32 h-32" />
+                                )}
                               </div>
                               <p className="text-sm md:text-base text-slate-400 font-bold">
                                 Looking for the best items in this category...
@@ -1382,5 +1468,3 @@ const Home = () => {
 };
 
 export default Home;
-
-

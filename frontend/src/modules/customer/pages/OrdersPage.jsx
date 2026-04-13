@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Package, ChevronRight, Clock, CheckCircle, Loader2, ChevronLeft } from 'lucide-react';
 import { customerApi } from '../services/customerApi';
 import { getOrderStatusLabel, getLegacyStatusFromOrder } from '@/shared/utils/orderStatus';
+import { applyCloudinaryTransform } from '@/core/utils/imageUtils';
 
 const OrdersPage = () => {
     const navigate = useNavigate();
@@ -86,8 +87,9 @@ const OrdersPage = () => {
                                     <div className="h-12 w-12 rounded-xl overflow-hidden flex items-center justify-center bg-slate-50 ring-1 ring-slate-200/90 shrink-0">
                                         {order.items[0]?.image ? (
                                             <img
-                                                src={order.items[0].image}
+                                                src={applyCloudinaryTransform(order.items[0].image)}
                                                 alt={order.items[0]?.name || 'Order thumbnail'}
+                                                loading="lazy"
                                                 className="w-full h-full object-cover"
                                             />
                                         ) : (

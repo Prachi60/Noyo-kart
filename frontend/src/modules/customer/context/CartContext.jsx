@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
+import React, { createContext, useContext, useState, useEffect, useMemo, useRef } from "react";
 import { customerApi } from "../services/customerApi";
 import { useAuth } from "../../../core/context/AuthContext";
 
@@ -20,6 +20,7 @@ export const CartProvider = ({ children }) => {
 
   const [loading, setLoading] = useState(false);
   const pendingRequestsRef = React.useRef(0);
+  const lsDebounceRef = useRef(null);
 
   // Clear cart locally when user logs out is handled by the useEffect dependency on isAuthenticated
   const normalizeBackendCart = (items) => {
@@ -100,11 +101,21 @@ export const CartProvider = ({ children }) => {
     }
   }, [isAuthenticated]);
 
-  // Save local cart to localStorage (fallback/guest mode)
+  // Save local cart to localStorage (fallback/guest mode) — debounced to 300 ms
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (isAuthenticated) return;           // backend is source of truth
+
+    clearTimeout(lsDebounceRef.current);
+    lsDebounceRef.current = setTimeout(() => {
       localStorage.setItem("cart", JSON.stringify(cart));
-    }
+    }, 300);
+
+    return () => {
+      if (isAuthenticated) return;
+      // Flush on unmount — no data loss
+      clearTimeout(lsDebounceRef.current);
+      localStorage.setItem("cart", JSON.stringify(cart));
+    };
   }, [cart, isAuthenticated]);
 
   const addToCart = async (product) => {

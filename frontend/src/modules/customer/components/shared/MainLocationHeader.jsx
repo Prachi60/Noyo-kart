@@ -7,6 +7,7 @@ import { useLocation } from "../../context/LocationContext";
 import { useProductDetail } from "../../context/ProductDetailContext";
 import { useSettings } from "@core/context/SettingsContext";
 import { cn } from "@/lib/utils";
+import { applyCloudinaryTransform } from "@/core/utils/imageUtils";
 import {
   buildHeaderGradient,
   buildMiniCartColor,
@@ -14,7 +15,6 @@ import {
   shiftHex,
 } from "../../utils/headerTheme";
 import LogoImage from "../../../../assets/Logo.png";
-import shoppingCartAnimation from "../../../../assets/lottie/shopping-cart.json";
 
 // MUI Icons
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
@@ -95,8 +95,9 @@ function CategoryNavColumn({
           />
         ) : (
           <img
-            src={cat.icon}
+            src={applyCloudinaryTransform(cat.icon)}
             alt={cat.name}
+            loading="lazy"
             className="h-5 w-5 object-contain md:h-6 md:w-6"
             style={{ opacity: isActive ? 1 : 0.62 }}
           />
@@ -148,6 +149,14 @@ const MainLocationHeader = ({
 }) => {
   const { scrollY } = useScroll();
   const [isLocationOpen, setIsLocationOpen] = useState(false);
+  const [cartAnimData, setCartAnimData] = useState(null);
+
+  // Dynamically load shopping-cart Lottie on mount
+  useEffect(() => {
+    import("../../../../assets/lottie/shopping-cart.json")
+      .then((m) => setCartAnimData(m.default))
+      .catch(() => {});
+  }, []);
   const { currentLocation, refreshLocation, isFetchingLocation } =
     useLocation();
   const { isOpen: isProductDetailOpen } = useProductDetail();
@@ -321,11 +330,15 @@ const MainLocationHeader = ({
             aria-label="Open cart"
             onClick={() => navigate("/checkout")}
             className="absolute top-3 right-5 sm:top-4 sm:right-6 md:top-5 md:right-8 z-20 w-12 h-12 sm:w-14 sm:h-14 md:w-20 md:h-20 cursor-pointer">
-            <Lottie
-              animationData={shoppingCartAnimation}
-              loop
-              className="w-full h-full pointer-events-none drop-shadow-[0_8px_18px_rgba(0,0,0,0.14)]"
-            />
+            {cartAnimData ? (
+              <Lottie
+                animationData={cartAnimData}
+                loop
+                className="w-full h-full pointer-events-none drop-shadow-[0_8px_18px_rgba(0,0,0,0.14)]"
+              />
+            ) : (
+              <div className="w-full h-full" />
+            )}
           </motion.button>
 
           {/* Desktop/Tablet Header Layout (md and above) */}
@@ -339,6 +352,7 @@ const MainLocationHeader = ({
                   <img
                     src={logoUrl}
                     alt={`${appName} Logo`}
+                    loading="lazy"
                     className="h-10 w-auto object-contain"
                   />
                 </div>

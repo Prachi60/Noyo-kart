@@ -8,6 +8,7 @@ import { useWishlist } from '../../context/WishlistContext';
 import { useToast } from '@shared/components/ui/Toast';
 import { useSettings } from '@core/context/SettingsContext';
 import { cn } from '@/lib/utils';
+import { applyCloudinaryTransform } from '@/core/utils/imageUtils';
 import { customerApi } from '../../services/customerApi';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
@@ -353,7 +354,7 @@ const ProductDetailSheet = () => {
                                                                 : 'border-gray-200/60 opacity-50 hover:opacity-90 bg-white/60'
                                                         )}
                                                     >
-                                                        <img src={img} alt="" className="w-full h-full object-contain p-1.5" />
+                                                        <img src={applyCloudinaryTransform(img)} alt="" loading="lazy" className="w-full h-full object-contain p-1.5" />
                                                     </motion.button>
                                                 ))}
                                             </div>
@@ -368,7 +369,7 @@ const ProductDetailSheet = () => {
                                                     animate={{ scale: 1, opacity: 1 }}
                                                     exit={{ scale: 0.93, opacity: 0 }}
                                                     transition={{ duration: 0.15 }}
-                                                    src={allImages[activeImageIndex]}
+                                                    src={applyCloudinaryTransform(allImages[activeImageIndex])}
                                                     alt={`${selectedProduct.name} ${activeImageIndex + 1}`}
                                                     className="w-full h-full object-contain mix-blend-multiply drop-shadow-2xl hover:scale-[1.03] transition-transform duration-500 absolute inset-0 m-auto p-12"
                                                 />
@@ -796,7 +797,7 @@ const ProductDetailSheet = () => {
                                                 initial={{ scale: 0.8, opacity: 0 }}
                                                 animate={{ scale: 1, opacity: 1 }}
                                                 transition={{ duration: 0.4 }}
-                                                src={img}
+                                                src={applyCloudinaryTransform(img)}
                                                 alt={`${selectedProduct.name} ${i + 1}`}
                                                 className="w-full h-full object-contain mix-blend-multiply drop-shadow-xl"
                                             />

@@ -2,6 +2,7 @@ import Seller from "../models/seller.js";
 import Transaction from "../models/transaction.js";
 import { handleResponse, calculateDistance } from "../utils/helper.js";
 import mongoose from "mongoose";
+import { invalidateSellerName } from "../services/entityNameCache.js";
 
 /* ===============================
    GET NEARBY SELLERS
@@ -190,6 +191,11 @@ export const updateSellerProfile = async (req, res) => {
     }
 
     const updatedSeller = await seller.save();
+
+    // Invalidate cached seller name in case shopName changed
+    invalidateSellerName(req.user.id).catch((err) => {
+      console.warn("[Seller] Name cache invalidation failed:", err.message);
+    });
 
     return handleResponse(
       res,
