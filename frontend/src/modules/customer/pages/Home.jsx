@@ -396,6 +396,27 @@ const MARQUEE_MESSAGES = [
   "Save Big on Essentials!",
 ];
 
+const EMPTY_HERO_CONFIG = {
+  banners: { items: [] },
+  categoryIds: [],
+};
+
+// In-memory Home cache survives SPA navigation and resets on browser refresh.
+// This avoids flashing static fallback data when users return to Home.
+const homePageDataCache = new Map();
+const headerSectionsMemoryCache = {};
+const heroConfigMemoryCache = {};
+
+const getHomePageDataCacheKey = (location) => {
+  const lat = Number(location?.latitude);
+  const lng = Number(location?.longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return "home:no-location";
+  return `home:${lat.toFixed(5)}:${lng.toFixed(5)}`;
+};
+
+const getCachedHomePageData = (location) =>
+  homePageDataCache.get(getHomePageDataCacheKey(location)) || null;
+
 const Home = () => {
   const { scrollY } = useScroll();
   const { isOpen: isProductDetailOpen } = useProductDetail();
@@ -403,6 +424,7 @@ const Home = () => {
   const { settings } = useSettings();
   const navigate = useNavigate();
   const quickCatsRef = useRef(null);
+  const cachedHomePageData = getCachedHomePageData(currentLocation);
 
   // useInViewAnimation for floating particle containers
   const { ref: particleContainerRef, isVisible: particlesVisible } =
@@ -427,23 +449,41 @@ const Home = () => {
     return () => observer.disconnect();
   }, []);
 
-  const [categories, setCategories] = useState([ALL_CATEGORY]);
-  const [activeCategory, setActiveCategory] = useState(ALL_CATEGORY);
-  const [products, setProducts] = useState([]);
-  const [quickCategories, setQuickCategories] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [experienceSections, setExperienceSections] = useState([]);
+  const [categories, setCategories] = useState(
+    () => cachedHomePageData?.categories || [ALL_CATEGORY],
+  );
+  const [activeCategory, setActiveCategory] = useState(
+    () => cachedHomePageData?.activeCategory || ALL_CATEGORY,
+  );
+  const [products, setProducts] = useState(
+    () => cachedHomePageData?.products || [],
+  );
+  const [quickCategories, setQuickCategories] = useState(
+    () => cachedHomePageData?.quickCategories || [],
+  );
+  const [isLoading, setIsLoading] = useState(() => !cachedHomePageData);
+  const [experienceSections, setExperienceSections] = useState(
+    () => cachedHomePageData?.experienceSections || [],
+  );
   const [headerSections, setHeaderSections] = useState([]);
-  const [heroConfig, setHeroConfig] = useState({
-    banners: { items: [] },
-    categoryIds: [],
-  });
+  const [heroConfig, setHeroConfig] = useState(
+    () =>
+      cachedHomePageData?.heroConfig ||
+      heroConfigMemoryCache.__home__ ||
+      EMPTY_HERO_CONFIG,
+  );
   const [mobileBannerIndex, setMobileBannerIndex] = useState(0);
   const [isInstantBannerJump, setIsInstantBannerJump] = useState(false);
-  const [categoryMap, setCategoryMap] = useState({});
-  const [subcategoryMap, setSubcategoryMap] = useState({});
+  const [categoryMap, setCategoryMap] = useState(
+    () => cachedHomePageData?.categoryMap || {},
+  );
+  const [subcategoryMap, setSubcategoryMap] = useState(
+    () => cachedHomePageData?.subcategoryMap || {},
+  );
   const [pendingReturn, setPendingReturn] = useState(null);
-  const [offerSections, setOfferSections] = useState([]);
+  const [offerSections, setOfferSections] = useState(
+    () => cachedHomePageData?.offerSections || [],
+  );
   const [noServiceData, setNoServiceData] = useState(null);
 
   // Dynamically load no-service Lottie when products are empty and not loading
@@ -493,7 +533,59 @@ const Home = () => {
     },
   ];
 
-  const fetchData = async () => {
+  const applyHomePageData = (data, { cacheKey, persist = true } = {}) => {
+    if (!data) return;
+
+    setCategoryMap(data.categoryMap || {});
+    setSubcategoryMap(data.subcategoryMap || {});
+    setCategories(data.categories || [ALL_CATEGORY]);
+    setQuickCategories(data.quickCategories || []);
+    setProducts(data.products || []);
+    setExperienceSections(data.experienceSections || []);
+    setOfferSections(data.offerSections || []);
+    if (data.heroConfig) setHeroConfig(data.heroConfig);
+
+    setActiveCategory((prev) => {
+      const stored = window.sessionStorage.getItem("experienceReturn");
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (parsed?.headerId) {
+            const match = (data.formattedHeaders || []).find(
+              (h) => h._id === parsed.headerId,
+            );
+            if (match) return match;
+          }
+        } catch (e) {}
+      }
+
+      if (!prev || prev._id === "all") {
+        return data.activeCategory || data.categories?.[0] || ALL_CATEGORY;
+      }
+
+      return (
+        (data.categories || []).find((cat) => cat._id === prev._id) ||
+        data.activeCategory ||
+        prev
+      );
+    });
+
+    if (persist && cacheKey) {
+      homePageDataCache.set(cacheKey, data);
+    }
+  };
+
+  const fetchData = async ({ forceRefresh = false } = {}) => {
+    const cacheKey = getHomePageDataCacheKey(currentLocation);
+    if (!forceRefresh) {
+      const cached = homePageDataCache.get(cacheKey);
+      if (cached) {
+        applyHomePageData(cached, { cacheKey, persist: false });
+        setIsLoading(false);
+        return;
+      }
+    }
+
     setIsLoading(true);
     try {
       const hasValidLocation =
@@ -523,6 +615,19 @@ const Home = () => {
           : Promise.resolve({ data: { results: [] } }),
       ]);
 
+      const nextHomeData = {
+        categories: [ALL_CATEGORY],
+        activeCategory: ALL_CATEGORY,
+        products: [],
+        quickCategories: [],
+        experienceSections: [],
+        offerSections: [],
+        categoryMap: {},
+        subcategoryMap: {},
+        formattedHeaders: [],
+        heroConfig: heroConfigMemoryCache.__home__ || EMPTY_HERO_CONFIG,
+      };
+
       if (catRes.data.success) {
         const dbCats = catRes.data.results || catRes.data.result || [];
 
@@ -536,8 +641,8 @@ const Home = () => {
             subMap[c._id] = c;
           }
         });
-        setCategoryMap(catMap);
-        setSubcategoryMap(subMap);
+        nextHomeData.categoryMap = catMap;
+        nextHomeData.subcategoryMap = subMap;
 
         // 1. Process Header Categories (Main Navigation)
         const formattedHeaders = dbCats
@@ -576,6 +681,7 @@ const Home = () => {
               banner: { ...meta.banner, textColor: "text-white" },
             };
           });
+        nextHomeData.formattedHeaders = formattedHeaders;
 
         // 1a. Merge admin-configured "All" header color into the static ALL category
         const allHeaderFromAdmin = formattedHeaders.find(
@@ -602,26 +708,8 @@ const Home = () => {
             ),
         );
 
-        setCategories([mergedAllCategory, ...headersWithoutAll]);
-
-        // If active category is "All", keep it in sync with admin color updates
-        setActiveCategory((prev) =>
-          !prev || prev._id === "all" ? mergedAllCategory : prev,
-        );
-
-        // If we have a stored header to restore (coming back from a category page), set it
-        const stored = window.sessionStorage.getItem("experienceReturn");
-        if (stored) {
-          try {
-            const parsed = JSON.parse(stored);
-            if (parsed && parsed.headerId) {
-              const match = formattedHeaders.find(
-                (h) => h._id === parsed.headerId,
-              );
-              if (match) setActiveCategory(match);
-            }
-          } catch (e) {}
-        }
+        nextHomeData.categories = [mergedAllCategory, ...headersWithoutAll];
+        nextHomeData.activeCategory = mergedAllCategory;
 
         // 2. Process Quick Navigation Categories (Horizontal Scroll)
         const formattedQuickCats = dbCats
@@ -633,7 +721,7 @@ const Home = () => {
               cat.image ||
               "https://cdn-icons-png.flaticon.com/128/2321/2321831.png",
           }));
-        setQuickCategories(formattedQuickCats);
+        nextHomeData.quickCategories = formattedQuickCats;
       }
 
       if (prodRes.data.success) {
@@ -658,21 +746,23 @@ const Home = () => {
           weight: p.weight || "1 unit",
           deliveryTime: "8-15 mins",
         }));
-        setProducts(formattedProds);
+        nextHomeData.products = formattedProds;
       }
 
       if (expRes && expRes.data && expRes.data.success) {
         const raw = expRes.data.result || expRes.data.results || expRes.data;
-        setExperienceSections(Array.isArray(raw) ? raw : []);
-      } else {
-        setExperienceSections([]);
+        nextHomeData.experienceSections = Array.isArray(raw) ? raw : [];
       }
 
       const sectionsList =
         sectionsRes?.data?.results ||
         sectionsRes?.data?.result ||
         sectionsRes?.data;
-      setOfferSections(Array.isArray(sectionsList) ? sectionsList : []);
+      nextHomeData.offerSections = Array.isArray(sectionsList)
+        ? sectionsList
+        : [];
+
+      applyHomePageData(nextHomeData, { cacheKey });
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -686,8 +776,8 @@ const Home = () => {
   }, [currentLocation?.latitude, currentLocation?.longitude]); // Refetch when location changes
 
   // Cache refs to avoid re-fetching on category tab switches
-  const headerSectionsCache = useRef({});
-  const heroConfigCache = useRef({});
+  const headerSectionsCache = useRef(headerSectionsMemoryCache);
+  const heroConfigCache = useRef(heroConfigMemoryCache);
 
   // Fetch header-specific experience sections when active header category changes
   useEffect(() => {
@@ -765,14 +855,24 @@ const Home = () => {
               }
             : { banners: { items: [] }, categoryIds: [] };
         heroConfigCache.current[cacheKey] = resolved;
+        if (cacheKey === "__home__") {
+          const homeCacheKey = getHomePageDataCacheKey(currentLocation);
+          const cachedHomeData = homePageDataCache.get(homeCacheKey);
+          if (cachedHomeData) {
+            homePageDataCache.set(homeCacheKey, {
+              ...cachedHomeData,
+              heroConfig: resolved,
+            });
+          }
+        }
         setHeroConfig(resolved);
       } catch (e) {
-        setHeroConfig({ banners: { items: [] }, categoryIds: [] });
+        setHeroConfig(EMPTY_HERO_CONFIG);
       }
     };
 
     fetchHeroConfig();
-  }, [activeCategory]);
+  }, [activeCategory, currentLocation?.latitude, currentLocation?.longitude]);
 
   // Autoplay for Mobile Banner Carousel (smooth, one-direction loop)
   useEffect(() => {
