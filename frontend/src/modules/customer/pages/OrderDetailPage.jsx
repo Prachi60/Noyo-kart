@@ -128,6 +128,9 @@ const matchesOrderIdentifier = (payloadOrderId, identifiers = []) => {
     .includes(normalizedPayloadId);
 };
 
+const getPrimaryPrintDetails = (printDetails) =>
+  Array.isArray(printDetails) ? printDetails[0] || null : printDetails || null;
+
 const OrderDetailPage = () => {
   const { orderId } = useParams();
   const [showInvoice, setShowInvoice] = useState(false);
@@ -984,11 +987,40 @@ const OrderDetailPage = () => {
                   <p className="text-slate-500 text-xs font-medium">
                     Qty: {item.quantity}
                   </p>
+                  {item.type === 'print' && getPrimaryPrintDetails(item.printDetails) && (
+                    <div className="mt-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                       <span>{getPrimaryPrintDetails(item.printDetails)?.options?.color ? "Color" : "B&W"}</span>
+                       <span>•</span>
+                       <span>{getPrimaryPrintDetails(item.printDetails)?.options?.doubleSided ? "Double" : "Single"}</span>
+                       <span>•</span>
+                       <span>{getPrimaryPrintDetails(item.printDetails)?.pageCount} Pages</span>
+                    </div>
+                  )}
                 </div>
                 <div className="text-right flex-shrink-0">
                   <p className="font-bold text-slate-900">
                     ₹{item.price * item.quantity}
                   </p>
+                  {item.type === 'print' && getPrimaryPrintDetails(item.printDetails) && (
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        try {
+                          const printDetails = getPrimaryPrintDetails(item.printDetails);
+                          const response = await customerApi.verifyPrintFile(
+                            order.orderId || order._id,
+                            printDetails?.fileId || printDetails?.publicId || printDetails?.fileMetaId,
+                          );
+                          window.open(response.data.result.url, '_blank');
+                        } catch (err) {
+                          toast.error("Failed to get secure link");
+                        }
+                      }}
+                      className="mt-2 h-8 w-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-700 hover:bg-slate-200 transition-colors"
+                    >
+                      <Download size={14} />
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

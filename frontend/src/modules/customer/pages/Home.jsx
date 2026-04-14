@@ -9,6 +9,7 @@ import {
   Heart,
   Snowflake,
   Dog,
+  Printer,
 } from "lucide-react";
 
 // MUI Icons (shared with admin & icon selector)
@@ -1129,10 +1130,40 @@ const Home = () => {
                   </motion.button>
                 </div>
 
-                <div
-                  ref={quickCatsRef}
-                  className="relative z-10 flex items-start gap-2.5 md:gap-3 lg:gap-4 overflow-x-auto no-scrollbar px-4 pb-3 pt-1 md:px-8 md:pb-4 snap-x scroll-smooth">
-                  {effectiveQuickCategories.map((cat, idx) => {
+                  <div
+                    ref={quickCatsRef}
+                    className="relative z-10 flex items-start gap-2.5 md:gap-3 lg:gap-4 overflow-x-auto no-scrollbar px-4 pb-3 pt-1 md:px-8 md:pb-4 snap-x scroll-smooth">
+                    
+                    {/* Instant Print Special Card */}
+                    <motion.div
+                      whileHover={{ y: -4 }}
+                      whileTap={{ scale: 0.96 }}
+                      onClick={() => navigate('/print-store')}
+                      className="flex flex-col items-center gap-1 min-w-[84px] md:min-w-[112px] lg:min-w-[128px] cursor-pointer group/item snap-start"
+                    >
+                      <div
+                        className="relative w-[84px] h-[96px] md:w-[112px] md:h-[126px] lg:w-[128px] lg:h-[140px] rounded-[22px] shadow-[0_10px_22px_rgba(255,30,86,0.15)] border-2 border-rose-100 flex items-start justify-center p-2 transition-all duration-300 group-hover/item:-translate-y-1 group-hover/item:shadow-[0_16px_30px_rgba(255,30,86,0.2)] overflow-hidden bg-rose-50"
+                        style={{
+                          backgroundImage: `linear-gradient(135deg, rgba(255,255,255,0.96) 0%, rgba(255,255,255,0.6) 24%, rgba(255,255,255,0.15) 100%), linear-gradient(135deg, #FF1E56, #FF4D6D, #FF8FA3)`,
+                        }}
+                      >
+                        <div className="absolute inset-0 bg-white/10 pointer-events-none" />
+                        <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-white/20 backdrop-blur-md rounded-lg text-[7px] font-black text-white uppercase tracking-widest border border-white/30 z-20">
+                          New
+                        </div>
+                        <Printer
+                          className="absolute left-1/2 top-3 z-10 h-[56px] w-[56px] -translate-x-1/2 text-white drop-shadow-[0_4px_10px_rgba(0,0,0,0.2)] group-hover/item:scale-110 transition-transform duration-500"
+                          strokeWidth={2.5}
+                        />
+                        <div className="absolute inset-x-2 bottom-1.5 z-20 text-center">
+                          <span className="block text-[10px] md:text-[11px] lg:text-[12px] font-black text-white leading-tight whitespace-nowrap overflow-hidden text-ellipsis drop-shadow-[0_1px_4px_rgba(0,0,0,0.2)]">
+                            Instant Print
+                          </span>
+                        </div>
+                      </div>
+                    </motion.div>
+
+                    {effectiveQuickCategories.map((cat, idx) => {
                     const palette =
                       quickCategoryPalettes[idx % quickCategoryPalettes.length];
                     return (

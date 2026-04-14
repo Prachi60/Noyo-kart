@@ -16,6 +16,7 @@ import {
 import { handleOnlineOrderFinance } from "./finance/orderFinanceService.js";
 import { DEFAULT_SELLER_TIMEOUT_MS, WORKFLOW_STATUS } from "../constants/orderWorkflow.js";
 import { afterPlaceOrderV2 } from "./orderWorkflowService.js";
+import { materializeMissingPrintOrdersForCheckoutGroup } from "./printOrderRecoveryService.js";
 import { releaseReservedStockForOrder } from "./stockService.js";
 import { emitNotificationEvent } from "../modules/notifications/notification.emitter.js";
 import { NOTIFICATION_EVENTS } from "../modules/notifications/notification.constants.js";
@@ -106,6 +107,12 @@ async function resolvePaymentTarget(orderRef) {
     }
     let orders = await Order.find({ checkoutGroupId })
       .sort({ checkoutGroupIndex: 1, createdAt: 1 });
+
+    if (orders.length === 0) {
+      await materializeMissingPrintOrdersForCheckoutGroup(checkoutGroup);
+      orders = await Order.find({ checkoutGroupId })
+        .sort({ checkoutGroupIndex: 1, createdAt: 1 });
+    }
 
     if (orders.length === 0) {
       const fallbackClauses = [];

@@ -701,13 +701,11 @@ export async function markArrivedAtStoreAtomic(deliveryId, orderId, lat, lng) {
   }
   const [slng, slat] = coords;
   const d = distanceMeters(lat, lng, slat, slng);
-  /*
   if (d > PICKUP_RADIUS_M()) {
     const err = new Error(`Too far from store (>${PICKUP_RADIUS_M()}m)`);
     err.statusCode = 400;
     throw err;
   }
-  */
 
   const now = new Date();
   const updated = await Order.findOneAndUpdate(
@@ -791,13 +789,11 @@ export async function confirmPickupAtomic(deliveryId, orderId, lat, lng) {
   }
   const [slng, slat] = coords;
   const d = distanceMeters(lat, lng, slat, slng);
-  /*
   if (d > PICKUP_RADIUS_M()) {
     const err = new Error(`Too far from store (>${PICKUP_RADIUS_M()}m)`);
     err.statusCode = 400;
     throw err;
   }
-  */
 
   const now = new Date();
   const updated = await Order.findOneAndUpdate(

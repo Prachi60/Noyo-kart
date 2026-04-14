@@ -48,6 +48,8 @@ export async function getNearbySellerIdsForCustomer(lat, lng) {
 
   const sellers = await Seller.find({
     isActive: true,
+    isVerified: true,
+    applicationStatus: "approved",
     location: {
       $near: {
         $geometry: {

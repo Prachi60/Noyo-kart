@@ -56,6 +56,52 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import emptyBoxAnimation from "../../../assets/lottie/Empty box.json";
 
+const getPrimaryPrintDetails = (printDetails) =>
+  Array.isArray(printDetails) ? printDetails[0] || null : printDetails || null;
+
+const getCheckoutPrintDetails = (item) =>
+  getPrimaryPrintDetails(item?.printDetails) || {
+    fileMetaId: item?.fileMetaId,
+    fileId: item?.publicId,
+    publicId: item?.publicId,
+    fileUrl: item?.fileUrl,
+    fileName: item?.name,
+    pageCount: item?.pageCount,
+    copies: item?.copies,
+    options: {
+      color: Boolean(item?.isColor),
+      doubleSided: Boolean(item?.isDoubleSided),
+    },
+  };
+
+const getInitialPrintDraft = () => {
+  if (typeof window === "undefined") return null;
+
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("type") !== "print") return null;
+
+  const rawDraft = window.sessionStorage.getItem("print_order_draft");
+  if (!rawDraft) return null;
+
+  try {
+    return JSON.parse(rawDraft);
+  } catch {
+    return null;
+  }
+};
+
+const LEGACY_CHECKOUT_NAME = "Harshvardhan Panchal";
+const LEGACY_CHECKOUT_PHONE = "6268423925";
+
+const createBlankCheckoutAddress = () => ({
+  type: "Home",
+  name: "",
+  address: "",
+  landmark: "",
+  city: "",
+  phone: "",
+});
+
 const CheckoutPage = () => {
   const {
     cart,
@@ -106,23 +152,11 @@ const CheckoutPage = () => {
   const [pricingPreview, setPricingPreview] = useState(null);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const postOrderNavigateRef = useRef(null);
-  const [currentAddress, setCurrentAddress] = useState({
-    type: "Home",
-    name: "Harshvardhan Panchal",
-    address: "81 Pipliyahana Road, Near 214",
-    landmark: "",
-    city: "Indore - 452018",
-    phone: "6268423925",
-  });
+  const [printDraft, setPrintDraft] = useState(() => getInitialPrintDraft());
+  const [isPrintOrder, setIsPrintOrder] = useState(() => Boolean(getInitialPrintDraft()));
+  const [currentAddress, setCurrentAddress] = useState(createBlankCheckoutAddress);
   const [isEditAddressOpen, setIsEditAddressOpen] = useState(false);
-  const [editAddressForm, setEditAddressForm] = useState({
-    type: "Home",
-    name: "Harshvardhan Panchal",
-    address: "81 Pipliyahana Road, Near 214",
-    landmark: "",
-    city: "Indore - 452018",
-    phone: "6268423925",
-  });
+  const [editAddressForm, setEditAddressForm] = useState(createBlankCheckoutAddress);
   const [showRecipientForm, setShowRecipientForm] = useState(false);
   const [recipientData, setRecipientData] = useState({
     // city: 'Select city',
@@ -176,11 +210,18 @@ const CheckoutPage = () => {
         ]),
   ];
 
-  const tipAmounts = [
+  const legacyTipAmounts = [
     { value: 0, label: "No Tip" },
     { value: 10, label: "₹10" },
     { value: 20, label: "₹20" },
     { value: 30, label: "₹30" },
+  ];
+
+  const tipAmounts = [
+    { value: 0, label: "No Tip" },
+    { value: 10, label: "Rs 10" },
+    { value: 20, label: "Rs 20" },
+    { value: 30, label: "Rs 30" },
   ];
 
   const deliveryFee = pricingPreview?.deliveryFeeCharged || 0;
@@ -192,17 +233,79 @@ const CheckoutPage = () => {
     : 0;
   const totalAmount = pricingPreview?.grandTotal || 0;
 
-  const displayCartItems = showAllCartItems ? cart : cart;
+  const displayCartItems = isPrintOrder
+    ? printDraft?.items || []
+    : showAllCartItems
+      ? cart
+      : cart;
 
   const RECIPIENT_STORAGE_KEY = "appzeto_checkout_recipient_v1";
 
   // Derived display values for primary delivery card
   const displayName = savedRecipient?.name || currentAddress.name;
   const displayPhone =
-    savedRecipient?.phone || currentAddress.phone || "6268423925";
+    savedRecipient?.phone || currentAddress.phone || user?.phone || "";
   const displayAddress = savedRecipient
     ? `${savedRecipient.completeAddress}${savedRecipient.landmark ? `, ${savedRecipient.landmark}` : ""}${savedRecipient.pincode ? ` - ${savedRecipient.pincode}` : ""}`
     : `${currentAddress.address}${currentAddress.landmark ? `, ${currentAddress.landmark}` : ""}, ${currentAddress.city}`;
+
+  // Print Order Logic
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('type') === 'print') {
+      const draft = sessionStorage.getItem('print_order_draft');
+      if (draft) {
+        setPrintDraft(JSON.parse(draft));
+        setIsPrintOrder(true);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    setCurrentAddress((prev) => {
+      const shouldHydrateIdentity =
+        !prev.name ||
+        !prev.phone ||
+        prev.name === LEGACY_CHECKOUT_NAME ||
+        prev.phone === LEGACY_CHECKOUT_PHONE;
+
+      const shouldHydrateLocation =
+        !prev.address &&
+        !prev.city &&
+        currentLocation?.name;
+
+      if (!shouldHydrateIdentity && !shouldHydrateLocation) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        ...(shouldHydrateIdentity
+          ? {
+              name: user?.name || prev.name || "",
+              phone: user?.phone || prev.phone || "",
+            }
+          : {}),
+        ...(shouldHydrateLocation
+          ? {
+              address: currentLocation.name || prev.address,
+              city: [currentLocation.city, currentLocation.state, currentLocation.pincode]
+                .filter(Boolean)
+                .join(", "),
+              ...(typeof currentLocation.latitude === "number" &&
+              typeof currentLocation.longitude === "number"
+                ? {
+                    location: {
+                      lat: currentLocation.latitude,
+                      lng: currentLocation.longitude,
+                    },
+                  }
+                : {}),
+            }
+          : {}),
+      };
+    });
+  }, [user?.name, user?.phone, currentLocation]);
 
   useEffect(() => {
     if (!paymentMethods.length) return;
@@ -624,7 +727,7 @@ const CheckoutPage = () => {
   }, [cart]);
 
   useEffect(() => {
-    if (!isAuthenticated || cart.length === 0) {
+    if (!isAuthenticated || (cart.length === 0 && !isPrintOrder)) {
       setPricingPreview(null);
       return;
     }
@@ -633,7 +736,28 @@ const CheckoutPage = () => {
       try {
         setIsPreviewLoading(true);
           const payload = {
-            items: cart.map((item) => ({
+            items: isPrintOrder ? printDraft.items.map(item => ({
+              name: item.name,
+              quantity: item.copies,
+              price: item.price || 0,
+              image: item.image || "https://cdn-icons-png.flaticon.com/128/2321/2321831.png",
+              type: 'print',
+              printDetails: {
+                fileMetaId: item.fileMetaId,
+                fileId: item.publicId,
+                publicId: item.publicId,
+                fileUrl: item.fileUrl,
+                fileName: item.name,
+                pageCount: item.pageCount,
+                copies: item.copies,
+                options: {
+                  color: item.isColor,
+                  doubleSided: item.isDoubleSided
+                },
+                isColor: item.isColor,
+                isDoubleSided: item.isDoubleSided
+              }
+            })) : cart.map((item) => ({
               product: item.id || item._id,
               name: item.name,
               variantSku: String(item.variantSku || "").trim(),
@@ -647,6 +771,7 @@ const CheckoutPage = () => {
             tipAmount: selectedTip,
             paymentMode: selectedPayment === "online" ? "ONLINE" : "COD",
             timeSlot: selectedTimeSlot,
+            ...(isPrintOrder ? { sellerId: printDraft.sellerId } : {})
           };
         const res = await customerApi.checkoutPreview(payload);
         if (res.data?.success) {
@@ -670,6 +795,8 @@ const CheckoutPage = () => {
     savedRecipient,
     currentAddress,
     currentLocation,
+    isPrintOrder,
+    printDraft
   ]);
 
   const handlePlaceOrder = async () => {
@@ -689,7 +816,28 @@ const CheckoutPage = () => {
           timeSlot: selectedTimeSlot,
           walletAmount: walletAmountToUse,
           ...(selectedCoupon?.couponId ? { couponId: selectedCoupon.couponId } : {}),
-          items: cart.map((item) => ({
+          items: isPrintOrder ? printDraft.items.map(item => ({
+            name: item.name,
+            quantity: item.copies,
+            price: item.price || 0,
+            image: item.image || "https://cdn-icons-png.flaticon.com/128/2321/2321831.png",
+            type: 'print',
+            printDetails: {
+              fileMetaId: item.fileMetaId,
+              fileId: item.publicId,
+              publicId: item.publicId,
+              fileUrl: item.fileUrl,
+              fileName: item.name,
+              pageCount: item.pageCount,
+              copies: item.copies,
+              options: {
+                color: item.isColor,
+                doubleSided: item.isDoubleSided
+              },
+              isColor: item.isColor,
+              isDoubleSided: item.isDoubleSided
+            }
+          })) : cart.map((item) => ({
             product: item.id || item._id,
             name: item.name,
             variantSku: String(item.variantSku || "").trim(),
@@ -697,6 +845,7 @@ const CheckoutPage = () => {
             price: item.price,
             image: item.image,
           })),
+          ...(isPrintOrder ? { sellerId: printDraft.sellerId } : {})
         };
 
       const response = await customerApi.createOrder(orderData);
@@ -710,8 +859,6 @@ const CheckoutPage = () => {
           result.paymentRef ||
           (orderCount > 1 ? result.checkoutGroup?.checkoutGroupId || result.checkoutGroupId : mainOrderId) ||
           mainOrderId;
-        
-        console.log("[CheckoutPage] Order placed. Result:", result, "Target ID:", mainOrderId);
         
         if (!mainOrderId) {
           console.error("[CheckoutPage] CRITICAL: Order ID missing from response!", result);
@@ -730,6 +877,7 @@ const CheckoutPage = () => {
             
             if (paymentRes.data.success && paymentRes.data.result?.redirectUrl) {
               clearCart();
+              sessionStorage.removeItem('print_order_draft');
               window.location.href = paymentRes.data.result.redirectUrl;
               return; // End function here as we are redirecting
             } else {
@@ -761,6 +909,7 @@ const CheckoutPage = () => {
 
         // COD Flow
         clearCart();
+        sessionStorage.removeItem('print_order_draft');
         showToast(`Order placed — waiting for seller to accept.`, "success");
         setOrderId(mainOrderId);
         setShowSuccess(true);
@@ -857,7 +1006,7 @@ const CheckoutPage = () => {
 
   // Map-based precise location has been removed; manual addresses are used instead.
 
-  if (cart.length === 0 && !showSuccess) {
+  if (displayCartItems.length === 0 && !showSuccess) {
     return (
       <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans">
         {/* Artistic Background Elements */}
@@ -973,7 +1122,7 @@ const CheckoutPage = () => {
               <div className="flex items-center gap-2 mt-1">
                 <span className="h-1.5 w-1.5 bg-cyan-400 rounded-full animate-pulse" />
                 <p className="text-cyan-100/90 text-[10px] md:text-xs font-black tracking-[0.2em] uppercase">
-                  {cartCount} {cartCount === 1 ? "Item" : "Items"} in cart
+                  {isPrintOrder ? printDraft?.items?.length : cartCount} { (isPrintOrder ? printDraft?.items?.length : cartCount) === 1 ? "Item" : "Items"}
                 </p>
               </div>
             </div>
@@ -1240,7 +1389,7 @@ const CheckoutPage = () => {
             <motion.div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-4">
               {displayCartItems.map((item) => (
                 <div
-                  key={`${item.id}::${String(item.variantSku || "").trim()}`}
+                  key={`${item.id || item.publicId || item.name}::${String(item.variantSku || "").trim()}`}
                   className="flex items-start gap-3 pb-4 border-b border-slate-100 last:border-0 last:pb-0">
                   <div className="h-20 w-20 rounded-xl overflow-hidden bg-slate-50 flex-shrink-0">
                     <img
@@ -1253,37 +1402,69 @@ const CheckoutPage = () => {
                     <h4 className="font-bold text-slate-800 mb-1">
                       {item.name}
                     </h4>
-                    {(item.variantName || item.variantSku) && (
-                      <p className="text-xs text-slate-500 mb-1">
-                        Variant: {item.variantName || item.variantSku}
-                      </p>
+                    {item.type === 'print' && getCheckoutPrintDetails(item) ? (
+                      <div className="flex flex-col gap-1">
+                        {(() => {
+                          const printDetails = getCheckoutPrintDetails(item);
+                          return (
+                            <>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-black bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md uppercase tracking-wider">
+                            {printDetails?.options?.color ? "Color" : "B&W"}
+                          </span>
+                          <span className="text-[10px] font-black bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md uppercase tracking-wider">
+                            {printDetails?.pageCount} Pages
+                          </span>
+                        </div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">
+                          {printDetails?.options?.doubleSided ? "Double Sided" : "Single Sided"}
+                        </p>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    ) : (
+                      <>
+                        {(item.variantName || item.variantSku) && (
+                          <p className="text-xs text-slate-500 mb-1">
+                            Variant: {item.variantName || item.variantSku}
+                          </p>
+                        )}
+                        <button
+                          onClick={() => handleMoveToWishlist(item)}
+                          className="text-xs text-slate-500 underline hover:text-[#45B0E2] transition-colors">
+                          Move to wishlist
+                        </button>
+                      </>
                     )}
-                    <button
-                      onClick={() => handleMoveToWishlist(item)}
-                      className="text-xs text-slate-500 underline hover:text-[#45B0E2] transition-colors">
-                      Move to wishlist
-                    </button>
                   </div>
                   <div className="flex flex-col items-end gap-2">
-                    <div className="flex items-center gap-2 bg-[#45B0E2] rounded-lg px-2 py-1">
-                      <button
-                        onClick={() =>
-                          item.quantity > 1
-                            ? updateQuantity(item.id, -1, item.variantSku)
-                            : removeFromCart(item.id, item.variantSku)
-                        }
-                        className="text-white p-1 hover:bg-white/20 rounded transition-colors">
-                        <Minus size={14} strokeWidth={3} />
-                      </button>
-                      <span className="text-white font-bold min-w-[20px] text-center">
-                        {item.quantity}
-                      </span>
-                      <button
-                        onClick={() => updateQuantity(item.id, 1, item.variantSku)}
-                        className="text-white p-1 hover:bg-white/20 rounded transition-colors">
-                        <Plus size={14} strokeWidth={3} />
-                      </button>
-                    </div>
+                    {item.type === 'print' ? (
+                       <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-100">
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Copies:</span>
+                          <span className="text-sm font-black text-slate-900">{item.quantity || item.copies || getCheckoutPrintDetails(item)?.copies || 1}</span>
+                       </div>
+                    ) : (
+                      <div className="flex items-center gap-2 bg-[#45B0E2] rounded-lg px-2 py-1">
+                        <button
+                          onClick={() =>
+                            item.quantity > 1
+                              ? updateQuantity(item.id, -1, item.variantSku)
+                              : removeFromCart(item.id, item.variantSku)
+                          }
+                          className="text-white p-1 hover:bg-white/20 rounded transition-colors">
+                          <Minus size={14} strokeWidth={3} />
+                        </button>
+                        <span className="text-white font-bold min-w-[20px] text-center">
+                          {item.quantity}
+                        </span>
+                        <button
+                          onClick={() => updateQuantity(item.id, 1, item.variantSku)}
+                          className="text-white p-1 hover:bg-white/20 rounded transition-colors">
+                          <Plus size={14} strokeWidth={3} />
+                        </button>
+                      </div>
+                    )}
                     {(() => {
                       const mrp = Number(item.price || 0);
                       const sale = Number(item.salePrice || 0);

@@ -38,6 +38,9 @@ import { DatePicker } from "@/components/ui/date-picker";
 
 
 const Orders = () => {
+    const getPrimaryPrintDetails = (printDetails) =>
+        Array.isArray(printDetails) ? printDetails[0] || null : printDetails || null;
+
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('All');
@@ -97,7 +100,9 @@ const Orders = () => {
                     name: item.name,
                     price: item.price,
                     qty: item.quantity,
-                    image: item.image
+                    image: item.image,
+                    type: item.type,
+                    printDetails: item.printDetails
                 })),
                 total: order.pricing?.total || 0,
                 status: getLegacyStatusFromOrder(order),
@@ -195,6 +200,20 @@ const Orders = () => {
             default: return 'secondary';
         }
     };
+
+    const getSellerStatusOptions = (order) => {
+        if (order?.workflowVersion >= 2) {
+            if (order.status?.toLowerCase() === 'pending') {
+                return ['pending', 'confirmed', 'cancelled'];
+            }
+            return [order.status?.toLowerCase() || 'pending'];
+        }
+
+        return ['pending', 'confirmed', 'packed', 'out_for_delivery', 'delivered', 'cancelled'];
+    };
+
+    const isSellerStatusEditable = (order) =>
+        !order?.workflowVersion || order.workflowVersion < 2 || order.status?.toLowerCase() === 'pending';
 
     const handleViewDetails = (order) => {
         setSelectedOrder(order);
@@ -470,19 +489,20 @@ const Orders = () => {
                                                         value={order.status}
                                                         onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
                                                         onClick={(e) => e.stopPropagation()}
+                                                        disabled={!isSellerStatusEditable(order)}
                                                         className={cn(
-                                                            "w-full min-w-[100px] text-[10px] pl-2 pr-6 py-1.5 rounded-lg font-black uppercase cursor-pointer appearance-none border outline-none",
+                                                            "w-full min-w-[100px] text-[10px] pl-2 pr-6 py-1.5 rounded-lg font-black uppercase appearance-none border outline-none",
+                                                            isSellerStatusEditable(order) ? "cursor-pointer" : "cursor-not-allowed opacity-70",
                                                             order.status === 'pending' ? "bg-amber-100 text-amber-700" :
                                                                 order.status === 'delivered' ? "bg-brand-100 text-brand-700" :
                                                                     order.status === 'cancelled' ? "bg-rose-100 text-rose-700" : "bg-slate-100 text-slate-700"
                                                         )}
                                                     >
-                                                        <option value="pending">Pending</option>
-                                                        <option value="confirmed">Confirmed</option>
-                                                        <option value="packed">Packed</option>
-                                                        <option value="out_for_delivery">Out</option>
-                                                        <option value="delivered">Delivered</option>
-                                                        <option value="cancelled">Cancelled</option>
+                                                        {getSellerStatusOptions(order).map((statusOption) => (
+                                                            <option key={statusOption} value={statusOption}>
+                                                                {statusOption === 'out_for_delivery' ? 'Out' : statusOption.replaceAll('_', ' ')}
+                                                            </option>
+                                                        ))}
                                                     </select>
                                                     <button
                                                         onClick={() => handleViewDetails(order)}
@@ -556,8 +576,10 @@ const Orders = () => {
                                                             <select
                                                                 value={order.status}
                                                                 onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
+                                                                disabled={!isSellerStatusEditable(order)}
                                                                 className={cn(
-                                                                    "w-full text-[10px] pl-2.5 pr-8 py-1.5 rounded-full font-black uppercase tracking-widest cursor-pointer appearance-none focus:ring-2 focus:ring-offset-1 transition-all border-none outline-none shadow-sm",
+                                                                    "w-full text-[10px] pl-2.5 pr-8 py-1.5 rounded-full font-black uppercase tracking-widest appearance-none focus:ring-2 focus:ring-offset-1 transition-all border-none outline-none shadow-sm",
+                                                                    isSellerStatusEditable(order) ? "cursor-pointer" : "cursor-not-allowed opacity-70",
                                                                     order.status === 'pending' ? "bg-amber-100 text-amber-700 focus:ring-amber-200" :
                                                                         order.status === 'confirmed' ? "bg-blue-100 text-blue-700 focus:ring-blue-200" :
                                                                             order.status === 'packed' ? "bg-indigo-100 text-indigo-700 focus:ring-indigo-200" :
@@ -567,12 +589,11 @@ const Orders = () => {
                                                                                             "bg-slate-100 text-slate-700 focus:ring-slate-200"
                                                                 )}
                                                             >
-                                                                <option value="pending">Pending</option>
-                                                                <option value="confirmed">Confirmed</option>
-                                                                <option value="packed">Packed</option>
-                                                                <option value="out_for_delivery">Out for Delivery</option>
-                                                                <option value="delivered">Delivered</option>
-                                                                <option value="cancelled">Cancelled</option>
+                                                                {getSellerStatusOptions(order).map((statusOption) => (
+                                                                    <option key={statusOption} value={statusOption}>
+                                                                        {statusOption.replaceAll('_', ' ')}
+                                                                    </option>
+                                                                ))}
                                                             </select>
                                                             <HiOutlineChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none opacity-60" />
                                                         </div>
@@ -837,8 +858,11 @@ const Orders = () => {
 
                                         <h4 className="text-xs font-black text-slate-600 uppercase tracking-widest mb-3 sm:mb-4">Items Ordered ({selectedOrder.items.length})</h4>
                                         <div className="space-y-3 max-h-52 sm:max-h-64 overflow-y-auto pr-1">
-                                            {selectedOrder.items.map((item, idx) => (
-                                                <div key={idx} className="flex items-center justify-between p-3 bg-white ring-1 ring-slate-100 rounded-2xl group hover:shadow-md transition-all">
+                                            {selectedOrder.items.map((item, idx) => {
+                                                const printDetails = getPrimaryPrintDetails(item.printDetails);
+                                                return (
+                                                <React.Fragment key={idx}>
+                                                <div className="flex items-center justify-between p-3 bg-white ring-1 ring-slate-100 rounded-2xl group hover:shadow-md transition-all">
                                                     <div className="flex items-center gap-4">
                                                         <div className="h-12 w-12 rounded-xl overflow-hidden bg-slate-50 ring-1 ring-slate-200">
                                                             <img src={item.image} alt={item.name} className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500" />
@@ -850,9 +874,52 @@ const Orders = () => {
                                                     </div>
                                                     <div className="text-right">
                                                         <p className="text-xs font-black text-slate-900">₹{(item.price * item.qty).toFixed(2)}</p>
+                                                        {item.type === 'print' && printDetails && (
+                                                            <button
+                                                                onClick={async (e) => {
+                                                                    e.stopPropagation();
+                                                                    try {
+                                                                        const response = await sellerApi.verifyPrintFile(
+                                                                            selectedOrder.id || selectedOrder._id,
+                                                                            printDetails.fileId || printDetails.publicId || printDetails.fileMetaId,
+                                                                        );
+                                                                        window.open(response.data.result.url, '_blank');
+                                                                    } catch (err) {
+                                                                        showToast("Failed to get secure download link", "error");
+                                                                    }
+                                                                }}
+                                                                className="mt-2 flex items-center gap-1.5 px-3 py-1 bg-primary text-white text-[10px] font-black rounded-lg hover:scale-105 active:scale-95 transition-all shadow-sm"
+                                                            >
+                                                                <HiOutlinePrinter className="h-3 w-3" />
+                                                                DOWNLOAD
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </div>
-                                            ))}
+                                                {item.type === 'print' && printDetails && (
+                                                    <div className="mx-3 mb-3 p-3 bg-slate-50 border border-slate-100 rounded-xl">
+                                                        <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                                                            <div className="flex justify-between items-center">
+                                                                <span className="text-[10px] font-bold text-slate-500 uppercase">Pages</span>
+                                                                <span className="text-[10px] font-black text-slate-900">{printDetails.pageCount}</span>
+                                                            </div>
+                                                            <div className="flex justify-between items-center">
+                                                                <span className="text-[10px] font-bold text-slate-500 uppercase">Color</span>
+                                                                <span className="text-[10px] font-black text-slate-900">{printDetails?.options?.color ? "Yes" : "B&W"}</span>
+                                                            </div>
+                                                            <div className="flex justify-between items-center">
+                                                                <span className="text-[10px] font-bold text-slate-500 uppercase">Layout</span>
+                                                                <span className="text-[10px] font-black text-slate-900">{printDetails?.options?.doubleSided ? "Double" : "Single"}</span>
+                                                            </div>
+                                                            <div className="flex justify-between items-center">
+                                                                <span className="text-[10px] font-bold text-slate-500 uppercase">Copies</span>
+                                                                <span className="text-[10px] font-black text-slate-900">{item.qty}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </React.Fragment>
+                                            )})}
                                         </div>
                                     </div>
 
@@ -864,8 +931,10 @@ const Orders = () => {
                                                 <select
                                                     value={selectedOrder.status.toLowerCase()}
                                                     onChange={(e) => handleStatusUpdate(selectedOrder.id, e.target.value)}
+                                                    disabled={!isSellerStatusEditable(selectedOrder)}
                                                     className={cn(
-                                                        "w-full text-xs pl-3 pr-8 py-2 rounded-xl font-black uppercase tracking-wider border appearance-none cursor-pointer focus:ring-2 focus:ring-offset-1 transition-all outline-none shadow-sm",
+                                                        "w-full text-xs pl-3 pr-8 py-2 rounded-xl font-black uppercase tracking-wider border appearance-none focus:ring-2 focus:ring-offset-1 transition-all outline-none shadow-sm",
+                                                        isSellerStatusEditable(selectedOrder) ? "cursor-pointer" : "cursor-not-allowed opacity-70",
                                                         getStatusColor(selectedOrder.status) === 'warning' ? "bg-amber-100 text-amber-700 focus:ring-amber-200" :
                                                             getStatusColor(selectedOrder.status) === 'info' ? "bg-blue-100 text-blue-700 focus:ring-blue-200" :
                                                                 getStatusColor(selectedOrder.status) === 'primary' ? "bg-indigo-100 text-indigo-700 focus:ring-indigo-200" :
@@ -875,12 +944,11 @@ const Orders = () => {
                                                                                 "bg-slate-100 text-slate-700 focus:ring-slate-200"
                                                     )}
                                                 >
-                                                    <option value="pending">Pending</option>
-                                                    <option value="confirmed">Confirmed</option>
-                                                    <option value="packed">Packed</option>
-                                                    <option value="out_for_delivery">Out for Delivery</option>
-                                                    <option value="delivered">Delivered</option>
-                                                    <option value="cancelled">Cancelled</option>
+                                                    {getSellerStatusOptions(selectedOrder).map((statusOption) => (
+                                                        <option key={statusOption} value={statusOption}>
+                                                            {statusOption.replaceAll('_', ' ')}
+                                                        </option>
+                                                    ))}
                                                 </select>
                                                 <HiOutlineChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none opacity-60" />
                                             </div>

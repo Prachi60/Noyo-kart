@@ -1,12 +1,273 @@
 import Seller from "../models/seller.js";
 import Category from "../models/category.js";
+import FileMeta from "../models/fileMeta.js";
 import { distanceMeters } from "../utils/geoUtils.js";
 import { HANDLING_FEE_STRATEGY } from "../constants/finance.js";
 import {
   calculateHandlingFee,
+  calculateCustomerDeliveryFee,
   generateOrderPaymentBreakdown,
   hydrateOrderItems,
 } from "./finance/pricingService.js";
+import { calculatePrintPrice, hasConfiguredPrintService } from "./printService.js";
+import { getOrCreateFinanceSettings } from "./finance/financeSettingsService.js";
+
+const DEFAULT_PRINT_IMAGE =
+  "https://cdn-icons-png.flaticon.com/128/2321/2321831.png";
+
+function isPrintItem(item = {}) {
+  return String(item?.type || "").toLowerCase() === "print" || Boolean(item?.printDetails);
+}
+
+function getCheckoutMode(orderItems = []) {
+  const items = Array.isArray(orderItems) ? orderItems.filter(Boolean) : [];
+  const printCount = items.filter(isPrintItem).length;
+  if (printCount === 0) return "product";
+  if (printCount === items.length) return "print";
+  const err = new Error("Mixed product and print checkout is not supported yet");
+  err.statusCode = 400;
+  throw err;
+}
+
+function getPrimaryPrintDetails(item = {}) {
+  if (Array.isArray(item?.printDetails)) {
+    return item.printDetails[0] || {};
+  }
+  return item?.printDetails || {};
+}
+
+function normalizePrintOptions(item = {}, details = {}) {
+  return {
+    color: Boolean(details?.options?.color ?? details?.isColor ?? item?.isColor ?? false),
+    doubleSided: Boolean(
+      details?.options?.doubleSided ?? details?.isDoubleSided ?? item?.isDoubleSided ?? false,
+    ),
+  };
+}
+
+async function hydratePrintOrderItems(
+  orderItems = [],
+  { address = {}, sellerId = null, customerId = null, session = null } = {},
+) {
+  const normalizedSellerId = String(sellerId || "").trim();
+  if (!normalizedSellerId) {
+    const err = new Error("sellerId is required for print checkout");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const sellerQuery = Seller.findById(normalizedSellerId)
+    .select("shopName serviceRadius location isOnline isAcceptingOrders services")
+    .lean();
+  if (session && typeof sellerQuery.session === "function") sellerQuery.session(session);
+  const seller = await sellerQuery;
+  if (!seller) {
+    const err = new Error("Print seller not found");
+    err.statusCode = 404;
+    throw err;
+  }
+  if (
+    !seller?.services?.print?.enabled ||
+    !hasConfiguredPrintService(seller?.services?.print) ||
+    !seller?.isOnline ||
+    !seller?.isAcceptingOrders
+  ) {
+    const err = new Error("Selected seller is not available for print orders");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const distanceKm = await computeDistanceKmForSeller({
+    sellerId: normalizedSellerId,
+    addressLocation: address?.location,
+    session,
+  });
+
+  const normalizedItems = [];
+  for (let index = 0; index < orderItems.length; index += 1) {
+    const item = orderItems[index];
+    const details = getPrimaryPrintDetails(item);
+    const fileMetaId = String(details?.fileMetaId || item?.fileMetaId || "").trim();
+    const publicId = String(details?.publicId || details?.fileId || item?.publicId || "").trim();
+
+    if (!fileMetaId && !publicId) {
+      const err = new Error("Each print item must include a file reference");
+      err.statusCode = 400;
+      throw err;
+    }
+
+    let fileMeta = null;
+    if (fileMetaId) {
+      const query = FileMeta.findById(fileMetaId).select("_id ownerId publicId fileUrl status").lean();
+      if (session && typeof query.session === "function") query.session(session);
+      fileMeta = await query;
+    }
+    if (!fileMeta && publicId) {
+      const query = FileMeta.findOne({ publicId })
+        .select("_id ownerId publicId fileUrl status")
+        .lean();
+      if (session && typeof query.session === "function") query.session(session);
+      fileMeta = await query;
+    }
+
+    if (!fileMeta) {
+      const err = new Error("Uploaded print file could not be found");
+      err.statusCode = 404;
+      throw err;
+    }
+    if (customerId && String(fileMeta.ownerId) !== String(customerId)) {
+      const err = new Error("You are not allowed to use this print file");
+      err.statusCode = 403;
+      throw err;
+    }
+    if (String(fileMeta.status || "").toUpperCase() === "EXPIRED") {
+      const err = new Error("This print file has expired. Please upload it again.");
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const quantity = Math.max(
+      1,
+      Math.floor(Number(item?.quantity || details?.copies || item?.copies || 1)),
+    );
+    const pageCount = Math.max(1, Math.floor(Number(details?.pageCount || item?.pageCount || 1)));
+    const options = normalizePrintOptions(item, details);
+    const priceBreakdown = calculatePrintPrice(
+      pageCount,
+      quantity,
+      options,
+      seller.services.print.rates || {},
+    );
+
+    normalizedItems.push({
+      type: "print",
+      sellerId: normalizedSellerId,
+      productId: null,
+      productName:
+        String(item?.name || details?.fileName || item?.fileName || "").trim() ||
+        `Print Document ${index + 1}`,
+      quantity,
+      price: round2(Number(priceBreakdown.total || 0) / quantity),
+      image: item?.image || DEFAULT_PRINT_IMAGE,
+      headerCategoryId: "",
+      variantSku: "",
+      variantName: "",
+      printDetails: {
+        fileMetaId: String(fileMeta._id),
+        fileId: String(fileMeta.publicId || publicId),
+        publicId: String(fileMeta.publicId || publicId),
+        fileUrl: String(details?.fileUrl || item?.fileUrl || fileMeta.fileUrl || ""),
+        fileName:
+          String(details?.fileName || item?.name || item?.fileName || "").trim() ||
+          `Print Document ${index + 1}`,
+        pageCount,
+        copies: quantity,
+        priceBreakdown,
+        options,
+      },
+    });
+  }
+
+  return {
+    sellerId: normalizedSellerId,
+    distanceKm,
+    normalizedItems,
+  };
+}
+
+export async function resolvePrintFeeBreakdown({ distanceKm = 0, session = null } = {}) {
+  const financeSettings = await getOrCreateFinanceSettings({ session });
+  const delivery = calculateCustomerDeliveryFee(distanceKm, financeSettings);
+
+  return {
+    deliveryFeeCharged: round2(Number(delivery.deliveryFeeCharged || 0)),
+    handlingFeeCharged: 0,
+    deliverySettings: financeSettings,
+    deliverySnapshot: delivery,
+  };
+}
+
+async function buildPrintBreakdown({
+  sellerId,
+  normalizedItems = [],
+  distanceKm = 0,
+  tipAmount = 0,
+  discountTotal = 0,
+  session = null,
+}) {
+  const productSubtotal = round2(
+    normalizedItems.reduce(
+      (sum, item) =>
+        sum + Number(item?.printDetails?.priceBreakdown?.total || item?.price || 0),
+      0,
+    ),
+  );
+  const feeBreakdown = await resolvePrintFeeBreakdown({ distanceKm, session });
+  const deliveryFeeCharged = feeBreakdown.deliveryFeeCharged;
+  const handlingFeeCharged = feeBreakdown.handlingFeeCharged;
+  const riderPayoutBase = deliveryFeeCharged;
+  const riderPayoutDistance = 0;
+  const riderPayoutBonus = 0;
+  const riderTipAmount = round2(tipAmount);
+  const riderPayoutTotal = round2(riderPayoutBase + riderTipAmount);
+  const normalizedDiscount = round2(discountTotal);
+  const grandTotal = round2(
+    productSubtotal + deliveryFeeCharged + handlingFeeCharged - normalizedDiscount + riderTipAmount,
+  );
+
+  return {
+    sellerId,
+    currency: "INR",
+    productSubtotal,
+    deliveryFeeCharged,
+    handlingFeeCharged,
+    tipTotal: riderTipAmount,
+    discountTotal: normalizedDiscount,
+    taxTotal: 0,
+    grandTotal,
+    sellerPayoutTotal: productSubtotal,
+    adminProductCommissionTotal: 0,
+    riderPayoutBase,
+    riderPayoutDistance,
+    riderPayoutBonus,
+    riderTipAmount,
+    riderPayoutTotal,
+    platformLogisticsMargin: round2(deliveryFeeCharged + handlingFeeCharged - riderPayoutTotal),
+    platformTotalEarning: handlingFeeCharged,
+    codCollectedAmount: grandTotal,
+    codRemittedAmount: 0,
+    codPendingAmount: grandTotal,
+    distanceKmActual: round2(distanceKm),
+    distanceKmRounded: round2(distanceKm),
+    snapshots: {
+      deliverySettings: {
+        deliveryPricingMode: feeBreakdown.deliverySettings.deliveryPricingMode,
+        customerBaseDeliveryFee: feeBreakdown.deliverySettings.customerBaseDeliveryFee,
+        fixedDeliveryFee: feeBreakdown.deliverySettings.fixedDeliveryFee,
+        baseDistanceCapacityKm: feeBreakdown.deliverySettings.baseDistanceCapacityKm,
+        incrementalKmSurcharge: feeBreakdown.deliverySettings.incrementalKmSurcharge,
+      },
+      handlingFeeStrategy: feeBreakdown.deliverySettings.handlingFeeStrategy,
+      handlingCategoryUsed: null,
+      deliveryChargeComputation: feeBreakdown.deliverySnapshot,
+      categoryCommissionSettings: [],
+      printPricing: true,
+    },
+    lineItems: normalizedItems.map((item) => ({
+      type: "print",
+      productId: null,
+      productName: item.productName,
+      quantity: item.quantity,
+      unitPrice: item.price,
+      itemSubtotal: item?.printDetails?.priceBreakdown?.total || item.price,
+      sellerPayout: item?.printDetails?.priceBreakdown?.total || item.price,
+      adminProductCommission: 0,
+      headerCategoryId: null,
+      headerCategoryName: "Print Service",
+      printDetails: item.printDetails,
+    })),
+  };
+}
 
 function normalizeLocation(location = null) {
   const lat = Number(location?.lat);
@@ -250,8 +511,43 @@ export async function buildCheckoutPricingSnapshot({
   address = {},
   tipAmount = 0,
   discountTotal = 0,
+  sellerId = null,
+  customerId = null,
   session = null,
 }) {
+  const checkoutMode = getCheckoutMode(orderItems);
+  if (checkoutMode === "print") {
+    const { sellerId: normalizedSellerId, distanceKm, normalizedItems } =
+      await hydratePrintOrderItems(orderItems, {
+        address,
+        sellerId,
+        customerId,
+        session,
+      });
+    const breakdown = await buildPrintBreakdown({
+      sellerId: normalizedSellerId,
+      normalizedItems,
+      distanceKm,
+      tipAmount,
+      discountTotal,
+      session,
+    });
+    return {
+      hydratedItems: normalizedItems,
+      sellerBreakdownEntries: [
+        {
+          sellerId: normalizedSellerId,
+          distanceKm,
+          items: normalizedItems,
+          breakdown,
+        },
+      ],
+      aggregateBreakdown: buildAggregateBreakdown([breakdown]),
+      sellerCount: 1,
+      itemCount: normalizedItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0),
+    };
+  }
+
   const hydratedItems = await hydrateOrderItems(orderItems, {
     session,
     enforceServerPricing: true,

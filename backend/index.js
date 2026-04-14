@@ -32,6 +32,10 @@ import {
   getPayoutBatchJobInterval,
   isPayoutBatchJobEnabled
 } from "./app/jobs/payoutBatchJob.js";
+import { 
+  getPrintCleanupJobHandler, 
+  getPrintCleanupJobInterval 
+} from "./app/jobs/printCleanupJob.js";
 import logger from "./app/services/logger.js";
 import { stopScheduledJobs } from "./app/services/distributedScheduler.js";
 
@@ -261,14 +265,24 @@ async function startScheduler() {
     );
   }
   
+  // Register print cleanup job
+  registerScheduledJob(
+    'printCleanupJob',
+    getPrintCleanupJobInterval(),
+    getPrintCleanupJobHandler()
+  );
+  
   // Start all registered jobs
   await startScheduledJobs();
   registerSchedulerStopper(stopScheduledJobs);
   
   logger.info('Scheduler started', {
-    jobs: isPayoutBatchJobEnabled() 
-      ? ['orderAutoCancelJob', 'payoutBatchJob']
-      : ['orderAutoCancelJob'],
+    jobs: [
+      'orderAutoCancelJob',
+      'returnWindowReleaseJob',
+      ...(isPayoutBatchJobEnabled() ? ['payoutBatchJob'] : []),
+      'printCleanupJob'
+    ],
     role: getProcessRole()
   });
 }

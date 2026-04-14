@@ -23,6 +23,7 @@ import healthRoute from "./healthRoutes.js";
 import metricsRoute from "./metricsRoutes.js";
 import authOtpRoute from "../modules/otp/otp.routes.js";
 
+import printRoute from "./printRoutes.js";
 import express from "express";
 
 const setupRoutes = (app) => {
@@ -32,6 +33,7 @@ const setupRoutes = (app) => {
     app.use("/health", healthRoute);
     app.use("/metrics", metricsRoute);
 
+    router.use("/print", printRoute);
     router.use("/customer", customerRoute);
     router.use("/delivery", deliveryRoute);
     router.use("/admin/categories", categoryRoute);

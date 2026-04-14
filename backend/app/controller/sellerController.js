@@ -23,6 +23,7 @@ export const getNearbySellers = async (req, res) => {
     const sellers = await Seller.find({
       isActive: true,
       isVerified: true,
+      applicationStatus: "approved",
       location: {
         $near: {
           $geometry: {
@@ -152,7 +153,22 @@ export const getSellerProfile = async (req, res) => {
 ================================ */
 export const updateSellerProfile = async (req, res) => {
   try {
-    const { name, shopName, phone, address, locality, pincode, city, state, lat, lng, radius } = req.body;
+    const {
+      name,
+      shopName,
+      phone,
+      address,
+      locality,
+      pincode,
+      city,
+      state,
+      lat,
+      lng,
+      radius,
+      isOnline,
+      isAcceptingOrders,
+      services,
+    } = req.body;
 
     // Find seller
     const seller = await Seller.findById(req.user.id);
@@ -169,6 +185,35 @@ export const updateSellerProfile = async (req, res) => {
     if (pincode !== undefined) seller.pincode = pincode;
     if (city !== undefined) seller.city = city;
     if (state !== undefined) seller.state = state;
+
+    if (isOnline !== undefined) seller.isOnline = isOnline;
+    if (isAcceptingOrders !== undefined)
+      seller.isAcceptingOrders = isAcceptingOrders;
+
+    if (services !== undefined) {
+      // Merge specifically for print to avoid overwriting other potential services
+      if (services.print) {
+        const mergedPrint = {
+          ...seller.services.print,
+          ...services.print,
+          rates: {
+            ...seller.services.print?.rates,
+            ...services.print?.rates,
+          },
+        };
+        const bw = Number(mergedPrint?.rates?.bw || 0);
+        const color = Number(mergedPrint?.rates?.color || 0);
+        mergedPrint.isConfigured = Boolean(
+          mergedPrint.enabled && (bw > 0 || color > 0),
+        );
+        seller.services = {
+          ...seller.services,
+          print: mergedPrint,
+        };
+      } else {
+        seller.services = services;
+      }
+    }
 
     // Validate and update geo data
     if (lat !== undefined && lng !== undefined) {

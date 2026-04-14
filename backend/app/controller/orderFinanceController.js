@@ -17,6 +17,7 @@ import { placeOrderAtomic } from "../services/orderPlacementService.js";
 import { orderMatchQueryFromRouteParam } from "../utils/orderLookup.js";
 import { verifyClientPaymentCallback } from "../services/paymentService.js";
 import { buildCheckoutPricingSnapshot } from "../services/checkoutPricingService.js";
+import { materializeMissingPrintOrdersForCheckoutGroup } from "../services/printOrderRecoveryService.js";
 
 function validateWithJoi(schema, payload) {
   const { error, value } = schema.validate(payload, {
@@ -40,6 +41,8 @@ export const previewCheckoutFinance = async (req, res) => {
       address: payload.address,
       tipAmount: payload.tipAmount,
       discountTotal: payload.discountTotal || 0,
+      sellerId: payload.sellerId || null,
+      customerId: req.user?.id || null,
     });
 
     const sellerBreakdowns = pricingSnapshot.sellerBreakdownEntries.map((entry) => ({
@@ -86,14 +89,31 @@ export const createOrderWithFinancialSnapshot = async (req, res) => {
       tipAmount: validated.tipAmount || 0,
       walletAmount: validated.walletAmount || 0,
       couponId: validated.couponId || null,
+      sellerId: validated.sellerId || null,
     };
     const idempotencyKey = String(req.headers["idempotency-key"] || "").trim() || null;
 
-    const placement = await placeOrderAtomic({
+    let placement = await placeOrderAtomic({
       customerId,
       payload,
       idempotencyKey,
     });
+
+    if (placement?.checkoutGroup?.checkoutGroupId) {
+      const recoveredOrders = await materializeMissingPrintOrdersForCheckoutGroup(
+        placement.checkoutGroup,
+      );
+      if ((!placement.orders || placement.orders.length === 0) && recoveredOrders.length > 0) {
+        const normalizedOrders = recoveredOrders.map((order) =>
+          typeof order?.toObject === "function" ? order.toObject() : order,
+        );
+        placement = {
+          ...placement,
+          orders: normalizedOrders,
+          order: normalizedOrders[0] || null,
+        };
+      }
+    }
 
     return handleResponse(
       res,

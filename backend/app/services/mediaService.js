@@ -432,6 +432,22 @@ function getMediaURL(publicId, transformations = {}) {
   });
 }
 
+function getPrivateDownloadUrl(publicId, {
+  format = "pdf",
+  resourceType = "image",
+  type = "upload",
+  attachment = null,
+} = {}) {
+  if (!publicId) return "";
+  validateStorageConfig();
+  configureCloudinary();
+  return cloudinary.utils.private_download_url(publicId, format, {
+    resource_type: resourceType,
+    type,
+    ...(attachment ? { attachment } : {}),
+  });
+}
+
 async function deleteMedia(publicId, userId, userModel) {
   const media = await MediaMetadata.findOne({
     $or: [{ publicId }, { objectKey: publicId }],
@@ -466,7 +482,7 @@ async function uploadToCloudinary(fileBuffer, folder = "categories") {
         if (error) {
           reject(error);
         } else {
-          resolve(result.secure_url);
+          resolve(result); // Return full result to get secure_url and publicId
         }
       },
     );
@@ -505,6 +521,7 @@ export {
   generateSignedUploadURL,
   confirmUpload,
   getMediaURL,
+  getPrivateDownloadUrl,
   deleteMedia,
   uploadToCloudinary,
   isSignedUploadsEnabled,
@@ -515,6 +532,7 @@ export default {
   generateSignedUploadURL,
   confirmUpload,
   getMediaURL,
+  getPrivateDownloadUrl,
   deleteMedia,
   uploadToCloudinary,
   isSignedUploadsEnabled,

@@ -32,6 +32,9 @@ export async function reserveStockForItems({
   const stockType = String(paymentMode || "").toUpperCase() === "ONLINE" ? "Reservation" : "Sale";
 
   for (const item of items) {
+    if (String(item?.type || "").toLowerCase() === "print" || !item?.productId) {
+      continue;
+    }
     const variantSku = String(item.variantSku || "").trim();
 
     let updated;
@@ -102,6 +105,9 @@ export async function releaseReservedStockForOrder(order, { session = null, reas
   }
 
   for (const item of order.items) {
+    if (String(item?.type || "").toLowerCase() === "print" || !item?.product) {
+      continue;
+    }
     const variantSku = String(item.variantSku || item.variantSlot || "").trim();
 
     if (variantSku) {

@@ -42,6 +42,7 @@ import {
 } from "../utils/orderLookup.js";
 import { createFinanceOrderSchema } from "../validation/financeValidation.js";
 import { placeOrderAtomic } from "../services/orderPlacementService.js";
+import { reconcilePrintOrdersForLookup } from "../services/printOrderRecoveryService.js";
 import { emitNotificationEvent } from "../modules/notifications/notification.emitter.js";
 import { NOTIFICATION_EVENTS } from "../modules/notifications/notification.constants.js";
 import {
@@ -193,7 +194,7 @@ export const placeOrder = async (req, res) => {
       return handleResponse(res, 401, "Unauthorized");
     }
 
-    const { address, payment, timeSlot, items, paymentMode: paymentModeRaw } =
+    const { address, payment, timeSlot, items, paymentMode: paymentModeRaw, sellerId } =
       req.body || {};
 
     const payload = validateWithJoi(createFinanceOrderSchema, {
@@ -204,16 +205,34 @@ export const placeOrder = async (req, res) => {
         normalizePaymentMode(payment?.paymentMode) ||
         inferPaymentMode(payment) ||
         "COD",
+      sellerId,
       timeSlot: timeSlot || "now",
       tipAmount: Number(req.body?.tipAmount || 0),
     });
 
     const idempotencyKey = String(req.headers?.["idempotency-key"] || "").trim() || null;
-    const placement = await placeOrderAtomic({
+    let placement = await placeOrderAtomic({
       customerId,
       payload,
       idempotencyKey,
     });
+
+    if (placement?.checkoutGroup?.checkoutGroupId) {
+      const recoveredOrders = await reconcilePrintOrdersForLookup({
+        checkoutGroupId: placement.checkoutGroup.checkoutGroupId,
+        limit: 1,
+      });
+      if ((!placement.orders || placement.orders.length === 0) && recoveredOrders.length > 0) {
+        const normalizedOrders = recoveredOrders.map((order) =>
+          typeof order?.toObject === "function" ? order.toObject() : order,
+        );
+        placement = {
+          ...placement,
+          orders: normalizedOrders,
+          order: normalizedOrders[0] || null,
+        };
+      }
+    }
 
     return handleResponse(
       res,
@@ -244,6 +263,7 @@ export const placeOrder = async (req, res) => {
 export const getMyOrders = async (req, res) => {
   try {
     const customerId = req.user.id;
+    await reconcilePrintOrdersForLookup({ customerId, limit: 50 });
     const { page, limit, skip } = getPagination(req, {
       defaultLimit: 20,
       maxLimit: 100,
@@ -363,6 +383,21 @@ export const getOrderDetails = async (req, res) => {
       .populate("returnDeliveryBoy", "name phone")
       .populate("seller", "shopName name address phone location")
       .lean();
+
+    if (!order) {
+      await reconcilePrintOrdersForLookup({
+        publicOrderId: orderId && !orderId.startsWith("CHK-") ? orderId : null,
+        checkoutGroupId: orderId && orderId.startsWith("CHK-") ? orderId : null,
+      });
+
+      order = await Order.findOne(orderKey)
+        .populate("customer", "name email phone")
+        .populate("items.product", "name mainImage price salePrice")
+        .populate("deliveryBoy", "name phone")
+        .populate("returnDeliveryBoy", "name phone")
+        .populate("seller", "shopName name address phone location")
+        .lean();
+    }
 
     if (!order) {
       if (orderId && orderId.startsWith("CHK-")) {
@@ -832,6 +867,13 @@ export const updateOrderStatus = async (req, res) => {
         } catch (e) {
           return handleResponse(res, e.statusCode || 500, e.message);
         }
+      }
+      if (status && !["pending", "confirmed", "cancelled"].includes(status)) {
+        return handleResponse(
+          res,
+          409,
+          "Seller cannot directly update delivery stages for workflow orders.",
+        );
       }
     }
 
