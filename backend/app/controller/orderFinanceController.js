@@ -84,8 +84,6 @@ export const createOrderWithFinancialSnapshot = async (req, res) => {
       address: validated.address,
       paymentMode: validated.paymentMode,
       timeSlot: validated.timeSlot || "now",
-      discountTotal: validated.discountTotal || 0,
-      taxTotal: validated.taxTotal || 0,
       tipAmount: validated.tipAmount || 0,
       walletAmount: validated.walletAmount || 0,
       couponId: validated.couponId || null,

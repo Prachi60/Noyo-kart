@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import MainLocationHeader from '../components/shared/MainLocationHeader';
 import { customerApi } from '../services/customerApi';
+import { applyCloudinaryTransform } from '@/core/utils/imageUtils';
 
 const COLORS = [
     "#F2EEE4", "#EFE7E2", "#EAF1F4", "#F0E8F2",
@@ -173,8 +174,9 @@ const CategoriesPage = () => {
                                                     }}
                                                 >
                                                     <img
-                                                        src={category.image}
+                                                        src={applyCloudinaryTransform(category.image)}
                                                         alt={category.name}
+                                                        loading="lazy"
                                                         className="w-full h-full rounded-full object-cover"
                                                     />
                                                 </div>

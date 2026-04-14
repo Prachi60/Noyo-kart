@@ -23,6 +23,35 @@ function getAllowedMimeTypes() {
     .filter(Boolean);
 }
 
+function getOptimizedImageFormat() {
+  return String(process.env.CLOUDINARY_IMAGE_UPLOAD_FORMAT || "webp")
+    .trim()
+    .toLowerCase();
+}
+
+function getOptimizedImageQuality() {
+  return String(process.env.CLOUDINARY_IMAGE_UPLOAD_QUALITY || "auto:good")
+    .trim();
+}
+
+function isImageMimeType(mimeType = "") {
+  return String(mimeType || "").trim().toLowerCase().startsWith("image/");
+}
+
+function buildImageUploadTransformation() {
+  const quality = getOptimizedImageQuality();
+  return quality ? `q_${quality}` : "";
+}
+
+function getImageUploadOptions() {
+  const format = getOptimizedImageFormat();
+  const transformation = buildImageUploadTransformation();
+  return {
+    ...(format ? { format } : {}),
+    ...(transformation ? { transformation } : {}),
+  };
+}
+
 const ENTITY_FOLDER_MAP = {
   product: "products",
   profile: "users",
@@ -177,11 +206,14 @@ function buildCloudinarySignedPayload({
   const cloudResourceType = RESOURCE_TYPE_MAP[resourceType] || "image";
   const timestamp = Math.floor(Date.now() / 1000);
   const folder = buildUploadFolderFromObjectKey(objectKey);
+  const imageUploadOptions =
+    cloudResourceType === "image" ? getImageUploadOptions() : {};
   const signatureParams = {
     timestamp,
     public_id: objectKey,
     folder,
     resource_type: cloudResourceType,
+    ...imageUploadOptions,
   };
   const signature = cloudinary.utils.api_sign_request(
     signatureParams,
@@ -198,6 +230,7 @@ function buildCloudinarySignedPayload({
       public_id: objectKey,
       folder,
       resource_type: cloudResourceType,
+      ...imageUploadOptions,
     },
     expiresAt,
   };
@@ -469,15 +502,24 @@ async function deleteMedia(publicId, userId, userModel) {
   await media.softDelete();
 }
 
-async function uploadToCloudinary(fileBuffer, folder = "categories") {
+async function uploadToCloudinary(fileBuffer, folder = "categories", options = {}) {
   validateStorageConfig();
   configureCloudinary();
+  const mimeType = String(options.mimeType || "").trim().toLowerCase();
+  const resourceType = String(options.resourceType || "").trim().toLowerCase();
+  const shouldOptimizeImage =
+    options.optimize !== false &&
+    (resourceType === "image" || isImageMimeType(mimeType));
+
+  const uploadOptions = {
+    folder,
+    resource_type: shouldOptimizeImage ? "image" : "auto",
+    ...(shouldOptimizeImage ? getImageUploadOptions() : {}),
+  };
+
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
-      {
-        folder,
-        resource_type: "auto",
-      },
+      uploadOptions,
       (error, result) => {
         if (error) {
           reject(error);

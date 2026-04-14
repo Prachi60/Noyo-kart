@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useMemo } from 'react';
 
 const ProductDetailContext = createContext();
 
@@ -26,8 +26,13 @@ export const ProductDetailProvider = ({ children }) => {
         setTimeout(() => setSelectedProduct(null), 300);
     };
 
+    const value = useMemo(
+        () => ({ selectedProduct, isOpen, openProduct, closeProduct }),
+        [selectedProduct, isOpen]
+    );
+
     return (
-        <ProductDetailContext.Provider value={{ selectedProduct, isOpen, openProduct, closeProduct }}>
+        <ProductDetailContext.Provider value={value}>
             {children}
         </ProductDetailContext.Provider>
     );

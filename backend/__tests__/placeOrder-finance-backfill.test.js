@@ -35,16 +35,6 @@ jest.unstable_mockModule("../app/constants/orderWorkflow.js", () => ({
   DEFAULT_SELLER_TIMEOUT_MS: () => 0,
 }));
 
-jest.unstable_mockModule("../app/constants/finance.js", () => ({
-  ORDER_PAYMENT_STATUS: {
-    CREATED: "CREATED",
-    PAID: "PAID",
-    PENDING_CASH_COLLECTION: "PENDING_CASH_COLLECTION",
-    CASH_COLLECTED: "CASH_COLLECTED",
-    COD_RECONCILED: "COD_RECONCILED",
-  },
-}));
-
 jest.unstable_mockModule("../app/services/orderWorkflowService.js", () => ({
   afterPlaceOrderV2: mockAfterPlaceOrderV2,
   sellerAcceptAtomic: jest.fn(),
@@ -102,6 +92,11 @@ jest.unstable_mockModule("../app/models/seller.js", () => ({ default: {} }));
 jest.unstable_mockModule("../app/models/delivery.js", () => ({ default: {} }));
 jest.unstable_mockModule("../app/models/setting.js", () => ({ default: {} }));
 jest.unstable_mockModule("../app/models/customer.js", () => ({ default: {} }));
+jest.unstable_mockModule("../app/models/coupon.js", () => ({
+  default: {
+    findByIdAndUpdate: jest.fn(),
+  },
+}));
 jest.unstable_mockModule("../app/utils/pagination.js", () => ({ default: jest.fn() }));
 jest.unstable_mockModule("../app/utils/orderLookup.js", () => ({
   orderMatchQueryFromRouteParam: jest.fn(),

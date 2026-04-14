@@ -80,6 +80,8 @@ Redis is **mandatory in production** (`NODE_ENV=production`). Startup fails if n
 | `CLOUDINARY_CLOUD_NAME` | — | Yes (for uploads) | Cloudinary cloud name |
 | `CLOUDINARY_API_KEY` | — | Yes (for uploads) | Cloudinary API key |
 | `CLOUDINARY_API_SECRET` | — | Yes (for uploads) | Cloudinary API secret |
+| `CLOUDINARY_IMAGE_UPLOAD_FORMAT` | `webp` | No | Stored format for optimized image uploads |
+| `CLOUDINARY_IMAGE_UPLOAD_QUALITY` | `auto:good` | No | Cloudinary quality transformation for image uploads |
 | `ENABLE_SIGNED_UPLOADS` | `true` | No | Use signed URL upload flow |
 | `MEDIA_MAX_FILE_SIZE` | `5242880` | No | Max upload size in bytes (5MB) |
 | `MEDIA_ALLOWED_FORMATS` | `jpg,png,webp` | No | Allowed upload formats |

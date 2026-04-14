@@ -7,6 +7,7 @@ const mockDeliveryFindById = jest.fn();
 const mockGenerateDeliveryOtp = jest.fn();
 const mockGetIO = jest.fn();
 const mockHandleResponse = jest.fn();
+const mockEmitToCustomer = jest.fn();
 
 jest.unstable_mockModule('../app/utils/orderLookup.js', () => ({
   orderMatchQueryFromRouteParam: mockOrderMatchQueryFromRouteParam
@@ -30,6 +31,10 @@ jest.unstable_mockModule('../app/services/deliveryOtpService.js', () => ({
 
 jest.unstable_mockModule('../app/socket/socketManager.js', () => ({
   getIO: mockGetIO
+}));
+
+jest.unstable_mockModule('../app/services/orderSocketEmitter.js', () => ({
+  emitToCustomer: mockEmitToCustomer
 }));
 
 jest.unstable_mockModule('../app/utils/helper.js', () => ({
@@ -105,7 +110,22 @@ describe('POST /api/delivery/orders/:orderId/generate-otp', () => {
       );
 
       // Verify Socket.IO events were emitted
-      expect(mockTo).toHaveBeenCalledWith('customer:customer-id');
+      expect(mockEmitToCustomer).toHaveBeenCalledWith('customer-id', {
+        event: 'order:otp',
+        payload: expect.objectContaining({
+          orderId: 'ORD123456',
+          otp: '1234',
+          deliveryPersonNearby: true
+        })
+      });
+      expect(mockEmitToCustomer).toHaveBeenCalledWith('customer-id', {
+        event: 'delivery:otp:generated',
+        payload: expect.objectContaining({
+          orderId: 'ORD123456',
+          otp: '1234',
+          deliveryPersonNearby: true
+        })
+      });
       expect(mockTo).toHaveBeenCalledWith('order:ORD123456');
       expect(mockEmit).toHaveBeenCalledWith(
         'delivery:otp:generated',

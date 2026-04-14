@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Send, Phone, Paperclip, Smile } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSettings } from '@core/context/SettingsContext';
+import { applyCloudinaryTransform } from '@/core/utils/imageUtils';
 
 const emojis = ['😀', '😂', '😍', '🥺', '😎', '😭', '😡', '👍', '👎', '🎉', '❤️', '🔥', '✅', '❌', '👋', '🙏', '👀', '💯', '💩', '🤡'];
 
@@ -126,7 +127,7 @@ const ChatPage = () => {
                                 : 'bg-white text-slate-700 border-slate-100 rounded-tl-none'
                                 }`}>
                                 {msg.image && (
-                                    <img src={msg.image} alt="Sent" className="rounded-lg mb-2 max-w-full h-auto object-cover" />
+                                    <img src={applyCloudinaryTransform(msg.image)} alt="Sent" loading="lazy" className="rounded-lg mb-2 max-w-full h-auto object-cover" />
                                 )}
                                 {msg.text}
                             </div>
@@ -192,7 +193,7 @@ const ChatPage = () => {
                             className="absolute bottom-full right-4 mb-2 bg-white rounded-xl shadow-lg border border-slate-100 p-2 z-50"
                         >
                             <div className="relative">
-                                <img src={selectedImage} alt="Preview" className="h-20 w-20 object-cover rounded-lg" />
+                                <img src={selectedImage} alt="Preview" loading="lazy" className="h-20 w-20 object-cover rounded-lg" />
                                 <button
                                     onClick={() => setSelectedImage(null)}
                                     className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors"

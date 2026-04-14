@@ -7,6 +7,7 @@ import { useWishlist } from "../../context/WishlistContext";
 import { useCart } from "../../context/CartContext";
 import { useToast } from "@shared/components/ui/Toast";
 import { useCartAnimation } from "../../context/CartAnimationContext";
+import { applyCloudinaryTransform } from "@/core/utils/imageUtils";
 
 import { motion, AnimatePresence } from "framer-motion";
 import { Clock } from "lucide-react";
@@ -228,8 +229,9 @@ const ProductCard = React.memo(
             )}>
             <img
               ref={imageRef}
-              src={product.image}
+              src={applyCloudinaryTransform(product.image)}
               alt={product.name}
+              loading="lazy"
               className="w-full h-full object-contain mix-blend-multiply drop-shadow-sm"
             />
           </div>

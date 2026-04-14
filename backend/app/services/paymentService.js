@@ -24,6 +24,12 @@ import { NOTIFICATION_EVENTS } from "../modules/notifications/notification.const
 let phonePeClient = null;
 const MAX_MERCHANT_ORDER_ID_LENGTH = 63;
 
+function isMockPaymentEnabled() {
+  return String(process.env.PAYMENT_MOCK_ENABLED || "")
+    .trim()
+    .toLowerCase() === "true";
+}
+
 function getPhonePeClient() {
   if (phonePeClient) return phonePeClient;
 
@@ -33,6 +39,9 @@ function getPhonePeClient() {
   const isProd = String(process.env.PHONEPE_ENV || "").toUpperCase() === "PRODUCTION";
 
   if (!clientId || !clientSecret) {
+    if (isMockPaymentEnabled()) {
+      return null;
+    }
     throw new Error("PhonePe credentials not configured");
   }
 
@@ -560,7 +569,22 @@ export async function createPaymentOrderForOrderRef({
     .redirectUrl(redirectUrl)
     .build();
 
-  const response = await client.pay(request);
+  let response;
+  if (!client) {
+    if (!isMockPaymentEnabled()) {
+      throw new Error("PhonePe client unavailable");
+    }
+    response = { redirectUrl: `${redirectUrl}&mock=1` };
+  } else {
+    try {
+      response = await client.pay(request);
+    } catch (error) {
+      if (!isMockPaymentEnabled()) {
+        throw error;
+      }
+      response = { redirectUrl: `${redirectUrl}&mock=1` };
+    }
+  }
 
   const paymentData = {
     order: primaryOrder._id,

@@ -211,6 +211,7 @@ const CustomerAuth = () => {
                                 <img
                                     src={activeCategory.img}
                                     className="w-full h-full object-cover"
+                                    loading="lazy"
                                     alt="banner"
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/10 to-transparent opacity-60" style={{ backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.1), ${activeCategory.theme})` }} />
@@ -267,6 +268,7 @@ const CustomerAuth = () => {
                                             <img
                                                 src={logoUrl}
                                                 alt={`${appName} logo`}
+                                                loading="lazy"
                                                 className="w-full h-full object-cover"
                                             />
                                         ) : (

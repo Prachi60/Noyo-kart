@@ -7,6 +7,7 @@ import LiveTrackingMap from "../components/order/LiveTrackingMap";
 import DeliveryOtpDisplay from "../components/DeliveryOtpDisplay";
 import OrderProgressTracker from "../components/order/OrderProgressTracker";
 import ReturnProgressTracker from "../components/order/ReturnProgressTracker";
+import { applyCloudinaryTransform } from "@/core/utils/imageUtils";
 import {
   ChevronLeft,
   Package,
@@ -702,7 +703,10 @@ const OrderDetailPage = () => {
           const uploadRes = await axiosInstance.post("/media/upload", formData, {
             headers: { "Content-Type": "multipart/form-data" },
           });
-          url = uploadRes.data?.data?.url || uploadRes.data?.url;
+          url =
+            uploadRes.data?.result?.url ||
+            uploadRes.data?.data?.url ||
+            uploadRes.data?.url;
         } catch {
           url = await new Promise((resolve) => {
             const reader = new FileReader();
@@ -975,8 +979,9 @@ const OrderDetailPage = () => {
                 className="flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-50 transition-colors">
                 <div className="h-14 w-14 bg-slate-50 rounded-xl overflow-hidden flex-shrink-0 border border-slate-100">
                   <img
-                    src={item.image}
+                    src={applyCloudinaryTransform(item.image)}
                     alt={item.name}
+                    loading="lazy"
                     className="h-full w-full object-cover"
                   />
                 </div>

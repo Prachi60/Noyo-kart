@@ -42,7 +42,10 @@ const ReturnProgressTracker = ({ returnStatus }) => {
   return (
     <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100">
       <h4 className="text-sm font-bold text-slate-800 mb-4">Return Status</h4>
-      <div className="space-y-4">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="space-y-4">
         {steps.map((step, index) => {
           const Icon = step.icon;
           const isCompleted = isRejected
@@ -55,12 +58,11 @@ const ReturnProgressTracker = ({ returnStatus }) => {
             : status !== "refund_completed" && index === currentIndex;
 
           return (
-            <div key={step.id} className="relative">
+            <div
+              key={step.id}
+              className="relative transition-opacity duration-200">
               <div className="flex items-center gap-3">
-                <motion.div
-                  initial={{ scale: 0.9, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: index * 0.06 }}
+                <div
                   className={`relative z-10 h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0 ${
                     isRejected && step.id === "return_rejected"
                       ? "bg-rose-100 text-rose-600 border border-rose-300"
@@ -78,7 +80,7 @@ const ReturnProgressTracker = ({ returnStatus }) => {
                   ) : (
                     <Circle size={18} />
                   )}
-                </motion.div>
+                </div>
 
                 <div className="flex-1">
                   <p
@@ -109,7 +111,7 @@ const ReturnProgressTracker = ({ returnStatus }) => {
             </div>
           );
         })}
-      </div>
+      </motion.div>
     </div>
   );
 };

@@ -1,14 +1,17 @@
 import express from "express";
+import multer from "multer";
 import { verifyToken } from "../middleware/authMiddleware.js";
 import handleResponse from "../utils/helper.js";
 import {
   createUploadIntent,
   confirmUpload,
   deleteMedia,
+  uploadToCloudinary,
 } from "../services/mediaService.js";
 import logger from "../services/logger.js";
 
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
 const VALID_ENTITY_TYPES = [
   "product",
@@ -21,6 +24,10 @@ const VALID_ENTITY_TYPES = [
 ];
 
 const VALID_RESOURCE_TYPES = ["image", "document", "raw"];
+
+function isImageMimeType(mimeType = "") {
+  return String(mimeType || "").trim().toLowerCase().startsWith("image/");
+}
 
 function resolveUploadedByModel(role) {
   switch (String(role || "").toLowerCase()) {
@@ -92,6 +99,37 @@ router.post("/upload-intent", verifyToken, handleCreateUploadIntent);
 
 // Backward compatibility alias
 router.post("/upload-url", verifyToken, handleCreateUploadIntent);
+
+router.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
+  try {
+    const uploadedByModel = resolveUploadedByModel(req.user?.role);
+    if (!uploadedByModel) {
+      return handleResponse(res, 400, "Invalid user role for media upload");
+    }
+    if (!req.file) {
+      return handleResponse(res, 400, "file is required");
+    }
+
+    const mimeType = req.file.mimetype;
+    const imageUpload = isImageMimeType(mimeType);
+    const folder = imageUpload ? "media/images" : "media/files";
+    const url = await uploadToCloudinary(req.file.buffer, folder, {
+      mimeType,
+      resourceType: imageUpload ? "image" : "raw",
+    });
+
+    return handleResponse(res, 200, "Media uploaded successfully", {
+      url,
+      secureUrl: url,
+    });
+  } catch (error) {
+    logger.error("Failed to upload media", {
+      message: error.message,
+      userId: req.user?.id,
+    });
+    return handleResponse(res, error.statusCode || 500, error.message);
+  }
+});
 
 router.post("/confirm", verifyToken, async (req, res) => {
   try {

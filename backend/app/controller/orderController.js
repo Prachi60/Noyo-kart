@@ -55,6 +55,7 @@ import {
 import * as walletService from "../services/finance/walletService.js";
 import { OWNER_TYPE } from "../constants/finance.js";
 import { processPayout } from "../services/finance/payoutService.js";
+import { buildKey, getOrSet, getTTL, invalidate } from "../services/cacheService.js";
 
 function validateWithJoi(schema, payload) {
   const { error, value } = schema.validate(payload, {
@@ -234,6 +235,12 @@ export const placeOrder = async (req, res) => {
       }
     }
 
+    try {
+      await invalidate(buildKey("orders", "customer", `${customerId}:*`));
+    } catch (cacheErr) {
+      console.warn("[placeOrder] cache invalidation failed:", cacheErr.message);
+    }
+
     return handleResponse(
       res,
       placement.duplicate ? 200 : 201,
@@ -269,26 +276,36 @@ export const getMyOrders = async (req, res) => {
       maxLimit: 100,
     });
 
-    const [orders, total] = await Promise.all([
-      Order.find({ customer: customerId })
-        .select(
-          "orderId checkoutGroupId customer seller items address payment pricing status workflowStatus workflowVersion returnStatus timeSlot createdAt",
-        )
-        .sort({ createdAt: -1, _id: -1 })
-        .skip(skip)
-        .limit(limit)
-        .populate("items.product", "name mainImage price salePrice")
-        .lean(),
-      Order.countDocuments({ customer: customerId }),
-    ]);
+    const cacheKey = buildKey("orders", "customer", `${customerId}:p${page}:l${limit}`);
 
-    return handleResponse(res, 200, "Orders fetched successfully", {
-      items: orders,
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit) || 1,
-    });
+    const result = await getOrSet(
+      cacheKey,
+      async () => {
+        const [orders, total] = await Promise.all([
+          Order.find({ customer: customerId })
+            .select(
+              "orderId checkoutGroupId customer seller items address payment pricing status workflowStatus workflowVersion returnStatus timeSlot createdAt",
+            )
+            .sort({ createdAt: -1, _id: -1 })
+            .skip(skip)
+            .limit(limit)
+            .populate("items.product", "name mainImage price salePrice")
+            .lean(),
+          Order.countDocuments({ customer: customerId }),
+        ]);
+
+        return {
+          items: orders,
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit) || 1,
+        };
+      },
+      getTTL("orders"),
+    );
+
+    return handleResponse(res, 200, "Orders fetched successfully", result);
   } catch (error) {
     return handleResponse(res, 500, error.message);
   }
@@ -570,6 +587,12 @@ export const cancelOrder = async (req, res) => {
     order.cancelledBy = "customer";
     order.cancelReason = reason || "Cancelled by user";
     await order.save();
+
+    try {
+      await invalidate(buildKey("orders", "customer", `${customerId}:*`));
+    } catch (cacheErr) {
+      console.warn("[cancelOrder] cache invalidation failed:", cacheErr.message);
+    }
 
     if (order.paymentBreakdown?.grandTotal != null) {
       try {
@@ -966,6 +989,12 @@ export const updateOrderStatus = async (req, res) => {
     }
 
     await order.save();
+
+    try {
+      await invalidate(buildKey("orders", "customer", `${order.customer.toString()}:*`));
+    } catch (cacheErr) {
+      console.warn("[updateOrderStatus] cache invalidation failed:", cacheErr.message);
+    }
 
     if (status === "confirmed" && role === "seller") {
       // This order is now 'Automatic' for delivery partners
