@@ -281,8 +281,8 @@ const PrintStore = () => {
                               <FileText size={24} />
                             )}
                           </div>
-                          <div className="min-w-0">
-                            <p className="text-sm font-black text-slate-800 truncate pr-4">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-black text-slate-800 break-words pr-4">
                               {f.name}
                             </p>
                             <div className="flex items-center gap-2 mt-0.5">
@@ -361,7 +361,7 @@ const PrintStore = () => {
               className="space-y-6"
             >
               <div className="flex items-center justify-between mb-2 px-2">
-                <h2 className="text-4xl font-black text-slate-900 tracking-tighter">Set Options</h2>
+                <h2 className="text-2xl font-black text-slate-900">Set Options</h2>
                 <Button 
                   variant="outline" 
                   onClick={() => setStep(1)}
@@ -380,14 +380,14 @@ const PrintStore = () => {
                   >
                     <Card className="p-8 border-none shadow-2xl shadow-slate-200/60 rounded-[40px] bg-white/90 backdrop-blur-sm relative overflow-hidden group">
                       <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/50 rounded-bl-[100px] -z-10 group-hover:bg-indigo-100/50 transition-colors" />
-                      <div className="flex items-center gap-4 mb-8">
-                        <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-100">
+                      <div className="flex items-start gap-4 mb-8">
+                        <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-100 shrink-0">
                           <FileText size={20} />
                         </div>
-                        <div>
-                          <h4 className="text-sm font-black text-slate-900 truncate max-w-[240px]">{f.name}</h4>
-                          <div className="flex flex-col gap-1">
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[2px]">
+                        <div className="min-w-0 flex-1 pr-2">
+                          <h4 className="text-sm font-black text-slate-900 break-words">{f.name}</h4>
+                          <div className="flex flex-col gap-1 mt-1">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[2px] truncate">
                               {f.pageCount} Pages • Document Ready
                             </p>
                             {(f.name.toLowerCase().endsWith('.doc') || f.name.toLowerCase().endsWith('.docx')) && (
@@ -400,15 +400,15 @@ const PrintStore = () => {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        <div className="space-y-4">
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[3px] ml-1">Color Mode</p>
-                          <div className="flex p-1.5 bg-slate-100/50 rounded-2xl gap-1">
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4 md:gap-8">
+                        <div className="space-y-3">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[3px] ml-1">Color</p>
+                          <div className="flex p-1 bg-slate-100/70 rounded-xl gap-1">
                             {[{ label: 'B&W', value: false }, { label: 'Color', value: true }].map(opt => (
                               <button
                                 key={opt.label}
                                 onClick={() => updateFileConfig(f.id, { isColor: opt.value })}
-                                className={`flex-1 py-3.5 rounded-xl transition-all text-[11px] font-black tracking-widest ${
+                                className={`flex-1 py-2.5 px-1 rounded-lg transition-all text-[10px] sm:text-[11px] font-black tracking-wider ${
                                   f.config.isColor === opt.value 
                                     ? 'bg-primary text-white shadow-md shadow-primary/30' 
                                     : 'text-slate-400 hover:text-slate-600'
@@ -420,14 +420,14 @@ const PrintStore = () => {
                           </div>
                         </div>
 
-                        <div className="space-y-4">
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[3px] ml-1">Side Mode</p>
-                          <div className="flex p-1.5 bg-slate-100/50 rounded-2xl gap-1">
+                        <div className="space-y-3">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[3px] ml-1">Sides</p>
+                          <div className="flex p-1 bg-slate-100/70 rounded-xl gap-1">
                             {[{ label: 'Single', value: false }, { label: 'Double', value: true }].map(opt => (
                               <button
                                 key={opt.label}
                                 onClick={() => updateFileConfig(f.id, { isDoubleSided: opt.value })}
-                                className={`flex-1 py-3.5 rounded-xl transition-all text-[11px] font-black tracking-widest ${
+                                className={`flex-1 py-2.5 px-1 rounded-lg transition-all text-[10px] sm:text-[11px] font-black tracking-wider ${
                                   f.config.isDoubleSided === opt.value 
                                     ? 'bg-primary text-white shadow-md shadow-primary/30' 
                                     : 'text-slate-400 hover:text-slate-600'
@@ -439,9 +439,9 @@ const PrintStore = () => {
                           </div>
                         </div>
 
-                        <div className="space-y-4">
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[3px] ml-1">Print Copies</p>
-                          <div className="flex items-center gap-4 bg-slate-100/50 p-1.5 rounded-2xl">
+                        <div className="space-y-3 col-span-2 md:col-span-1">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[3px] ml-1">Copies</p>
+                          <div className="flex items-center gap-4 bg-slate-100/70 p-1.5 rounded-xl">
                             <button 
                               onClick={() => updateFileConfig(f.id, { copies: Math.max(1, f.config.copies - 1) })}
                               className="w-10 h-10 bg-white shadow-sm rounded-xl flex items-center justify-center text-slate-900 active:scale-90 transition-all font-black hover:bg-primary hover:text-white hover:rotate-[-10deg]"
@@ -496,7 +496,7 @@ const PrintStore = () => {
               <div className="flex items-center gap-4 mb-8">
                 <div className="h-14 w-1 flex bg-primary rounded-full" />
                 <div>
-                  <h2 className="text-4xl font-black text-slate-900 tracking-tighter">Order Summary</h2>
+                  <h2 className="text-2xl font-black text-slate-900">Order Summary</h2>
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-[4px] mt-1 pr-1">Review & Confirm</p>
                 </div>
               </div>
@@ -510,12 +510,12 @@ const PrintStore = () => {
                       <div key={f.id} className="bg-white p-5 rounded-[24px] border border-dashed border-slate-200 flex flex-col gap-4">
                          <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400">
+                                <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 shrink-0">
                                     <FileText size={20} />
                                 </div>
-                                <div className="min-w-0">
-                                    <h4 className="text-sm font-black text-slate-900 truncate max-w-[150px]">{f.name}</h4>
-                                    <p className="text-[10px] font-bold text-slate-500">{f.pageCount} Pages × {f.config.copies} Copies</p>
+                                <div className="min-w-0 flex-1 pr-2">
+                                    <h4 className="text-sm font-black text-slate-900 break-words">{f.name}</h4>
+                                    <p className="text-[10px] font-bold text-slate-500 mt-0.5">{f.pageCount} Pages × {f.config.copies} Copies</p>
                                 </div>
                             </div>
                             <div className="flex flex-col items-end gap-1">
@@ -579,7 +579,7 @@ const PrintStore = () => {
                             </div>
                             <div className="flex justify-between items-center text-xs">
                               <span className="font-bold text-slate-500">Delivery Fee</span>
-                              <span className="font-black text-emerald-500 tracking-tight">₹{quote.pricing.deliveryFee.toFixed(2)}</span>
+                              <span className="font-black text-primary tracking-tight">₹{quote.pricing.deliveryFee.toFixed(2)}</span>
                             </div>
                             <div className="h-px bg-slate-50 my-6" />
                             <div className="flex justify-between items-center">
@@ -591,7 +591,7 @@ const PrintStore = () => {
                           <div className="pt-2">
                              <Button 
                               onClick={handlePlaceOrder}
-                              className="w-full py-4 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-black tracking-[2px] text-xs shadow-xl shadow-emerald-500/20 active:scale-95 transition-all"
+                              className="w-full py-4 rounded-2xl bg-primary hover:brightness-90 text-white font-black tracking-[2px] text-xs shadow-xl shadow-primary/30 active:scale-95 transition-all"
                              >
                                CONTINUE TO PAYMENT
                              </Button>
