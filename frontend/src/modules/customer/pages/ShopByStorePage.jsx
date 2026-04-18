@@ -7,6 +7,7 @@ import {
   getSideImageByKey,
   getBackgroundColorByValue,
 } from "@/shared/constants/offerSectionOptions";
+import { applyCloudinaryTransform } from "@/core/utils/imageUtils";
 
 const mapProduct = (p) => ({
   id: p._id,
@@ -138,8 +139,9 @@ const ShopByStorePage = () => {
                     style={{ backgroundColor: bgColor }}
                   >
                     <img
-                      src={sideImageUrl}
+                      src={applyCloudinaryTransform(sideImageUrl)}
                       alt={store.title}
+                      loading="lazy"
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -214,8 +216,9 @@ const ShopByStorePage = () => {
                     <div className="relative p-3 flex flex-col items-center text-center gap-2">
                       <div className="h-16 w-full rounded-2xl overflow-hidden bg-white shadow-inner">
                         <img
-                          src={sampleImage}
+                          src={applyCloudinaryTransform(sampleImage)}
                           alt={name}
+                          loading="lazy"
                           className="w-full h-full object-cover"
                         />
                       </div>

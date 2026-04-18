@@ -16,12 +16,19 @@ import {
 import { handleOnlineOrderFinance } from "./finance/orderFinanceService.js";
 import { DEFAULT_SELLER_TIMEOUT_MS, WORKFLOW_STATUS } from "../constants/orderWorkflow.js";
 import { afterPlaceOrderV2 } from "./orderWorkflowService.js";
+import { materializeMissingPrintOrdersForCheckoutGroup } from "./printOrderRecoveryService.js";
 import { releaseReservedStockForOrder } from "./stockService.js";
 import { emitNotificationEvent } from "../modules/notifications/notification.emitter.js";
 import { NOTIFICATION_EVENTS } from "../modules/notifications/notification.constants.js";
 
 let phonePeClient = null;
 const MAX_MERCHANT_ORDER_ID_LENGTH = 63;
+
+function isMockPaymentEnabled() {
+  return String(process.env.PAYMENT_MOCK_ENABLED || "")
+    .trim()
+    .toLowerCase() === "true";
+}
 
 function getPhonePeClient() {
   if (phonePeClient) return phonePeClient;
@@ -32,6 +39,9 @@ function getPhonePeClient() {
   const isProd = String(process.env.PHONEPE_ENV || "").toUpperCase() === "PRODUCTION";
 
   if (!clientId || !clientSecret) {
+    if (isMockPaymentEnabled()) {
+      return null;
+    }
     throw new Error("PhonePe credentials not configured");
   }
 
@@ -106,6 +116,12 @@ async function resolvePaymentTarget(orderRef) {
     }
     let orders = await Order.find({ checkoutGroupId })
       .sort({ checkoutGroupIndex: 1, createdAt: 1 });
+
+    if (orders.length === 0) {
+      await materializeMissingPrintOrdersForCheckoutGroup(checkoutGroup);
+      orders = await Order.find({ checkoutGroupId })
+        .sort({ checkoutGroupIndex: 1, createdAt: 1 });
+    }
 
     if (orders.length === 0) {
       const fallbackClauses = [];
@@ -553,7 +569,22 @@ export async function createPaymentOrderForOrderRef({
     .redirectUrl(redirectUrl)
     .build();
 
-  const response = await client.pay(request);
+  let response;
+  if (!client) {
+    if (!isMockPaymentEnabled()) {
+      throw new Error("PhonePe client unavailable");
+    }
+    response = { redirectUrl: `${redirectUrl}&mock=1` };
+  } else {
+    try {
+      response = await client.pay(request);
+    } catch (error) {
+      if (!isMockPaymentEnabled()) {
+        throw error;
+      }
+      response = { redirectUrl: `${redirectUrl}&mock=1` };
+    }
+  }
 
   const paymentData = {
     order: primaryOrder._id,

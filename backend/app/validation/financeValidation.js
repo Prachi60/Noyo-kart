@@ -5,7 +5,7 @@ const locationSchema = Joi.object({
   lng: Joi.number().min(-180).max(180).required(),
 });
 
-const orderItemSchema = Joi.object({
+const productOrderItemSchema = Joi.object({
   product: Joi.string().optional(),
   productId: Joi.string().optional(),
   id: Joi.string().optional(),
@@ -18,6 +18,36 @@ const orderItemSchema = Joi.object({
   price: Joi.number().min(0).optional(),
   image: Joi.string().allow("", null),
 }).or("product", "productId", "id");
+
+const printDetailsSchema = Joi.object({
+  fileMetaId: Joi.string().optional(),
+  fileId: Joi.string().optional(),
+  publicId: Joi.string().optional(),
+  fileUrl: Joi.string().allow("", null).optional(),
+  fileName: Joi.string().allow("", null).optional(),
+  pageCount: Joi.number().integer().min(1).required(),
+  copies: Joi.number().integer().min(1).optional(),
+  isColor: Joi.boolean().optional(),
+  isDoubleSided: Joi.boolean().optional(),
+  options: Joi.object({
+    color: Joi.boolean().optional(),
+    doubleSided: Joi.boolean().optional(),
+  }).optional(),
+}).or("fileMetaId", "fileId", "publicId");
+
+const printOrderItemSchema = Joi.object({
+  type: Joi.string().valid("print").required(),
+  name: Joi.string().allow("", null).optional(),
+  quantity: Joi.number().integer().min(1).required(),
+  price: Joi.number().min(0).optional(),
+  image: Joi.string().allow("", null).optional(),
+  printDetails: printDetailsSchema.required(),
+});
+
+const orderItemSchema = Joi.alternatives().try(
+  productOrderItemSchema,
+  printOrderItemSchema,
+);
 
 export const checkoutPreviewSchema = Joi.object({
   items: Joi.array().items(orderItemSchema).min(1).required(),
@@ -37,6 +67,7 @@ export const checkoutPreviewSchema = Joi.object({
   paymentMode: Joi.string().valid("ONLINE", "COD").default("COD"),
   timeSlot: Joi.string().allow("", null),
   couponId: Joi.string().allow("", null).optional(),
+  sellerId: Joi.string().allow("", null).optional(),
 });
 
 export const createFinanceOrderSchema = checkoutPreviewSchema.keys({

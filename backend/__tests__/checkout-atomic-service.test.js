@@ -9,6 +9,8 @@ const mockSession = {
 const mockStartSession = jest.fn().mockResolvedValue(mockSession);
 
 const mockCartFindOne = jest.fn();
+const mockCustomerFindById = jest.fn();
+const mockCouponFindByIdAndUpdate = jest.fn();
 const mockCheckoutGroupFindOne = jest.fn();
 const mockCheckoutGroupSave = jest.fn();
 const mockOrderFind = jest.fn();
@@ -54,6 +56,18 @@ OrderMock.findOne = jest.fn();
 jest.unstable_mockModule("mongoose", () => ({
   default: {
     startSession: mockStartSession,
+  },
+}));
+
+jest.unstable_mockModule("../app/models/customer.js", () => ({
+  default: {
+    findById: mockCustomerFindById,
+  },
+}));
+
+jest.unstable_mockModule("../app/models/coupon.js", () => ({
+  default: {
+    findByIdAndUpdate: mockCouponFindByIdAndUpdate,
   },
 }));
 
@@ -161,6 +175,15 @@ describe("checkout atomic service", () => {
       }),
     });
     mockCartFindOne.mockResolvedValue(null);
+    mockCustomerFindById.mockReturnValue({
+      session: jest.fn().mockResolvedValue({
+        _id: "67f0000000000000000000c1",
+        walletBalance: 0,
+      }),
+    });
+    mockCouponFindByIdAndUpdate.mockReturnValue({
+      catch: jest.fn(),
+    });
     mockReserveStockForItems.mockResolvedValue(undefined);
     mockBuildCheckoutPricingSnapshot.mockResolvedValue({
       sellerCount: 1,

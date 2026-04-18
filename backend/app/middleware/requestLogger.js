@@ -35,49 +35,51 @@ export function structuredRequestLogger(req, res, next) {
   const start = req.requestStartedAt || Date.now();
   
   res.on("finish", () => {
-    if (!shouldLogRequest(req.path, req.method)) return;
-    
-    const durationMs = Date.now() - start;
-    const durationSeconds = durationMs / 1000;
-    
-    // Log request with structured logger
-    const logLevel = res.statusCode >= 500 ? 'error' : 
-                     res.statusCode >= 400 ? 'warn' : 'info';
-    
-    logger.log(logLevel, 'HTTP request completed', {
-      requestId: req.correlationId || null,
-      method: req.method,
-      path: req.originalUrl,
-      route: req.route?.path || req.path || null,
-      statusCode: res.statusCode,
-      duration: durationMs,
-      appRole: getProcessRole(),
-      ip: getClientIp(req),
-      userId: req.user?.id || null,
-      userRole: req.user?.role || null,
-      userAgent: req.headers["user-agent"] || ""
-    });
-    
-    // Collect metrics
-    incrementCounter('http_requests_total', {
-      method: req.method,
-      path: req.route?.path || req.path || 'unknown',
-      status: res.statusCode
-    });
-    if (res.statusCode >= 400) {
-      incrementCounter("http_errors_total", {
+    try {
+      if (!shouldLogRequest(req.path, req.method)) return;
+
+      const durationMs = Date.now() - start;
+      const durationSeconds = durationMs / 1000;
+
+      const logLevel =
+        res.statusCode >= 500 ? "error" : res.statusCode >= 400 ? "warn" : "info";
+
+      logger.log(logLevel, "HTTP request completed", {
+        requestId: req.correlationId || null,
+        method: req.method,
+        path: req.originalUrl,
+        route: req.route?.path || req.path || null,
+        statusCode: res.statusCode,
+        duration: durationMs,
+        appRole: getProcessRole(),
+        ip: getClientIp(req),
+        userId: req.user?.id || null,
+        userRole: req.user?.role || null,
+        userAgent: req.headers["user-agent"] || "",
+      });
+
+      incrementCounter("http_requests_total", {
         method: req.method,
         path: req.route?.path || req.path || "unknown",
         status: res.statusCode,
+      });
+      if (res.statusCode >= 400) {
+        incrementCounter("http_errors_total", {
+          method: req.method,
+          path: req.route?.path || req.path || "unknown",
+          status: res.statusCode,
+          role: getProcessRole(),
+        });
+      }
+
+      recordHistogram("http_request_duration_seconds", durationSeconds, {
+        method: req.method,
+        path: req.route?.path || req.path || "unknown",
         role: getProcessRole(),
       });
+    } catch (err) {
+      console.error("[RequestLogger] Error in finish handler:", err);
     }
-    
-    recordHistogram('http_request_duration_seconds', durationSeconds, {
-      method: req.method,
-      path: req.route?.path || req.path || 'unknown',
-      role: getProcessRole(),
-    });
   });
   
   next();

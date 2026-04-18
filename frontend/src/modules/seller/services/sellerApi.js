@@ -43,4 +43,7 @@ export const sellerApi = {
     approveReturn: (orderId, data) => axiosInstance.put(`/orders/returns/${orderId}/approve`, data),
     rejectReturn: (orderId, data) => axiosInstance.put(`/orders/returns/${orderId}/reject`, data),
     assignReturnDelivery: (orderId, data) => axiosInstance.put(`/orders/returns/${orderId}/assign-delivery`, data),
+    
+    // Print Service
+    verifyPrintFile: (orderId, fileId) => axiosInstance.get(`/print/verify/${orderId}`, { params: { fileId } }),
 };

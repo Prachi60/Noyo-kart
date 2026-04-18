@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Lottie from 'lottie-react';
 import { useCart } from '../context/CartContext';
@@ -13,12 +13,22 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@shared/components/ui/Toast';
-import emptyBoxAnimation from '../../../assets/lottie/Empty box.json';
+import { applyCloudinaryTransform } from '@/core/utils/imageUtils';
 
 const CartPage = () => {
     const { cart, removeFromCart, updateQuantity, cartTotal, clearCart } = useCart();
     const { showToast } = useToast();
     const itemCount = cart.reduce((count, item) => count + item.quantity, 0);
+    const [emptyBoxData, setEmptyBoxData] = useState(null);
+
+    // Dynamically load empty-box Lottie when cart is empty
+    useEffect(() => {
+        if (cart.length === 0) {
+            import('../../../assets/lottie/Empty box.json')
+                .then((m) => setEmptyBoxData(m.default))
+                .catch(() => {});
+        }
+    }, [cart.length === 0]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleRemove = (id, name, variantSku = "") => {
         removeFromCart(id, variantSku);
@@ -55,8 +65,9 @@ const CartPage = () => {
                                         <div className="flex gap-4 p-4 md:p-5">
                                             <div className="h-24 w-24 md:h-28 md:w-28 flex-shrink-0 overflow-hidden rounded-2xl bg-slate-50 ring-1 ring-slate-100">
                                                 <img
-                                                    src={item.image}
+                                                    src={applyCloudinaryTransform(item.image)}
                                                     alt={item.name}
+                                                    loading="lazy"
                                                     className="h-full w-full object-cover"
                                                 />
                                             </div>
@@ -202,11 +213,15 @@ const CartPage = () => {
                                 </div>
 
                                 <div className="mx-auto mb-8 flex h-48 w-48 items-center justify-center rounded-[2rem] border border-brand-100 bg-gradient-to-br from-brand-50 to-white shadow-[0_16px_40px_rgba(16,185,129,0.12)] md:h-56 md:w-56">
-                                    <Lottie
-                                        animationData={emptyBoxAnimation}
-                                        loop
-                                        className="h-40 w-40 md:h-48 md:w-48"
-                                    />
+                                    {emptyBoxData ? (
+                                        <Lottie
+                                            animationData={emptyBoxData}
+                                            loop
+                                            className="h-40 w-40 md:h-48 md:w-48"
+                                        />
+                                    ) : (
+                                        <div className="h-40 w-40 md:h-48 md:w-48" />
+                                    )}
                                 </div>
 
                                 <h2 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900 leading-[0.96]">

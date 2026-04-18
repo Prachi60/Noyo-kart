@@ -51,7 +51,11 @@ const ReturnPickupProofUpload = ({ orderId, onSubmitted }) => {
           const uploadRes = await axiosInstance.post("/media/upload", uploadForm, {
             headers: { "Content-Type": "multipart/form-data" },
           });
-          url = uploadRes.data?.data?.url || uploadRes.data?.url || preview;
+          url =
+            uploadRes.data?.result?.url ||
+            uploadRes.data?.data?.url ||
+            uploadRes.data?.url ||
+            preview;
         } catch {
           // Fallback to base64 data URL for dev/offline
           url = preview;

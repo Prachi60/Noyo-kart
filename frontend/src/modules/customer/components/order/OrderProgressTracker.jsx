@@ -77,7 +77,10 @@ const OrderProgressTracker = ({
 
   return (
     <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
-      <div className="space-y-4">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="space-y-4">
         {steps.map((step, index) => {
           const stepStatus = getStepStatus(step);
           const Icon = step.icon;
@@ -86,13 +89,12 @@ const OrderProgressTracker = ({
           const isPending = stepStatus === "pending";
 
           return (
-            <div key={step.id} className="relative">
+            <div
+              key={step.id}
+              className="relative transition-opacity duration-200">
               <div className="flex items-center gap-4">
                 {/* Icon Circle */}
-                <motion.div
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: index * 0.1 }}
+                <div
                   className={`relative z-10 h-12 w-12 rounded-full flex items-center justify-center flex-shrink-0 ${
                     isCompleted
                       ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
@@ -104,16 +106,13 @@ const OrderProgressTracker = ({
                   {isCompleted ? (
                     <CheckCircle size={24} className="fill-current" />
                   ) : isActive ? (
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                    >
+                    <div className="animate-spin">
                       <Icon size={22} />
-                    </motion.div>
+                    </div>
                   ) : (
                     <Circle size={22} />
                   )}
-                </motion.div>
+                </div>
 
                 {/* Label */}
                 <div className="flex-1">
@@ -137,13 +136,9 @@ const OrderProgressTracker = ({
 
                 {/* Status Indicator */}
                 {isCompleted && (
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center"
-                  >
+                  <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center transition-opacity duration-200">
                     <CheckCircle size={14} className="text-primary" />
-                  </motion.div>
+                  </div>
                 )}
               </div>
 
@@ -160,7 +155,7 @@ const OrderProgressTracker = ({
             </div>
           );
         })}
-      </div>
+      </motion.div>
 
       {/* ETA Display */}
       {status !== "delivered" && (

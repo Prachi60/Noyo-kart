@@ -4,6 +4,7 @@ import getPagination from "../utils/pagination.js";
 import { buildKey, getOrSet, getTTL, invalidate } from "../services/cacheService.js";
 import { uploadToCloudinary } from "../services/mediaService.js";
 import mongoose from "mongoose";
+import { invalidateCategoryName } from "../services/entityNameCache.js";
 
 function normalizeUrl(value) {
   if (!value || typeof value !== "string") return "";
@@ -158,7 +159,10 @@ export const createCategory = async (req, res) => {
     // Handle Images
     if (req.file) {
       try {
-        const url = await uploadToCloudinary(req.file.buffer, "categories");
+        const url = await uploadToCloudinary(req.file.buffer, "categories", {
+          mimeType: req.file.mimetype,
+          resourceType: "image",
+        });
         categoryData.image = url;
       } catch (err) {
         console.error("Cloudinary upload failed for category:", err);
@@ -233,7 +237,10 @@ export const updateCategory = async (req, res) => {
 
     if (req.file) {
       try {
-        const url = await uploadToCloudinary(req.file.buffer, "categories");
+        const url = await uploadToCloudinary(req.file.buffer, "categories", {
+          mimeType: req.file.mimetype,
+          resourceType: "image",
+        });
         categoryData.image = url;
       } catch (err) {
         console.error("Cloudinary upload failed for category update:", err);
@@ -277,6 +284,9 @@ export const updateCategory = async (req, res) => {
     invalidate("cache:catalog:categories:*").catch(err => {
       console.warn("[Category] Cache invalidation failed:", err.message);
     });
+    invalidateCategoryName(id).catch(err => {
+      console.warn("[Category] Name cache invalidation failed:", err.message);
+    });
 
     return handleResponse(res, 200, "Category updated successfully", updatedCategory);
   } catch (error) {
@@ -305,6 +315,9 @@ export const deleteCategory = async (req, res) => {
     
     invalidate("cache:catalog:categories:*").catch(err => {
       console.warn("[Category] Cache invalidation failed:", err.message);
+    });
+    invalidateCategoryName(id).catch(err => {
+      console.warn("[Category] Name cache invalidation failed:", err.message);
     });
 
     return handleResponse(res, 200, "Category and all descendants deleted");

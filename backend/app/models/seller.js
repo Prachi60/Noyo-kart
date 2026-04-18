@@ -134,6 +134,25 @@ const sellerSchema = new mongoose.Schema(
       type: Number,
       default: 5, // Default 5km
     },
+    isOnline: {
+      type: Boolean,
+      default: false,
+    },
+    isAcceptingOrders: {
+      type: Boolean,
+      default: true,
+    },
+    services: {
+      print: {
+        enabled: { type: Boolean, default: false },
+        isConfigured: { type: Boolean, default: false },
+        rates: {
+          bw: { type: Number, default: 0 },
+          color: { type: Number, default: 0 },
+          doubleSidedExtra: { type: Number, default: 0 }
+        }
+      }
+    },
     lastLogin: Date,
   },
   { timestamps: true },

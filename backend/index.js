@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import http from "http";
 import cors from "cors";
 import helmet from "helmet";
+import compression from "compression";
 import path from "path";
 import { fileURLToPath } from "url";
 import { Server } from "socket.io";
@@ -32,6 +33,10 @@ import {
   getPayoutBatchJobInterval,
   isPayoutBatchJobEnabled
 } from "./app/jobs/payoutBatchJob.js";
+import { 
+  getPrintCleanupJobHandler, 
+  getPrintCleanupJobInterval 
+} from "./app/jobs/printCleanupJob.js";
 import logger from "./app/services/logger.js";
 import { stopScheduledJobs } from "./app/services/distributedScheduler.js";
 
@@ -112,6 +117,13 @@ function createApp() {
   app.use(correlationIdMiddleware);
   app.use(structuredRequestLogger);
   app.use(trackInFlightRequests);
+  app.use(compression({
+    threshold: 1024, // only compress responses > 1KB
+    filter: (req, res) => {
+      if (req.headers["x-no-compression"]) return false;
+      return compression.filter(req, res);
+    },
+  }));
   app.use(helmet());
   app.use(cors(corsOptions));
   app.use(globalApiRateLimiter);
@@ -261,14 +273,24 @@ async function startScheduler() {
     );
   }
   
+  // Register print cleanup job
+  registerScheduledJob(
+    'printCleanupJob',
+    getPrintCleanupJobInterval(),
+    getPrintCleanupJobHandler()
+  );
+  
   // Start all registered jobs
   await startScheduledJobs();
   registerSchedulerStopper(stopScheduledJobs);
   
   logger.info('Scheduler started', {
-    jobs: isPayoutBatchJobEnabled() 
-      ? ['orderAutoCancelJob', 'payoutBatchJob']
-      : ['orderAutoCancelJob'],
+    jobs: [
+      'orderAutoCancelJob',
+      'returnWindowReleaseJob',
+      ...(isPayoutBatchJobEnabled() ? ['payoutBatchJob'] : []),
+      'printCleanupJob'
+    ],
     role: getProcessRole()
   });
 }

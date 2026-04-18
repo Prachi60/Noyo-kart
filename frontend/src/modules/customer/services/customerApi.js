@@ -130,4 +130,13 @@ export const customerApi = {
   testPushNotification: () => axiosInstance.post("/push/test"),
   getTestPushNotificationStatus: (orderId) =>
     axiosInstance.get(`/push/test-status/${encodeURIComponent(String(orderId || "").trim())}`),
+
+  // Print Service
+  uploadPrintFile: (formData) => 
+    axiosInstance.post("/print/upload", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+      timeout: 60000 
+    }),
+  calculatePrintQuote: (data) => axiosInstance.post("/print/calculate", data),
+  verifyPrintFile: (orderId, fileId) => axiosInstance.get(`/print/verify/${orderId}`, { params: { fileId } }),
 };

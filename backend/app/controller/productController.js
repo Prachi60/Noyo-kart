@@ -12,6 +12,17 @@ import {
 } from "../services/searchSyncService.js";
 import { buildKey, getOrSet, getTTL, invalidate } from "../services/cacheService.js";
 import { uploadToCloudinary } from "../services/mediaService.js";
+import { resolveCategoryName, resolveSellerName } from "../services/entityNameCache.js";
+
+function buildProductListKey(queryParams) {
+  const sorted = Object.keys(queryParams)
+    .sort()
+    .reduce((acc, k) => {
+      acc[k] = String(queryParams[k] ?? "").trim().toLowerCase();
+      return acc;
+    }, {});
+  return buildKey("catalog", "productList", JSON.stringify(sorted));
+}
 
 function isCustomerVisibilityRequest(req) {
   const role = String(req.user?.role || "").toLowerCase();
@@ -225,29 +236,76 @@ export const getProducts = async (req, res) => {
     };
     const sortQuery = sortMap[String(sort || "newest").toLowerCase()] || sortMap.newest;
 
-    const [products, total] = await Promise.all([
-      Product.find(query)
-        .select(
-          "name slug description sku price salePrice stock brand weight mainImage galleryImages headerId categoryId subcategoryId sellerId status isFeatured variants createdAt",
-        )
-        .populate("headerId", "name")
-        .populate("categoryId", "name")
-        .populate("subcategoryId", "name")
-        .populate("sellerId", "shopName")
-        .sort(sortQuery)
-        .skip(skip)
-        .limit(limit)
-        .lean(),
-      Product.countDocuments(query),
-    ]);
+    const fetchFn = async () => {
+      const [rawProducts, total] = await Promise.all([
+        Product.find(query)
+          .select(
+            "name slug description sku price salePrice stock brand weight mainImage galleryImages headerId categoryId subcategoryId sellerId status isFeatured variants createdAt",
+          )
+          // No .populate() — names resolved via cache-backed entityNameCache
+          .sort(sortQuery)
+          .skip(skip)
+          .limit(limit)
+          .lean(),
+        Product.countDocuments(query),
+      ]);
 
-    return handleResponse(res, 200, "Products fetched successfully", {
-      items: products,
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit) || 1,
-    });
+      // Collect unique category IDs (headerId, categoryId, subcategoryId) and seller IDs
+      const categoryIdSet = new Set();
+      const sellerIdSet = new Set();
+      for (const p of rawProducts) {
+        if (p.headerId) categoryIdSet.add(String(p.headerId));
+        if (p.categoryId) categoryIdSet.add(String(p.categoryId));
+        if (p.subcategoryId) categoryIdSet.add(String(p.subcategoryId));
+        if (p.sellerId) sellerIdSet.add(String(p.sellerId));
+      }
+
+      // Resolve names in parallel via cache-backed service
+      const [categoryEntries, sellerEntries] = await Promise.all([
+        Promise.all(
+          [...categoryIdSet].map(async (id) => [id, await resolveCategoryName(id)]),
+        ),
+        Promise.all(
+          [...sellerIdSet].map(async (id) => [id, await resolveSellerName(id)]),
+        ),
+      ]);
+
+      const nameMap = Object.fromEntries([...categoryEntries, ...sellerEntries]);
+
+      // Enrich products to match the shape previously returned by .populate()
+      const products = rawProducts.map((p) => ({
+        ...p,
+        headerId: p.headerId
+          ? { _id: p.headerId, name: nameMap[String(p.headerId)] ?? null }
+          : null,
+        categoryId: p.categoryId
+          ? { _id: p.categoryId, name: nameMap[String(p.categoryId)] ?? null }
+          : null,
+        subcategoryId: p.subcategoryId
+          ? { _id: p.subcategoryId, name: nameMap[String(p.subcategoryId)] ?? null }
+          : null,
+        sellerId: p.sellerId
+          ? { _id: p.sellerId, shopName: nameMap[String(p.sellerId)] ?? null }
+          : null,
+      }));
+
+      return {
+        items: products,
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit) || 1,
+      };
+    };
+
+    const role = String(req.user?.role || "").toLowerCase();
+    const shouldCache = !role || (role !== "admin" && role !== "seller");
+
+    const result = shouldCache
+      ? await getOrSet(buildProductListKey(req.query), fetchFn, getTTL("productList"))
+      : await fetchFn();
+
+    return handleResponse(res, 200, "Products fetched successfully", result);
   } catch (error) {
     return handleResponse(res, 500, error.message);
   }
@@ -327,10 +385,16 @@ export const createProduct = async (req, res) => {
       for (const file of files) {
         try {
           if (file.fieldname === "mainImage") {
-            const url = await uploadToCloudinary(file.buffer, "products");
+            const url = await uploadToCloudinary(file.buffer, "products", {
+              mimeType: file.mimetype,
+              resourceType: "image",
+            });
             productData.mainImage = url;
           } else if (file.fieldname === "galleryImages") {
-            const url = await uploadToCloudinary(file.buffer, "products");
+            const url = await uploadToCloudinary(file.buffer, "products", {
+              mimeType: file.mimetype,
+              resourceType: "image",
+            });
             galleryUrls.push(url);
           }
         } catch (err) {
@@ -412,6 +476,12 @@ export const createProduct = async (req, res) => {
       await enqueueProductIndex(product._id.toString());
       await invalidate(`cache:catalog:product:${product._id.toString()}`);
     }
+
+    try {
+      await invalidate(buildKey("catalog", "productList", "*"));
+    } catch (cacheErr) {
+      console.error("Cache invalidation error (createProduct):", cacheErr);
+    }
     
     return handleResponse(res, 201, "Product created successfully", product);
   } catch (error) {
@@ -440,10 +510,16 @@ export const updateProduct = async (req, res) => {
       for (const file of files) {
         try {
           if (file.fieldname === "mainImage") {
-            const url = await uploadToCloudinary(file.buffer, "products");
+            const url = await uploadToCloudinary(file.buffer, "products", {
+              mimeType: file.mimetype,
+              resourceType: "image",
+            });
             productData.mainImage = url;
           } else if (file.fieldname === "galleryImages") {
-            const url = await uploadToCloudinary(file.buffer, "products");
+            const url = await uploadToCloudinary(file.buffer, "products", {
+              mimeType: file.mimetype,
+              resourceType: "image",
+            });
             galleryUrls.push(url);
           }
         } catch (err) {
@@ -533,6 +609,12 @@ export const updateProduct = async (req, res) => {
     await enqueueProductIndex(id);
     await invalidate(`cache:catalog:product:${id}`);
 
+    try {
+      await invalidate(buildKey("catalog", "productList", "*"));
+    } catch (cacheErr) {
+      console.error("Cache invalidation error (updateProduct):", cacheErr);
+    }
+
     return handleResponse(
       res,
       200,
@@ -579,6 +661,12 @@ export const deleteProduct = async (req, res) => {
     // Enqueue search index removal asynchronously
     await enqueueProductRemoval(id);
     await invalidate(`cache:catalog:product:${id}`);
+
+    try {
+      await invalidate(buildKey("catalog", "productList", "*"));
+    } catch (cacheErr) {
+      console.error("Cache invalidation error (deleteProduct):", cacheErr);
+    }
 
     return handleResponse(res, 200, "Product deleted successfully");
   } catch (error) {

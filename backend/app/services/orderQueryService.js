@@ -3,6 +3,7 @@ import Delivery from "../models/delivery.js";
 import Seller from "../models/seller.js";
 import { WORKFLOW_STATUS } from "../constants/orderWorkflow.js";
 import { distanceMeters } from "../utils/geoUtils.js";
+import { reconcilePrintOrdersForLookup } from "./printOrderRecoveryService.js";
 
 function normalizeSellerStatusFilter(statusParam) {
   if (!statusParam || statusParam === "all") {
@@ -83,6 +84,10 @@ export async function fetchSellerOrdersPage({
     startDate,
     endDate,
   });
+
+  if (role !== "admin") {
+    await reconcilePrintOrdersForLookup({ sellerId: userId, limit: 50 });
+  }
 
   const [orders, total] = await Promise.all([
     Order.find(query)

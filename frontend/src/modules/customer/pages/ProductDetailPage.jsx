@@ -8,9 +8,9 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { customerApi } from '../services/customerApi';
 import { useLocation as useAppLocation } from '../context/LocationContext';
+import { applyCloudinaryTransform } from '@/core/utils/imageUtils';
 import { useSettings } from '@core/context/SettingsContext';
 import Lottie from 'lottie-react';
-import noServiceAnimation from '@/assets/lottie/animation.json';
 
 const ProductDetailPage = () => {
     const { id } = useParams();
@@ -29,6 +29,14 @@ const ProductDetailPage = () => {
     const [reviewLoading, setReviewLoading] = useState(false);
     const [isSubmittingReview, setIsSubmittingReview] = useState(false);
     const [newReview, setNewReview] = useState({ rating: 5, comment: '' });
+    const [noServiceData, setNoServiceData] = useState(null);
+
+    // Dynamically load no-service Lottie on mount
+    useEffect(() => {
+        import('@/assets/lottie/animation.json')
+            .then((m) => setNoServiceData(m.default))
+            .catch(() => {});
+    }, []);
 
     const fetchData = async (showLoader = true) => {
         if (showLoader) setIsLoading(true);
@@ -135,7 +143,11 @@ const ProductDetailPage = () => {
         return (
             <div className="min-h-screen bg-white py-20 px-8 flex flex-col items-center justify-center text-center">
                 <div className="w-64 h-64 mb-6">
-                    <Lottie animationData={noServiceAnimation} loop={true} />
+                    {noServiceData ? (
+                        <Lottie animationData={noServiceData} loop={true} />
+                    ) : (
+                        <div className="w-64 h-64" />
+                    )}
                 </div>
                 <h3 className="text-3xl font-[1000] text-slate-800 tracking-tighter mb-4 uppercase">
                     Item <span className="text-[#45B0E2]">Unavailable</span>
@@ -177,8 +189,9 @@ const ProductDetailPage = () => {
                 <div className="lg:w-[45%] xl:w-[40%] space-y-4">
                     <div className="relative aspect-square rounded-[2rem] overflow-hidden bg-white border border-slate-100 shadow-sm transition-all hover:shadow-xl group">
                         <img
-                            src={activeImage}
+                            src={applyCloudinaryTransform(activeImage)}
                             alt={product.name}
+                            loading="lazy"
                             className="w-full h-full object-contain p-4 transition-transform duration-700 group-hover:scale-105"
                         />
                         <button
@@ -202,7 +215,7 @@ const ProductDetailPage = () => {
                                     activeImage === img ? "border-[#45B0E2] shadow-lg scale-95" : "border-transparent opacity-70 hover:opacity-100"
                                 )}
                             >
-                                <img src={img} alt={`Angle ${idx}`} className="w-full h-full object-contain p-1" />
+                                <img src={applyCloudinaryTransform(img)} alt={`Angle ${idx}`} loading="lazy" className="w-full h-full object-contain p-1" />
                             </button>
                         ))}
                     </div>

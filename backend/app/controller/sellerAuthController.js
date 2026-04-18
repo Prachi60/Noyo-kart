@@ -109,7 +109,9 @@ export const signupSeller = async (req, res) => {
                 try {
                     const fieldName = file.fieldname;
                     if (fieldName && REQUIRED_SELLER_DOCUMENT_FIELDS.includes(fieldName)) {
-                        const url = await uploadToCloudinary(file.buffer, "docs");
+                        const url = await uploadToCloudinary(file.buffer, "docs", {
+                            mimeType: file.mimetype,
+                        });
                         uploadedDocs[fieldName] = url;
                     }
                 } catch (err) {

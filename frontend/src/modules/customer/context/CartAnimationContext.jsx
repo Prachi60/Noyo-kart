@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const CartAnimationContext = createContext({
@@ -53,9 +53,11 @@ export const CartAnimationProvider = ({ children }) => {
     }, 600);
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const value = useMemo(() => ({ animateAddToCart, animateRemoveFromCart }), []);
+
   return (
-    <CartAnimationContext.Provider
-      value={{ animateAddToCart, animateRemoveFromCart }}>
+    <CartAnimationContext.Provider value={value}>
       {children}
       <FlyingItemsOverlay items={flyingItems} />
       <DroppingItemsOverlay items={droppingItems} />

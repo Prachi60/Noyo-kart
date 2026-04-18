@@ -4,6 +4,7 @@ import { ChevronRight } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { applyCloudinaryTransform } from '@/core/utils/imageUtils';
 
 const MiniCart = () => {
     const { cart, cartCount } = useCart();
@@ -56,8 +57,9 @@ const MiniCart = () => {
                             <div className="h-7 w-7 rounded-full bg-white flex items-center justify-center flex-shrink-0 shadow-sm overflow-hidden">
                                 {cart.length > 0 && (
                                     <img
-                                        src={cart[0].image}
+                                        src={applyCloudinaryTransform(cart[0].image)}
                                         alt={cart[0].name}
+                                        loading="lazy"
                                         className="w-full h-full object-contain p-0.5"
                                     />
                                 )}

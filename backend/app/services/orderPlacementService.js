@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Cart from "../models/cart.js";
 import CheckoutGroup from "../models/checkoutGroup.js";
+import FileMeta from "../models/fileMeta.js";
 import Order from "../models/order.js";
 import User from "../models/customer.js";
 import Transaction from "../models/transaction.js";
@@ -53,14 +54,39 @@ function normalizeAddress(address = {}) {
 }
 
 function mapOrderItemsForPersistence(hydratedItems = []) {
-  return hydratedItems.map((item) => ({
-    product: item.productId,
-    name: item.productName,
-    quantity: item.quantity,
-    price: item.price,
-    variantSlot: String(item.variantSku || item.variantSlot || "").trim() || undefined,
-    image: item.image || "",
-  }));
+  return hydratedItems.map((item) => {
+    if (item?.type === "print") {
+      return {
+        type: "print",
+        name: item.productName,
+        quantity: item.quantity,
+        price: item.price,
+        image: item.image || "",
+        printDetails: [
+          {
+            fileMetaId: item?.printDetails?.fileMetaId,
+            fileId: item?.printDetails?.fileId || item?.printDetails?.publicId,
+            publicId: item?.printDetails?.publicId || item?.printDetails?.fileId,
+            fileUrl: item?.printDetails?.fileUrl || "",
+            fileName: item?.printDetails?.fileName || item.productName,
+            pageCount: item?.printDetails?.pageCount || 1,
+            copies: item.quantity,
+            priceBreakdown: item?.printDetails?.priceBreakdown || {},
+            options: item?.printDetails?.options || {},
+          },
+        ],
+      };
+    }
+
+    return {
+      product: item.productId,
+      name: item.productName,
+      quantity: item.quantity,
+      price: item.price,
+      variantSlot: String(item.variantSku || item.variantSlot || "").trim() || undefined,
+      image: item.image || "",
+    };
+  });
 }
 
 function placementSource(payload = {}) {
@@ -211,6 +237,39 @@ function buildCheckoutGroupPaymentStatus(paymentMode) {
     : ORDER_PAYMENT_STATUS.PENDING_CASH_COLLECTION;
 }
 
+async function activatePrintFilesForOrder({
+  hydratedItems = [],
+  orderId,
+  customerId,
+  session,
+}) {
+  const fileMetaIds = Array.from(
+    new Set(
+      hydratedItems
+        .filter((item) => item?.type === "print")
+        .map((item) => String(item?.printDetails?.fileMetaId || "").trim())
+        .filter(Boolean),
+    ),
+  );
+
+  if (!fileMetaIds.length) return;
+
+  await FileMeta.updateMany(
+    {
+      _id: { $in: fileMetaIds },
+      ownerId: customerId,
+    },
+    {
+      $set: {
+        status: "ACTIVE",
+        orderId,
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      },
+    },
+    { session },
+  );
+}
+
 export async function placeOrderAtomic({
   customerId,
   payload,
@@ -313,6 +372,8 @@ export async function placeOrderAtomic({
       address: normalizedAddress,
       tipAmount,
       discountTotal: Math.max(0, Number(normalizedPayload.discountTotal || 0)),
+      sellerId: normalizedPayload.sellerId || null,
+      customerId,
       session,
     });
 
@@ -417,6 +478,12 @@ export async function placeOrderAtomic({
 
       freezeFinancialSnapshot(order, entry.breakdown);
       await order.save({ session });
+      await activatePrintFilesForOrder({
+        hydratedItems: entry.items,
+        orderId: order._id,
+        customerId,
+        session,
+      });
       orders.push(order);
     }
 

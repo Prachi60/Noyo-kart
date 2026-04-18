@@ -42,6 +42,7 @@ import {
 } from "../utils/orderLookup.js";
 import { createFinanceOrderSchema } from "../validation/financeValidation.js";
 import { placeOrderAtomic } from "../services/orderPlacementService.js";
+import { reconcilePrintOrdersForLookup } from "../services/printOrderRecoveryService.js";
 import { emitNotificationEvent } from "../modules/notifications/notification.emitter.js";
 import { NOTIFICATION_EVENTS } from "../modules/notifications/notification.constants.js";
 import {
@@ -54,6 +55,7 @@ import {
 import * as walletService from "../services/finance/walletService.js";
 import { OWNER_TYPE } from "../constants/finance.js";
 import { processPayout } from "../services/finance/payoutService.js";
+import { buildKey, getOrSet, getTTL, invalidate } from "../services/cacheService.js";
 
 function validateWithJoi(schema, payload) {
   const { error, value } = schema.validate(payload, {
@@ -193,7 +195,7 @@ export const placeOrder = async (req, res) => {
       return handleResponse(res, 401, "Unauthorized");
     }
 
-    const { address, payment, timeSlot, items, paymentMode: paymentModeRaw } =
+    const { address, payment, timeSlot, items, paymentMode: paymentModeRaw, sellerId } =
       req.body || {};
 
     const payload = validateWithJoi(createFinanceOrderSchema, {
@@ -204,16 +206,40 @@ export const placeOrder = async (req, res) => {
         normalizePaymentMode(payment?.paymentMode) ||
         inferPaymentMode(payment) ||
         "COD",
+      sellerId,
       timeSlot: timeSlot || "now",
       tipAmount: Number(req.body?.tipAmount || 0),
     });
 
     const idempotencyKey = String(req.headers?.["idempotency-key"] || "").trim() || null;
-    const placement = await placeOrderAtomic({
+    let placement = await placeOrderAtomic({
       customerId,
       payload,
       idempotencyKey,
     });
+
+    if (placement?.checkoutGroup?.checkoutGroupId) {
+      const recoveredOrders = await reconcilePrintOrdersForLookup({
+        checkoutGroupId: placement.checkoutGroup.checkoutGroupId,
+        limit: 1,
+      });
+      if ((!placement.orders || placement.orders.length === 0) && recoveredOrders.length > 0) {
+        const normalizedOrders = recoveredOrders.map((order) =>
+          typeof order?.toObject === "function" ? order.toObject() : order,
+        );
+        placement = {
+          ...placement,
+          orders: normalizedOrders,
+          order: normalizedOrders[0] || null,
+        };
+      }
+    }
+
+    try {
+      await invalidate(buildKey("orders", "customer", `${customerId}:*`));
+    } catch (cacheErr) {
+      console.warn("[placeOrder] cache invalidation failed:", cacheErr.message);
+    }
 
     return handleResponse(
       res,
@@ -244,31 +270,42 @@ export const placeOrder = async (req, res) => {
 export const getMyOrders = async (req, res) => {
   try {
     const customerId = req.user.id;
+    await reconcilePrintOrdersForLookup({ customerId, limit: 50 });
     const { page, limit, skip } = getPagination(req, {
       defaultLimit: 20,
       maxLimit: 100,
     });
 
-    const [orders, total] = await Promise.all([
-      Order.find({ customer: customerId })
-        .select(
-          "orderId checkoutGroupId customer seller items address payment pricing status workflowStatus workflowVersion returnStatus timeSlot createdAt",
-        )
-        .sort({ createdAt: -1, _id: -1 })
-        .skip(skip)
-        .limit(limit)
-        .populate("items.product", "name mainImage price salePrice")
-        .lean(),
-      Order.countDocuments({ customer: customerId }),
-    ]);
+    const cacheKey = buildKey("orders", "customer", `${customerId}:p${page}:l${limit}`);
 
-    return handleResponse(res, 200, "Orders fetched successfully", {
-      items: orders,
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit) || 1,
-    });
+    const result = await getOrSet(
+      cacheKey,
+      async () => {
+        const [orders, total] = await Promise.all([
+          Order.find({ customer: customerId })
+            .select(
+              "orderId checkoutGroupId customer seller items address payment pricing status workflowStatus workflowVersion returnStatus timeSlot createdAt",
+            )
+            .sort({ createdAt: -1, _id: -1 })
+            .skip(skip)
+            .limit(limit)
+            .populate("items.product", "name mainImage price salePrice")
+            .lean(),
+          Order.countDocuments({ customer: customerId }),
+        ]);
+
+        return {
+          items: orders,
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit) || 1,
+        };
+      },
+      getTTL("orders"),
+    );
+
+    return handleResponse(res, 200, "Orders fetched successfully", result);
   } catch (error) {
     return handleResponse(res, 500, error.message);
   }
@@ -363,6 +400,21 @@ export const getOrderDetails = async (req, res) => {
       .populate("returnDeliveryBoy", "name phone")
       .populate("seller", "shopName name address phone location")
       .lean();
+
+    if (!order) {
+      await reconcilePrintOrdersForLookup({
+        publicOrderId: orderId && !orderId.startsWith("CHK-") ? orderId : null,
+        checkoutGroupId: orderId && orderId.startsWith("CHK-") ? orderId : null,
+      });
+
+      order = await Order.findOne(orderKey)
+        .populate("customer", "name email phone")
+        .populate("items.product", "name mainImage price salePrice")
+        .populate("deliveryBoy", "name phone")
+        .populate("returnDeliveryBoy", "name phone")
+        .populate("seller", "shopName name address phone location")
+        .lean();
+    }
 
     if (!order) {
       if (orderId && orderId.startsWith("CHK-")) {
@@ -535,6 +587,12 @@ export const cancelOrder = async (req, res) => {
     order.cancelledBy = "customer";
     order.cancelReason = reason || "Cancelled by user";
     await order.save();
+
+    try {
+      await invalidate(buildKey("orders", "customer", `${customerId}:*`));
+    } catch (cacheErr) {
+      console.warn("[cancelOrder] cache invalidation failed:", cacheErr.message);
+    }
 
     if (order.paymentBreakdown?.grandTotal != null) {
       try {
@@ -833,6 +891,13 @@ export const updateOrderStatus = async (req, res) => {
           return handleResponse(res, e.statusCode || 500, e.message);
         }
       }
+      if (status && !["pending", "confirmed", "cancelled"].includes(status)) {
+        return handleResponse(
+          res,
+          409,
+          "Seller cannot directly update delivery stages for workflow orders.",
+        );
+      }
     }
 
     // --- Data Isolation Check ---
@@ -924,6 +989,12 @@ export const updateOrderStatus = async (req, res) => {
     }
 
     await order.save();
+
+    try {
+      await invalidate(buildKey("orders", "customer", `${order.customer.toString()}:*`));
+    } catch (cacheErr) {
+      console.warn("[updateOrderStatus] cache invalidation failed:", cacheErr.message);
+    }
 
     if (status === "confirmed" && role === "seller") {
       // This order is now 'Automatic' for delivery partners

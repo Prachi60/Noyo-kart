@@ -35,6 +35,18 @@ const SellerProfile = () => {
     lng: null,
     radius: 5,
     address: "",
+    isOnline: false,
+    isAcceptingOrders: true,
+    services: {
+      print: {
+        enabled: false,
+        rates: {
+          bw: 0,
+          color: 0,
+          doubleSidedExtra: 0,
+        },
+      },
+    },
   });
 
   useEffect(() => {
@@ -55,6 +67,14 @@ const SellerProfile = () => {
         lng: data.location?.coordinates[0] || null,
         radius: data.serviceRadius || 5,
         address: data.address || "",
+        isOnline: data.isOnline || false,
+        isAcceptingOrders: data.isAcceptingOrders ?? true,
+        services: data.services || {
+          print: {
+            enabled: false,
+            rates: { bw: 0, color: 0, doubleSidedExtra: 0 },
+          },
+        },
       });
     } catch (error) {
       toast.error("Failed to fetch profile");
@@ -110,6 +130,9 @@ const SellerProfile = () => {
         lat: formData.lat,
         lng: formData.lng,
         radius: formData.radius,
+        isOnline: formData.isOnline,
+        isAcceptingOrders: formData.isAcceptingOrders,
+        services: formData.services,
       };
       await sellerApi.updateProfile(payload);
       toast.success("Profile updated successfully");
@@ -411,6 +434,123 @@ const SellerProfile = () => {
               </div>
             </div>
           </Card>
+
+          {/* Print Service Settings Card */}
+          <Card className="p-8 border-none shadow-[0_20px_50px_rgba(0,0,0,0.05)] rounded-lg">
+            <div className="flex justify-between items-center mb-8 border-b border-slate-50 pb-4">
+              <h3 className="text-xl font-black text-slate-900">
+                Print Service Settings
+              </h3>
+              <button
+                type="button"
+                onClick={() =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    services: {
+                      ...prev.services,
+                      print: {
+                        ...prev.services.print,
+                        enabled: !prev.services.print?.enabled,
+                      },
+                    },
+                  }))
+                }
+                disabled={!isEditing}
+                className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                  formData.services?.print?.enabled
+                    ? "bg-emerald-500 text-white"
+                    : "bg-slate-200 text-slate-500"
+                }`}>
+                {formData.services?.print?.enabled ? "ENABLED" : "DISABLED"}
+              </button>
+            </div>
+
+            <div
+              className={`space-y-6 transition-all ${
+                !formData.services?.print?.enabled && "opacity-50 pointer-events-none"
+              }`}>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                    B&W Rate (per page)
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.services?.print?.rates?.bw || 0}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        services: {
+                          ...prev.services,
+                          print: {
+                            ...prev.services.print,
+                            rates: {
+                              ...prev.services.print.rates,
+                              bw: Number(e.target.value),
+                            },
+                          },
+                        },
+                      }))
+                    }
+                    disabled={!isEditing}
+                    className="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-lg text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-100 transition-all"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                    Color Rate (per page)
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.services?.print?.rates?.color || 0}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        services: {
+                          ...prev.services,
+                          print: {
+                            ...prev.services.print,
+                            rates: {
+                              ...prev.services.print.rates,
+                              color: Number(e.target.value),
+                            },
+                          },
+                        },
+                      }))
+                    }
+                    disabled={!isEditing}
+                    className="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-lg text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-100 transition-all"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                    Double-Sided Extra
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.services?.print?.rates?.doubleSidedExtra || 0}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        services: {
+                          ...prev.services,
+                          print: {
+                            ...prev.services.print,
+                            rates: {
+                              ...prev.services.print.rates,
+                              doubleSidedExtra: Number(e.target.value),
+                            },
+                          },
+                        },
+                      }))
+                    }
+                    disabled={!isEditing}
+                    className="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-lg text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-100 transition-all"
+                  />
+                </div>
+              </div>
+            </div>
+          </Card>
         </div>
 
         {/* Sidebar Card */}
@@ -420,7 +560,6 @@ const SellerProfile = () => {
               Security & Trust
             </h4>
             <div className="space-y-6">
-              <div className="flex items-center gap-4">
                 <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center">
                   <Shield size={20} className="text-white" />
                 </div>
@@ -435,6 +574,73 @@ const SellerProfile = () => {
                   </p>
                 </div>
               </div>
+
+              {/* Added Availability Toggles */}
+              <div
+                className={`flex items-center justify-between p-4 rounded-2xl border ${
+                  formData.isOnline
+                    ? "bg-emerald-500/10 border-emerald-500/20"
+                    : "bg-slate-800 border-white/10"
+                }`}>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-white/60">
+                    Online Status
+                  </p>
+                  <p className="text-sm font-bold">
+                    {formData.isOnline ? "Online" : "Offline"}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFormData((prev) => ({ ...prev, isOnline: !prev.isOnline }))
+                  }
+                  disabled={!isEditing}
+                  className={`w-12 h-6 rounded-full relative transition-all ${
+                    formData.isOnline ? "bg-emerald-500" : "bg-slate-600"
+                  }`}>
+                  <div
+                    className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${
+                      formData.isOnline ? "left-7" : "left-1"
+                    }`}
+                  />
+                </button>
+              </div>
+
+              <div
+                className={`flex items-center justify-between p-4 rounded-2xl border ${
+                  formData.isAcceptingOrders
+                    ? "bg-blue-500/10 border-blue-500/20"
+                    : "bg-slate-800 border-white/10"
+                }`}>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-white/60">
+                    Ordering
+                  </p>
+                  <p className="text-sm font-bold">
+                    {formData.isAcceptingOrders ? "Accepting" : "Paused"}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      isAcceptingOrders: !prev.isAcceptingOrders,
+                    }))
+                  }
+                  disabled={!isEditing}
+                  className={`w-12 h-6 rounded-full relative transition-all ${
+                    formData.isAcceptingOrders ? "bg-blue-500" : "bg-slate-600"
+                  }`}>
+                  <div
+                    className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${
+                      formData.isAcceptingOrders ? "left-7" : "left-1"
+                    }`}
+                  />
+                </button>
+              </div>
+
               <div className="flex items-center gap-4">
                 <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center">
                   <Rocket size={20} className="text-white" />
@@ -457,7 +663,6 @@ const SellerProfile = () => {
                   <p className="text-sm font-bold">Pan India Reach</p>
                 </div>
               </div>
-            </div>
           </Card>
         </div>
       </div>

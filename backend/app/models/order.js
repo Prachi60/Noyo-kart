@@ -25,10 +25,17 @@ const orderSchema = new mongoose.Schema(
     },
     items: [
       {
+        type: {
+          type: String,
+          enum: ["product", "print"],
+          default: "product",
+        },
         product: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "Product",
-          required: true,
+          required: function () {
+            return this.type === "product";
+          },
         },
         name: String,
         quantity: {
@@ -42,6 +49,29 @@ const orderSchema = new mongoose.Schema(
         },
         variantSlot: String,
         image: String,
+        printDetails: [
+          {
+            fileMetaId: String,
+            fileId: String,
+            publicId: String,
+            fileUrl: String,
+            fileName: String,
+            pageCount: Number,
+            copies: { type: Number, default: 1 },
+            priceBreakdown: {
+              bwPages: Number,
+              colorPages: Number,
+              extraCharges: Number,
+              total: Number,
+            },
+            options: {
+              color: Boolean,
+              doubleSided: Boolean,
+              orientation: { type: String, enum: ["portrait", "landscape"] },
+              pages: String,
+            },
+          },
+        ],
       },
     ],
     address: {
