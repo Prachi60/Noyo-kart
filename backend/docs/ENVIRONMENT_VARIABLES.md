@@ -47,6 +47,7 @@ Redis is **mandatory in production** (`NODE_ENV=production`). Startup fails if n
 |----------|---------|----------|-------------|
 | `USE_MOCK_OTP` | `true` in local dev | No | Enables mock OTP mode for the shared `/api/auth/otp/*` flow |
 | `USE_REAL_SMS` | `false` | No | Backward-compatible flag used by older OTP flows |
+| `USE_REAL_EMAIL_OTP` | `false` | No | Enables real SMTP delivery for seller email OTPs |
 | `OTP_EXPIRY_MINUTES` | `5` | No | OTP validity window |
 | `OTP_LENGTH` | `4` | No | OTP length for the shared SMS OTP flow |
 | `OTP_MAX_FAILED_ATTEMPTS` | `5` | No | Max invalid verification attempts before the OTP session is discarded |
@@ -59,6 +60,18 @@ Redis is **mandatory in production** (`NODE_ENV=production`). Startup fails if n
 | `SMS_INDIA_HUB_DLT_TEMPLATE_ID` | â€” | Real SMS: **Yes** | Approved DLT template ID |
 | `SMS_INDIA_HUB_URL` | `http://cloud.smsindiahub.in/vendorsms/pushsms.aspx` | No | SMS India HUB endpoint |
 | `SMS_INDIA_HUB_TIMEOUT_MS` | `10000` | No | SMS provider request timeout |
+
+## Email / SMTP
+
+| Variable | Default | Required | Description |
+|----------|---------|----------|-------------|
+| `SMTP_HOST` | â€” | Real email OTP: **Yes** | SMTP server hostname |
+| `SMTP_PORT` | `587` | No | SMTP server port |
+| `SMTP_SECURE` | Auto (`true` on `465`) | No | Force TLS mode for SMTP |
+| `SMTP_USER` | â€” | Depends on provider | SMTP username |
+| `SMTP_PASS` | â€” | Depends on provider | SMTP password |
+| `MAIL_FROM` | â€” | Real email OTP: **Yes** | Sender email address used for OTP emails |
+| `MAIL_FROM_NAME` | â€” | No | Optional sender display name |
 
 ## Media / Cloudinary
 

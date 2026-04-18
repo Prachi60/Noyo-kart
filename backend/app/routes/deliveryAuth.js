@@ -22,7 +22,6 @@ import { getRiderWalletSummaryController } from "../controller/adminFinanceContr
 import { verifyToken, allowRoles } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
-console.log("Delivery Auth Routes Loading...");
 
 router.post(
   "/send-signup-otp",

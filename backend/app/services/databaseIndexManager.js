@@ -56,38 +56,27 @@ export async function createAllIndexes() {
   
   try {
     for (const [collectionName, indexes] of Object.entries(INDEX_DEFINITIONS)) {
-      logger.info(`[DatabaseIndexManager] Processing collection: ${collectionName}`);
-      
       const collection = mongoose.connection.collection(collectionName);
       
       for (const indexDef of indexes) {
         try {
           const indexName = indexDef.options?.name || Object.keys(indexDef.keys).join("_");
           
-          // Check if index already exists
           const existingIndexes = await collection.indexes();
           const indexExists = existingIndexes.some(idx => idx.name === indexName);
           
           if (indexExists) {
-            logger.info(`[DatabaseIndexManager] Index "${indexName}" already exists on ${collectionName}`);
             results.existing++;
             continue;
           }
           
-          // Create index with background option for production safety
-          const options = {
-            ...indexDef.options,
-            background: true,
-          };
-          
+          const options = { ...indexDef.options, background: true };
           await collection.createIndex(indexDef.keys, options);
           logger.info(`[DatabaseIndexManager] Created index "${indexName}" on ${collectionName}`);
           results.created++;
           
         } catch (error) {
-          // Check for index already exists with different name (code 85)
           if (error.code === 85 || error.codeName === "IndexOptionsConflict") {
-            logger.info(`[DatabaseIndexManager] Equivalent index already exists on ${collectionName} (code 85)`);
             results.existing++;
             continue;
           }

@@ -1,6 +1,7 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import axiosInstance from '@core/api/axios';
 import { getWithDedupe } from '@core/api/dedupe';
+import { getStoredAuthToken } from '@core/utils/authStorage';
 
 const AuthContext = createContext(undefined);
 
@@ -23,14 +24,7 @@ export const AuthProvider = ({ children }) => {
         return 'customer';
     };
 
-    const getSafeToken = (key) => {
-        const val = localStorage.getItem(ROLE_STORAGE_KEYS[key]);
-        if (!val) return null;
-        if (val.startsWith('{')) {
-            try { return JSON.parse(val).token; } catch { return val; }
-        }
-        return val;
-    };
+    const getSafeToken = (key) => getStoredAuthToken(ROLE_STORAGE_KEYS[key]);
 
     const [authData, setAuthData] = useState({
         customer: getSafeToken('customer'),
@@ -44,6 +38,27 @@ export const AuthProvider = ({ children }) => {
     const [isLoading, setIsLoading] = useState(true);
     const token = authData[currentRole];
     const isAuthenticated = !!token;
+
+    useEffect(() => {
+        const syncStoredTokens = () => {
+            setAuthData({
+                customer: getSafeToken('customer'),
+                seller: getSafeToken('seller'),
+                admin: getSafeToken('admin'),
+                delivery: getSafeToken('delivery'),
+            });
+        };
+
+        window.addEventListener('focus', syncStoredTokens);
+        window.addEventListener('storage', syncStoredTokens);
+        document.addEventListener('visibilitychange', syncStoredTokens);
+
+        return () => {
+            window.removeEventListener('focus', syncStoredTokens);
+            window.removeEventListener('storage', syncStoredTokens);
+            document.removeEventListener('visibilitychange', syncStoredTokens);
+        };
+    }, []);
 
     // Register FCM token after login (non-blocking).
     useEffect(() => {
@@ -170,18 +185,21 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const value = useMemo(() => ({
+        user,
+        token,
+        role: currentRole,
+        isAuthenticated,
+        isLoading,
+        authData,
+        login,
+        logout,
+        refreshUser
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }), [user, token, currentRole, isAuthenticated, isLoading, authData]);
+
     return (
-        <AuthContext.Provider value={{
-            user,
-            token, // Added token to context
-            role: currentRole,
-            isAuthenticated,
-            isLoading,
-            authData,
-            login,
-            logout,
-            refreshUser
-        }}>
+        <AuthContext.Provider value={value}>
             {children}
         </AuthContext.Provider>
     );

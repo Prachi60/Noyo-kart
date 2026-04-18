@@ -119,21 +119,19 @@ async function processSearchIndexJob(job) {
   const operation = job.name; // "index" or "remove"
   
   try {
-    logger.info(`[SearchSync] Processing ${operation} job for product ${productId}, attempt ${job.attemptsMade + 1}/${SEARCH_INDEX_RETRY_ATTEMPTS}`);
+    logger.debug(`[SearchSync] Processing ${operation} job for product ${productId}, attempt ${job.attemptsMade + 1}/${SEARCH_INDEX_RETRY_ATTEMPTS}`);
     
     if (operation === "index") {
-      // Fetch product and index it
       const product = await Product.findById(productId).lean();
       
       if (!product) {
         logger.warn(`[SearchSync] Product ${productId} not found, skipping index`);
-        return; // Don't retry if product doesn't exist
+        return;
       }
       
       await indexProduct(product);
-      logger.info(`[SearchSync] Successfully indexed product ${productId}`);
+      logger.debug(`[SearchSync] Successfully indexed product ${productId}`);
       
-      // Remove from failure log if it was previously failed
       await SearchIndexFailure.updateMany(
         { productId, operation: "index", resolved: false },
         { $set: { resolved: true, resolvedAt: new Date() } }
@@ -141,9 +139,8 @@ async function processSearchIndexJob(job) {
       
     } else if (operation === "remove") {
       await removeProduct(productId);
-      logger.info(`[SearchSync] Successfully removed product ${productId} from index`);
+      logger.debug(`[SearchSync] Successfully removed product ${productId} from index`);
       
-      // Remove from failure log if it was previously failed
       await SearchIndexFailure.updateMany(
         { productId, operation: "remove", resolved: false },
         { $set: { resolved: true, resolvedAt: new Date() } }

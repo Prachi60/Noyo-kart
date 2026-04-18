@@ -2,19 +2,35 @@ import jwt from "jsonwebtoken";
 import handleResponse from "../utils/helper.js";
 import Seller from "../models/seller.js";
 
+function extractJwtFromHeaders(req) {
+  const authHeader = String(req.headers.authorization || "").trim();
+  if (authHeader) {
+    const parts = authHeader.split(/\s+/);
+    if (parts.length >= 2 && /^bearer$/i.test(parts[0])) {
+      return parts[1];
+    }
+
+    // Allow raw JWT in Authorization header for non-standard clients.
+    // Still requires signature verification so it doesn't weaken auth.
+    if (authHeader.split(".").length === 3) {
+      return authHeader;
+    }
+  }
+
+  const xAccessToken = String(req.headers["x-access-token"] || "").trim();
+  if (xAccessToken && xAccessToken.split(".").length === 3) {
+    return xAccessToken;
+  }
+
+  return null;
+}
+
 /* ===============================
    Verify Token
 ================================ */
 export const verifyToken = (req, res, next) => {
   try {
-    let token;
-
-    if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith("Bearer")
-    ) {
-      token = req.headers.authorization.split(" ")[1];
-    }
+    const token = extractJwtFromHeaders(req);
 
     if (!token) {
       return handleResponse(res, 401, "Unauthorized, token missing");
@@ -34,14 +50,7 @@ export const verifyToken = (req, res, next) => {
 ================================ */
 export const optionalVerifyToken = (req, res, next) => {
   try {
-    let token;
-
-    if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith("Bearer")
-    ) {
-      token = req.headers.authorization.split(" ")[1];
-    }
+    const token = extractJwtFromHeaders(req);
 
     if (token) {
       try {

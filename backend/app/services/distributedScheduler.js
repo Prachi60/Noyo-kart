@@ -133,7 +133,7 @@ async function executeJob(name, handler, lockDuration) {
     const lock = await acquireLock(name, lockDuration);
     
     if (!lock.acquired) {
-      logger.info('Skipping job execution - lock held by another instance', {
+      logger.debug('Skipping job execution - lock held by another instance', {
         jobName: name,
         instanceId
       });
@@ -141,7 +141,7 @@ async function executeJob(name, handler, lockDuration) {
     }
     
     // Execute job
-    logger.info('Starting job execution', {
+    logger.debug('Starting job execution', {
       jobName: name,
       instanceId
     });
@@ -149,7 +149,7 @@ async function executeJob(name, handler, lockDuration) {
     await handler();
     
     const duration = Date.now() - startTime;
-    logger.info('Job execution completed successfully', {
+    logger.debug('Job execution completed successfully', {
       jobName: name,
       instanceId,
       duration
@@ -193,7 +193,7 @@ function registerScheduledJob(name, intervalMs, handler) {
     lockDuration
   });
   
-  logger.info('Scheduled job registered', {
+  logger.debug('Scheduled job registered', {
     jobName: name,
     intervalMs,
     lockDuration,
@@ -211,7 +211,7 @@ async function startScheduledJobs() {
     return;
   }
   
-  logger.info(`Starting ${registeredJobs.size} scheduled job(s)`, {
+  logger.debug(`Starting ${registeredJobs.size} scheduled job(s)`, {
     instanceId,
     jobs: Array.from(registeredJobs.keys())
   });
@@ -227,7 +227,7 @@ async function startScheduledJobs() {
     
     activeIntervals.set(name, intervalHandle);
     
-    logger.info('Scheduled job started', {
+    logger.debug('Scheduled job started', {
       jobName: name,
       intervalMs: job.intervalMs,
       instanceId

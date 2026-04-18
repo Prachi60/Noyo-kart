@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
 import { customerApi } from "../services/customerApi";
 import { useAuth } from "../../../core/context/AuthContext";
 
@@ -172,20 +172,22 @@ export const WishlistProvider = ({ children }) => {
     setWishlist([]);
   };
 
+  const wishlistValue = useMemo(() => ({
+    wishlist,
+    addToWishlist,
+    removeFromWishlist,
+    toggleWishlist,
+    isInWishlist,
+    clearWishlist,
+    fetchFullWishlist,
+    isFullDataFetched,
+    count: wishlist.length,
+    loading,
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [wishlist, isFullDataFetched, loading]);
+
   return (
-    <WishlistContext.Provider
-      value={{
-        wishlist,
-        addToWishlist,
-        removeFromWishlist,
-        toggleWishlist,
-        isInWishlist,
-        clearWishlist,
-        fetchFullWishlist,
-        isFullDataFetched,
-        count: wishlist.length,
-        loading,
-      }}>
+    <WishlistContext.Provider value={wishlistValue}>
       {children}
     </WishlistContext.Provider>
   );

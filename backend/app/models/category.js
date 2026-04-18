@@ -224,7 +224,6 @@ categorySchema.pre("findOneAndUpdate", function syncLegacyFinanceFieldsOnUpdate(
 categorySchema.index({ type: 1, status: 1 });
 categorySchema.index({ parentId: 1, status: 1 });
 categorySchema.index({ name: 1 });
-categorySchema.index({ slug: 1 }, { unique: true });
 
 // Virtual for children categories
 categorySchema.virtual("children", {

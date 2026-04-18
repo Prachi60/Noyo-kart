@@ -98,7 +98,6 @@ const updateSettingsSchema = Joi.object({
  * For multi-tenant: later use req.tenantId ?? null in query.
  */
 export const getPublicSettings = async (req, res) => {
-  console.log("[SettingsController] GET /public called");
   try {
     const tenantId = req.tenantId ?? null;
     const filter = tenantId

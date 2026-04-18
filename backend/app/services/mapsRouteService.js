@@ -126,20 +126,12 @@ function isRouteCacheCompatible(cached, origin, dest, phase, mode) {
  * @param {string} phase - "pickup" | "delivery"
  */
 export async function getCachedRoute(origin, dest, mode = "driving", orderId = null, phase = "pickup") {
-  console.log(`[mapsRouteService] getCachedRoute called for order ${orderId || 'N/A'}, mode: ${mode}, phase: ${phase}`);
-  
   // Try Firebase cache first if orderId is provided
   if (orderId) {
     try {
       const firebaseRoute = await getRoutePolyline(orderId);
       const cachedPhase = firebaseRoute?.phase || "pickup";
-      if (firebaseRoute && firebaseRoute.polyline && cachedPhase !== phase) {
-        console.log(
-          `[mapsRouteService] Firebase route phase mismatch for order ${orderId}: cached=${cachedPhase}, requested=${phase}`,
-        );
-      }
       if (isRouteCacheCompatible(firebaseRoute, origin, dest, phase, mode)) {
-        console.log(`[mapsRouteService] ✓ Firebase cache HIT for order ${orderId}`);
         return {
           polyline: firebaseRoute.polyline,
           bounds: firebaseRoute.bounds,
@@ -149,11 +141,9 @@ export async function getCachedRoute(origin, dest, mode = "driving", orderId = n
           source: 'firebase',
           phase: cachedPhase,
         };
-      } else {
-        console.log(`[mapsRouteService] Firebase cache MISS for order ${orderId}`);
       }
-    } catch (err) {
-      console.warn("[mapsRouteService] Firebase cache read failed:", err.message);
+    } catch {
+      /* ignore firebase cache errors */
     }
   }
 
@@ -178,11 +168,6 @@ export async function getCachedRoute(origin, dest, mode = "driving", orderId = n
     process.env.GOOGLE_MAPS_API_KEY?.trim() ||
     process.env.GOOGLE_MAPS_SERVER_KEY?.trim();
   if (!apiKey) {
-    if (process.env.NODE_ENV !== "test") {
-      console.warn(
-        "[mapsRouteService] Set GOOGLE_MAPS_API_KEY in backend .env (Directions API) for road routes.",
-      );
-    }
     return degradedPayload();
   }
 
@@ -199,8 +184,6 @@ export async function getCachedRoute(origin, dest, mode = "driving", orderId = n
 
     const status = resp.data?.status;
     if (status && status !== "OK") {
-      const msg = resp.data?.error_message || status;
-      console.warn("[mapsRouteService] Directions API:", status, msg);
       return degradedPayload();
     }
 
@@ -213,7 +196,6 @@ export async function getCachedRoute(origin, dest, mode = "driving", orderId = n
     const duration = leg?.duration?.value ?? null;
 
     if (!polyline) {
-      console.warn("[mapsRouteService] No route polyline in response");
       return degradedPayload();
     }
 
@@ -239,7 +221,6 @@ export async function getCachedRoute(origin, dest, mode = "driving", orderId = n
     // Cache in Firebase if orderId is provided
     if (orderId) {
       try {
-        console.log(`[mapsRouteService] Writing route to Firebase for order ${orderId}`);
         await writeRoutePolyline(orderId, {
           polyline,
           phase,
@@ -250,15 +231,13 @@ export async function getCachedRoute(origin, dest, mode = "driving", orderId = n
           distance: distanceMeters,
           duration,
         });
-      } catch (err) {
-        console.warn("[mapsRouteService] Firebase cache write failed:", err.message);
+      } catch {
+        /* ignore firebase write errors */
       }
     }
 
     return payload;
-  } catch (e) {
-    const detail = e?.response?.data?.error_message || e?.response?.data?.status || e.message;
-    console.warn("[mapsRouteService]", detail);
+  } catch {
     return degradedPayload();
   }
 }

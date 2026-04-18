@@ -7,6 +7,7 @@ import {
   verifyHandoffOtpAndDeliver,
 } from "../services/orderWorkflowService.js";
 import { getCachedRoute } from "../services/mapsRouteService.js";
+import { geocodeAddress } from "../services/mapsGeocodeService.js";
 import Order from "../models/order.js";
 import Customer from "../models/customer.js";
 import Transaction from "../models/transaction.js";
@@ -128,8 +129,7 @@ export const getOrderRoute = async (req, res) => {
         if (hasCustLoc) {
           dest = { lat: c.lat, lng: c.lng };
         } else {
-          const User = (await import("../models/user.js")).default;
-          const customer = await User.findById(order.customer).lean();
+          const customer = await Customer.findById(order.customer).lean();
           const fallbackAddress = customer?.addresses?.find(
             (a) =>
               a.label?.toLowerCase() === order.address?.type?.toLowerCase() ||
@@ -176,8 +176,7 @@ export const getOrderRoute = async (req, res) => {
         if (hasCustLoc) {
           dest = { lat: c.lat, lng: c.lng };
         } else {
-          const User = (await import("../models/user.js")).default;
-          const customer = await User.findById(order.customer).lean();
+          const customer = await Customer.findById(order.customer).lean();
           const fallbackAddress = customer?.addresses?.find(
             (a) =>
               a.label?.toLowerCase() === order.address?.type?.toLowerCase() ||
@@ -194,17 +193,34 @@ export const getOrderRoute = async (req, res) => {
         }
 
         if (!hasCustLoc) {
-          return handleResponse(
-            res,
-            400,
-            `Customer delivery location missing for order ${order.orderId}.`,
-          );
+          // Last resort: geocode the address text
+          const addressText = [
+            order.address?.address,
+            order.address?.landmark,
+            order.address?.city,
+          ].filter(Boolean).join(", ");
+
+          if (addressText) {
+            try {
+              const geocoded = await geocodeAddress(addressText);
+              if (geocoded?.lat && geocoded?.lng) {
+                dest = { lat: geocoded.lat, lng: geocoded.lng };
+                hasCustLoc = true;
+              }
+            } catch (geocodeErr) {
+              console.warn(`[getOrderRoute] Geocode fallback failed for order ${orderId}:`, geocodeErr.message);
+            }
+          }
+        }
+
+        if (!hasCustLoc) {
+          return handleResponse(res, 200, "Route", { polyline: null, degraded: true });
         }
       }
     }
 
     const route = await getCachedRoute(origin, dest, "driving", orderId, phase);
-    return handleResponse(res, 200, "Route", route);
+    return handleResponse(res, 200, "Route", { ...route, destination: dest });
   } catch (e) {
     return handleResponse(res, 500, e.message);
   }

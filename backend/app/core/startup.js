@@ -182,7 +182,6 @@ async function connectMongoDB(maxRetries = 5) {
   
   // If already connected, return
   if (mongoose.connection.readyState === 1) {
-    console.log('[MongoDB] Already connected');
     return;
   }
   
@@ -193,9 +192,7 @@ async function connectMongoDB(maxRetries = 5) {
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      console.log(`[MongoDB] Connection attempt ${attempt}/${maxRetries}...`);
       await mongoose.connect(mongoUri, options);
-      console.log('[MongoDB] Connected successfully');
       return;
     } catch (error) {
       const isLastAttempt = attempt === maxRetries;
@@ -207,11 +204,6 @@ async function connectMongoDB(maxRetries = 5) {
       }
       
       const delay = Math.min(1000 * attempt, 5000);
-      console.log(
-        `[MongoDB] Connection attempt ${attempt}/${maxRetries} failed: ${error.message}. ` +
-        `Retrying in ${delay}ms...`
-      );
-      
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
@@ -225,28 +217,21 @@ async function connectMongoDB(maxRetries = 5) {
 async function startup() {
   try {
     console.log('[Startup] Beginning startup sequence...');
-    
+  
     // Step 1: Validate process role configuration
-    console.log('[Startup] Step 1: Validating process role...');
     validateProcessRole();
     const role = getProcessRole();
-    console.log(`[Startup] Process role validated: ${role}`);
     
     // Step 2: Connect to MongoDB
-    console.log('[Startup] Step 2: Connecting to MongoDB...');
     const maxMongoRetries = parseInt(process.env.MONGO_MAX_RETRIES || '5', 10);
     await connectMongoDB(maxMongoRetries);
     
     // Step 3: Connect to Redis (if enabled)
     if (isRedisEnabled()) {
-      console.log('[Startup] Step 3: Connecting to Redis...');
       await waitForRedis();
-    } else {
-      console.log('[Startup] Step 3: Redis is disabled, skipping...');
     }
     
     // Step 4: Validate all dependencies
-    console.log('[Startup] Step 4: Validating dependencies...');
     const validation = await validateDependencies();
     
     if (!validation.valid) {
@@ -255,55 +240,39 @@ async function startup() {
       throw new Error('Startup validation failed: ' + validation.errors.join('; '));
     }
     
-    console.log('[Startup] All dependencies validated successfully');
-    
     // Step 6: Create database indexes
-    console.log('[Startup] Step 6: Creating database indexes...');
     try {
       await createAllIndexes();
-      console.log('[Startup] Database indexes created successfully');
     } catch (error) {
       console.error('[Startup] Warning: Failed to create indexes:', error.message);
-      // Don't fail startup if index creation fails - indexes can be created later
     }
     
     // Step 7: Start search index worker (if worker role)
     if (isComponentEnabled('worker')) {
-      console.log('[Startup] Step 7: Starting search index worker...');
       try {
         await startSearchIndexWorker();
-        console.log('[Startup] Search index worker started successfully');
       } catch (error) {
         console.error('[Startup] Warning: Failed to start search index worker:', error.message);
       }
-    } else {
-      console.log('[Startup] Step 7: Skipping search index worker (not a worker process)');
     }
 
-    // Step 8: Subscribe to cache invalidation events (Phase 2)
+    // Step 8: Subscribe to cache invalidation events
     if (isRedisEnabled() && isComponentEnabled('http')) {
-      console.log('[Startup] Step 8: Subscribing to cache invalidation events...');
       try {
         const { subscribeToInvalidations } = await import('../services/cacheService.js');
-        await subscribeToInvalidations((data) => {
-          console.log(`[Cache] Invalidation received: ${data.key}`);
-        });
-        console.log('[Startup] Cache invalidation subscription active');
+        await subscribeToInvalidations(() => {});
       } catch (error) {
         console.error('[Startup] Warning: Failed to subscribe to cache invalidations:', error.message);
       }
     }
 
-    // Step 9: Warm dashboard summaries (Phase 2 - worker role only)
+    // Step 9: Warm dashboard summaries
     if (isComponentEnabled('worker') && process.env.DASHBOARD_SUMMARIES_ENABLED !== 'false') {
-      console.log('[Startup] Step 9: Warming dashboard summaries...');
       try {
         const { refreshAllSummaries } = await import('../services/dashboardSummaryService.js');
-        // Fire-and-forget: don't block startup
         refreshAllSummaries().catch(err =>
           console.error('[Startup] Warning: Dashboard summary warm-up failed:', err.message)
         );
-        console.log('[Startup] Dashboard summary warm-up initiated');
       } catch (error) {
         console.error('[Startup] Warning: Failed to initiate dashboard warm-up:', error.message);
       }

@@ -4,8 +4,10 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useMemo,
 } from "react";
 import { customerApi } from "../services/customerApi";
+import { hasValidStoredAuthToken } from "@core/utils/authStorage";
 
 const LocationContext = createContext(undefined);
 // v2 key to force one-time refresh from Google Maps for users
@@ -234,7 +236,7 @@ export const LocationProvider = ({ children }) => {
 
   const refreshAddresses = useCallback(async () => {
     // Skip if user is not logged in – getProfile would 401 and trigger axios reload loop
-    if (!localStorage.getItem("auth_customer")) return;
+    if (!hasValidStoredAuthToken("auth_customer")) return;
     try {
       const { data } = await customerApi.getProfile();
       const profile = data?.result ?? data?.data ?? data;
@@ -312,18 +314,20 @@ export const LocationProvider = ({ children }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const locationValue = useMemo(() => ({
+    currentLocation,
+    savedAddresses,
+    updateLocation,
+    addAddress,
+    refreshAddresses,
+    isFetchingLocation,
+    locationError,
+    refreshLocation: fetchAndCacheLocation,
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [currentLocation, savedAddresses, isFetchingLocation, locationError, refreshAddresses]);
+
   return (
-    <LocationContext.Provider
-      value={{
-        currentLocation,
-        savedAddresses,
-        updateLocation,
-        addAddress,
-        refreshAddresses,
-        isFetchingLocation,
-        locationError,
-        refreshLocation: fetchAndCacheLocation,
-      }}>
+    <LocationContext.Provider value={locationValue}>
       {children}
     </LocationContext.Provider>
   );

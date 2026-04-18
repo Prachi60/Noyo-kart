@@ -4,6 +4,7 @@ import CheckoutGroup from "../models/checkoutGroup.js";
 import Order from "../models/order.js";
 import User from "../models/customer.js";
 import Transaction from "../models/transaction.js";
+import Coupon from "../models/coupon.js";
 import { WORKFLOW_STATUS, DEFAULT_SELLER_TIMEOUT_MS } from "../constants/orderWorkflow.js";
 import { ORDER_PAYMENT_STATUS } from "../constants/finance.js";
 import { freezeFinancialSnapshot } from "./finance/orderFinanceService.js";
@@ -311,6 +312,7 @@ export async function placeOrderAtomic({
       orderItems: orderItemsInput,
       address: normalizedAddress,
       tipAmount,
+      discountTotal: Math.max(0, Number(normalizedPayload.discountTotal || 0)),
       session,
     });
 
@@ -474,6 +476,12 @@ export async function placeOrderAtomic({
     });
 
     await session.commitTransaction();
+
+    // Increment coupon usedCount after successful order placement (outside transaction — best effort)
+    const couponId = normalizedPayload.couponId;
+    if (couponId) {
+      Coupon.findByIdAndUpdate(couponId, { $inc: { usedCount: 1 } }).catch(() => {});
+    }
 
     const resultPayload = buildResultPayload({
       checkoutGroup,

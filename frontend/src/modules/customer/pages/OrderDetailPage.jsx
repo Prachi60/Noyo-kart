@@ -223,9 +223,27 @@ const OrderDetailPage = () => {
 
   useEffect(() => {
     if (!orderId) return undefined;
-    const getToken = () => localStorage.getItem("auth_customer");
+    const getToken = () => {
+      const raw = localStorage.getItem("auth_customer");
+      if (!raw) return null;
+      const trimmed = String(raw).trim();
+      if (!trimmed) return null;
+      if (trimmed.startsWith("{")) {
+        try {
+          return JSON.parse(trimmed)?.token || null;
+        } catch {
+          return trimmed;
+        }
+      }
+      return trimmed;
+    };
     getOrderSocket(getToken);
     joinOrderRoom(orderId, getToken);
+
+    // Also join using the canonical order.orderId once loaded (may differ from URL param)
+    if (order?.orderId && order.orderId !== orderId) {
+      joinOrderRoom(order.orderId, getToken);
+    }
 
     const refresh = () => {
       const now = Date.now();
@@ -251,7 +269,23 @@ const OrderDetailPage = () => {
         });
     };
 
-    const offStatus = onOrderStatusUpdate(getToken, () => {
+    const offStatus = onOrderStatusUpdate(getToken, (payload) => {
+      // Immediately update order state from socket payload — no waiting for API re-fetch
+      const ws = String(payload?.workflowStatus || "").toUpperCase();
+      if (ws) {
+        setOrder((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            workflowStatus: ws,
+            // Keep legacy status in sync for components that read order.status
+            ...(ws === "DELIVERED" && { status: "delivered" }),
+            ...(ws === "DELIVERY_SEARCH" && { status: "confirmed" }),
+            ...(ws === "OUT_FOR_DELIVERY" && { status: "out_for_delivery" }),
+            ...(ws === "CANCELLED" && { status: "cancelled" }),
+          };
+        });
+      }
       refresh();
     });
     const offOtp = onCustomerOtp(getToken, (payload) => {
@@ -283,7 +317,20 @@ const OrderDetailPage = () => {
 
   useEffect(() => {
     if (!orderId) return undefined;
-    const getToken = () => localStorage.getItem("auth_customer");
+    const getToken = () => {
+      const raw = localStorage.getItem("auth_customer");
+      if (!raw) return null;
+      const trimmed = String(raw).trim();
+      if (!trimmed) return null;
+      if (trimmed.startsWith("{")) {
+        try {
+          return JSON.parse(trimmed)?.token || null;
+        } catch {
+          return trimmed;
+        }
+      }
+      return trimmed;
+    };
 
     const nextExtraRoom =
       order?.orderId && order.orderId !== orderId ? String(order.orderId) : "";
@@ -406,6 +453,11 @@ const OrderDetailPage = () => {
   };
 
   const status = order ? getLegacyStatusFromOrder(order) : null;
+  const isAwaitingOnlinePayment =
+    Boolean(order) &&
+    order.paymentMode === "ONLINE" &&
+    order.paymentStatus !== "PAID" &&
+    status !== "cancelled";
   const sellerLocation = coordsToLatLng(order?.seller?.location?.coordinates);
   const routePhase = getTrackingRoutePhase(order);
   const routeMatchesPhase =
@@ -673,10 +725,12 @@ const OrderDetailPage = () => {
   const handleRetryPayment = async () => {
     try {
       if (!order) return;
-      const paymentRef = order.checkoutGroupId || order.orderId;
+      const paymentRef =
+        Number(order.checkoutGroupSize || 1) > 1
+          ? (order.checkoutGroupId || order.orderId)
+          : order.orderId;
       const response = await customerApi.createPaymentOrder({
         orderRef: paymentRef,
-        orderId: order.orderId
       });
       if (response.data.success && response.data.result?.redirectUrl) {
         window.location.href = response.data.result.redirectUrl;
@@ -685,7 +739,11 @@ const OrderDetailPage = () => {
       }
     } catch (err) {
       console.error("[OrderDetailPage] Retry payment error:", err);
-      toast.error("Unable to start payment. Please try again later.");
+      toast.error(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Unable to start payment. Please try again later.",
+      );
     }
   };
 
@@ -721,7 +779,7 @@ const OrderDetailPage = () => {
 
       <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
         {/* Payment Required Card - Only for Online Pending Orders */}
-        {order.paymentMode === "ONLINE" && order.paymentStatus !== "PAID" && status !== "cancelled" && (
+        {isAwaitingOnlinePayment && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -751,7 +809,7 @@ const OrderDetailPage = () => {
         )}
 
         {/* Enhanced Map with Cleaner Design - Hide when delivered or cancelled */}
-        {status !== "delivered" && status !== "cancelled" && (
+        {!isAwaitingOnlinePayment && status !== "delivered" && status !== "cancelled" && (
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -763,7 +821,11 @@ const OrderDetailPage = () => {
               riderName={order.deliveryBoy?.name || "Delivery Partner"}
               riderLocation={liveLocation}
               sellerLocation={sellerLocation}
-              destinationLocation={order.address?.location || null}
+              destinationLocation={
+                order.address?.location?.lat
+                  ? order.address.location
+                  : activeRoutePolyline?.destination || null
+              }
               routePhase={routePhase}
               routePolyline={activeRoutePolyline}
               onOpenInMaps={handleOpenInMaps}
@@ -772,12 +834,14 @@ const OrderDetailPage = () => {
         )}
 
         {/* Order Progress Tracker - New Component */}
-        <OrderProgressTracker
-          order={order}
-          estimatedArrivalText={estimatedArrival.arrivalTimeText}
-          arrivingInText={estimatedArrival.arrivingInText}
-          totalDistanceText={estimatedArrival.totalDistanceText}
-        />
+        {!isAwaitingOnlinePayment && (
+          <OrderProgressTracker
+            order={order}
+            estimatedArrivalText={estimatedArrival.arrivalTimeText}
+            arrivingInText={estimatedArrival.arrivingInText}
+            totalDistanceText={estimatedArrival.totalDistanceText}
+          />
+        )}
 
         {/* Proximity-based Delivery OTP Display */}
         <DeliveryOtpDisplay

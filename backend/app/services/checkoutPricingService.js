@@ -249,6 +249,7 @@ export async function buildCheckoutPricingSnapshot({
   orderItems = [],
   address = {},
   tipAmount = 0,
+  discountTotal = 0,
   session = null,
 }) {
   const hydratedItems = await hydrateOrderItems(orderItems, {
@@ -267,6 +268,16 @@ export async function buildCheckoutPricingSnapshot({
 
   const globalHandling = await computeGlobalHandlingFeeForCheckout(hydratedItems, { session });
 
+  // Pre-compute each seller's subtotal for proportional discount distribution
+  const sellerSubtotals = new Map();
+  let totalSubtotal = 0;
+  for (const sellerId of sellerIds) {
+    const items = itemsBySeller.get(sellerId) || [];
+    const subtotal = items.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0);
+    sellerSubtotals.set(sellerId, subtotal);
+    totalSubtotal += subtotal;
+  }
+
   for (const sellerId of sellerIds) {
     const sellerItems = itemsBySeller.get(sellerId) || [];
     const distanceKm = await computeDistanceKmForSeller({
@@ -274,10 +285,13 @@ export async function buildCheckoutPricingSnapshot({
       addressLocation: address?.location,
       session,
     });
+    // Distribute discount proportionally by seller subtotal
+    const sellerRatio = totalSubtotal > 0 ? (sellerSubtotals.get(sellerId) || 0) / totalSubtotal : 1 / sellerIds.length;
+    const sellerDiscount = round2(discountTotal * sellerRatio);
     const breakdown = await generateOrderPaymentBreakdown({
       preHydratedItems: sellerItems,
       distanceKm,
-      discountTotal: 0,
+      discountTotal: sellerDiscount,
       taxTotal: 0,
       session,
     });

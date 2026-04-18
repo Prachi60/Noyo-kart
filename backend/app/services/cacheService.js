@@ -109,6 +109,12 @@ export async function set(key, value, ttlSeconds) {
     const redis = getRedisClient();
     if (!redis) return;
     
+    if (ttlSeconds <= 0) {
+      await redis.del(key);
+      logger.debug(`[Cache] Deleted: ${key}`);
+      return;
+    }
+
     const serialized = JSON.stringify(value);
     
     await redis.setex(key, ttlSeconds, serialized);

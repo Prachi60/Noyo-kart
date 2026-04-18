@@ -69,12 +69,11 @@ function attachRedisErrorHandler(client) {
   client.__qcRedisErrorHandler = true;
 
   client.on("connect", () => {
-    console.log("[Redis] Connected successfully");
     _connectionAttempts = 0;
   });
 
   client.on("ready", () => {
-    console.log("[Redis] Ready to accept commands");
+    // suppress per-connection ready noise
   });
 
   client.on("error", (err) => {
@@ -91,12 +90,11 @@ function attachRedisErrorHandler(client) {
   });
 
   client.on("close", () => {
-    console.log("[Redis] Connection closed");
+    // suppress close noise
   });
 
-  client.on("reconnecting", (delay) => {
+  client.on("reconnecting", () => {
     _connectionAttempts++;
-    console.log(`[Redis] Reconnecting (attempt ${_connectionAttempts}, delay: ${delay}ms)`);
   });
 }
 
@@ -217,7 +215,6 @@ export async function validateRedisConnection() {
  */
 export async function waitForRedis(maxRetries = 10, baseDelay = 1000) {
   if (!isRedisEnabled()) {
-    console.log("[Redis] Redis is disabled, skipping connection wait");
     return;
   }
 
@@ -239,7 +236,6 @@ export async function waitForRedis(maxRetries = 10, baseDelay = 1000) {
       // Validate connection with PING
       const isValid = await validateRedisConnection();
       if (isValid) {
-        console.log(`[Redis] Connection established successfully (attempt ${attempt}/${maxRetries})`);
         return;
       }
     } catch (error) {

@@ -134,30 +134,7 @@ const CheckoutPage = () => {
   });
   const [savedRecipient, setSavedRecipient] = useState(null);
 
-  // Mock data for recommendations
-  const recommendedProducts = [
-    {
-      id: 101,
-      name: "Uncle Chips",
-      price: 20,
-      image:
-        "https://images.unsplash.com/photo-1566478989037-eec170784d0b?w=200",
-    },
-    {
-      id: 102,
-      name: "Lay's Chips",
-      price: 20,
-      image:
-        "https://images.unsplash.com/photo-1566478989037-eec170784d0b?w=200",
-    },
-    {
-      id: 103,
-      name: "Bread",
-      price: 35,
-      image:
-        "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=200",
-    },
-  ];
+  const [recommendedProducts, setRecommendedProducts] = useState([]);
 
   const [coupons, setCoupons] = useState([]);
   const [manualCode, setManualCode] = useState("");
@@ -625,6 +602,27 @@ const CheckoutPage = () => {
     fetchCoupons();
   }, []);
 
+  // Fetch products from the first cart item's category
+  useEffect(() => {
+    if (cart.length === 0) return;
+    const categoryId = cart[0]?.categoryId?._id || cart[0]?.categoryId;
+    if (!categoryId) return;
+
+    const cartProductIds = new Set(cart.map((i) => i.id || i._id));
+
+    customerApi
+      .getProducts({ categoryId, limit: 10 })
+      .then((res) => {
+        if (res.data?.success) {
+          const products = (res.data.result?.items || res.data.results || [])
+            .map((p) => ({ ...p, id: p._id }))
+            .filter((p) => !cartProductIds.has(p.id));
+          setRecommendedProducts(products.slice(0, 8));
+        }
+      })
+      .catch(() => {});
+  }, [cart]);
+
   useEffect(() => {
     if (!isAuthenticated || cart.length === 0) {
       setPricingPreview(null);
@@ -675,6 +673,11 @@ const CheckoutPage = () => {
   ]);
 
   const handlePlaceOrder = async () => {
+    if (!isAuthenticated) {
+      showToast("Please login to place an order.", "error");
+      navigate("/login");
+      return;
+    }
     setIsPlacingOrder(true);
     try {
         const orderData = {
@@ -685,6 +688,7 @@ const CheckoutPage = () => {
           tipAmount: selectedTip,
           timeSlot: selectedTimeSlot,
           walletAmount: walletAmountToUse,
+          ...(selectedCoupon?.couponId ? { couponId: selectedCoupon.couponId } : {}),
           items: cart.map((item) => ({
             product: item.id || item._id,
             name: item.name,
@@ -701,7 +705,11 @@ const CheckoutPage = () => {
         const result = response.data.result;
         const mainOrder = result.order || (Array.isArray(result.orders) ? result.orders[0] : null);
         const mainOrderId = mainOrder?.orderId || result.orderId;
-        const paymentRef = result.paymentRef || result.checkoutGroupId || mainOrderId;
+        const orderCount = Array.isArray(result.orders) ? result.orders.length : (mainOrderId ? 1 : 0);
+        const paymentRef =
+          result.paymentRef ||
+          (orderCount > 1 ? result.checkoutGroup?.checkoutGroupId || result.checkoutGroupId : mainOrderId) ||
+          mainOrderId;
         
         console.log("[CheckoutPage] Order placed. Result:", result, "Target ID:", mainOrderId);
         
@@ -718,7 +726,6 @@ const CheckoutPage = () => {
           try {
             const paymentRes = await customerApi.createPaymentOrder({
               orderRef: paymentRef,
-              orderId: mainOrderId
             });
             
             if (paymentRes.data.success && paymentRes.data.result?.redirectUrl) {
@@ -730,8 +737,23 @@ const CheckoutPage = () => {
             }
           } catch (payError) {
             console.error("[CheckoutPage] Payment initiation failed:", payError);
+            const apiMessage = payError?.response?.data?.message;
+            if (payError?.response?.status === 401) {
+              setIsPlacingOrder(false);
+              showToast(
+                apiMessage || "Your session expired. Please login again.",
+                "error",
+              );
+              navigate("/login");
+              return;
+            }
             setIsPlacingOrder(false);
-            showToast(payError.message || "Order created but payment gateway failed. Please pay from order details.", "error");
+            showToast(
+              apiMessage ||
+                payError.message ||
+                "Order created but payment gateway failed. Please pay from order details.",
+              "error",
+            );
             navigate(`/orders/${mainOrderId}`);
             return;
           }
@@ -758,6 +780,11 @@ const CheckoutPage = () => {
     } catch (error) {
       console.error("Failed to place order:", error);
       setIsPlacingOrder(false);
+      if (error?.response?.status === 401) {
+        showToast(error.response?.data?.message || "Please login to continue.", "error");
+        navigate("/login");
+        return;
+      }
       showToast(
         error.response?.data?.message ||
           "Failed to place order. Please try again.",
@@ -770,7 +797,20 @@ const CheckoutPage = () => {
   useEffect(() => {
     if (!orderId || !showSuccess) return undefined;
 
-    const getToken = () => localStorage.getItem("auth_customer");
+    const getToken = () => {
+      const raw = localStorage.getItem("auth_customer");
+      if (!raw) return null;
+      const trimmed = String(raw).trim();
+      if (!trimmed) return null;
+      if (trimmed.startsWith("{")) {
+        try {
+          return JSON.parse(trimmed)?.token || null;
+        } catch {
+          return trimmed;
+        }
+      }
+      return trimmed;
+    };
     getOrderSocket(getToken);
     joinOrderRoom(orderId, getToken);
 
@@ -1297,6 +1337,7 @@ const CheckoutPage = () => {
             )}
 
             {/* You might also like */}
+            {recommendedProducts.length > 0 && (
             <motion.div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
               <h3 className="font-black text-slate-800 text-lg mb-4">
                 You might also like
@@ -1311,6 +1352,7 @@ const CheckoutPage = () => {
                 ))}
               </div>
             </motion.div>
+            )}
           </div>
 
           {/* Right Column: Order Summary & Payment - Sticky on Desktop */}
@@ -1318,7 +1360,7 @@ const CheckoutPage = () => {
             {/* Summary Backdrop for desktop */}
             <div className="hidden lg:block absolute inset-0 -m-4 bg-[#fcf9f2] rounded-[2.5rem] -z-10 shadow-inner group-hover:shadow-2xl transition-all duration-500" />
             <motion.div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <Tag size={20} className="text-orange-500" />
                   <h3 className="font-black text-slate-800">
@@ -1331,34 +1373,65 @@ const CheckoutPage = () => {
                   See All
                 </button>
               </div>
-              <div className="space-y-3">
-                {coupons.map((coupon) => (
-                  <div
-                    key={coupon.code}
-                    className="flex items-center gap-3 p-3 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl border border-orange-100">
-                    <div className="flex-1">
-                      <p className="font-black text-slate-800 text-sm">
-                        {coupon.code}
-                      </p>
-                      <p className="text-xs text-slate-600">
-                        {coupon.description}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => handleApplyCoupon(coupon)}
-                      className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors ${
-                        selectedCoupon?.code === coupon.code
-                          ? "bg-slate-200 text-slate-500 cursor-not-allowed"
-                          : "bg-[#45B0E2] text-white hover:bg-[#0b721b]"
-                      }`}
-                      disabled={selectedCoupon?.code === coupon.code}>
-                      {selectedCoupon?.code === coupon.code
-                        ? "Applied"
-                        : "Apply"}
-                    </button>
-                  </div>
-                ))}
-              </div>
+              {coupons.length === 0 ? (
+                <p className="text-xs text-slate-400 font-medium py-2">No coupons available right now.</p>
+              ) : (
+                <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar -mx-4 px-4 snap-x">
+                  {coupons.map((coupon) => {
+                    const isApplied = selectedCoupon?.code === coupon.code;
+                    return (
+                      <div
+                        key={coupon.code}
+                        className={`flex-shrink-0 w-[200px] snap-start rounded-2xl border-2 border-dashed p-3 flex flex-col gap-2 transition-all ${
+                          isApplied
+                            ? "border-green-400 bg-green-50"
+                            : "border-orange-200 bg-gradient-to-br from-orange-50 to-yellow-50"
+                        }`}>
+                        {/* Coupon code badge */}
+                        <div className="flex items-center justify-between">
+                          <span className={`text-xs font-black px-2 py-0.5 rounded-lg tracking-widest uppercase ${
+                            isApplied ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-600"
+                          }`}>
+                            {coupon.code}
+                          </span>
+                          {isApplied && (
+                            <span className="text-[10px] font-black text-green-600 uppercase tracking-wide">✓ Applied</span>
+                          )}
+                        </div>
+                        {/* Discount label */}
+                        <p className="text-sm font-black text-slate-800 leading-tight">
+                          {coupon.discountType === "percentage"
+                            ? `${coupon.discountValue}% OFF`
+                            : `₹${coupon.discountValue} OFF`}
+                          {coupon.minOrderValue > 0 && (
+                            <span className="block text-[10px] font-medium text-slate-500">
+                              on orders above ₹{coupon.minOrderValue}
+                            </span>
+                          )}
+                        </p>
+                        {/* Description */}
+                        {coupon.description && (
+                          <p className="text-[10px] text-slate-500 leading-snug line-clamp-2">{coupon.description}</p>
+                        )}
+                        {/* Apply button */}
+                        {isApplied ? (
+                          <button
+                            onClick={() => setSelectedCoupon(null)}
+                            className="mt-auto w-full py-1.5 rounded-xl text-xs font-black bg-red-50 text-red-500 hover:bg-red-100 active:scale-95 transition-all">
+                            Remove
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleApplyCoupon(coupon)}
+                            className="mt-auto w-full py-1.5 rounded-xl text-xs font-black bg-[#45B0E2] text-white hover:bg-[#38bdf8] active:scale-95 transition-all">
+                            Apply
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </motion.div>
 
             {/* Tip for Partner */}

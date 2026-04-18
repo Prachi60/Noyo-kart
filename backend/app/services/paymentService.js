@@ -21,6 +21,7 @@ import { emitNotificationEvent } from "../modules/notifications/notification.emi
 import { NOTIFICATION_EVENTS } from "../modules/notifications/notification.constants.js";
 
 let phonePeClient = null;
+const MAX_MERCHANT_ORDER_ID_LENGTH = 63;
 
 function getPhonePeClient() {
   if (phonePeClient) return phonePeClient;
@@ -56,6 +57,23 @@ function sanitizeGatewayPayload(payload = {}) {
   };
 }
 
+function sanitizeMerchantOrderIdPart(value) {
+  return String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function buildGatewayMerchantOrderId(publicOrderRef, attemptCount = 1) {
+  const normalizedBase = sanitizeMerchantOrderIdPart(publicOrderRef) || "ORDER";
+  const suffix = `-A${Math.max(1, Number(attemptCount) || 1)}`;
+  const maxBaseLength = MAX_MERCHANT_ORDER_ID_LENGTH - suffix.length;
+  const truncatedBase = normalizedBase.slice(0, Math.max(1, maxBaseLength));
+  return `${truncatedBase}${suffix}`;
+}
+
 function toOrderLookup(orderRef) {
   if (!orderRef) return null;
   const trimmed = String(orderRef).trim();
@@ -86,8 +104,24 @@ async function resolvePaymentTarget(orderRef) {
       err.statusCode = 404;
       throw err;
     }
-    const orders = await Order.find({ checkoutGroupId })
+    let orders = await Order.find({ checkoutGroupId })
       .sort({ checkoutGroupIndex: 1, createdAt: 1 });
+
+    if (orders.length === 0) {
+      const fallbackClauses = [];
+      if (Array.isArray(checkoutGroup.orderIds) && checkoutGroup.orderIds.length > 0) {
+        fallbackClauses.push({ _id: { $in: checkoutGroup.orderIds } });
+      }
+      if (Array.isArray(checkoutGroup.publicOrderIds) && checkoutGroup.publicOrderIds.length > 0) {
+        fallbackClauses.push({ orderId: { $in: checkoutGroup.publicOrderIds } });
+      }
+
+      if (fallbackClauses.length > 0) {
+        orders = await Order.find({ $or: fallbackClauses })
+          .sort({ checkoutGroupIndex: 1, createdAt: 1 });
+      }
+    }
+
     if (orders.length === 0) {
       const err = new Error("Checkout group has no orders");
       err.statusCode = 404;
@@ -505,7 +539,10 @@ export async function createPaymentOrderForOrderRef({
   const amountPaise = getPayableAmountPaise(target);
   const currency = String(primaryOrder?.paymentBreakdown?.currency || "INR").toUpperCase();
   const attemptCount = (await Payment.countDocuments(paymentScopeQuery)) + 1;
-  const merchantOrderId = target.checkoutGroupId || target.publicOrderRef || crypto.randomUUID();
+  const merchantOrderId = buildGatewayMerchantOrderId(
+    target.checkoutGroupId || target.publicOrderRef || crypto.randomUUID(),
+    attemptCount,
+  );
 
   const client = getPhonePeClient();
   const redirectUrl = `${process.env.FRONTEND_URL}/payment-status?merchantOrderId=${merchantOrderId}`;

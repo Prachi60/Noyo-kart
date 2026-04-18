@@ -30,8 +30,8 @@ const ProductDetailPage = () => {
     const [isSubmittingReview, setIsSubmittingReview] = useState(false);
     const [newReview, setNewReview] = useState({ rating: 5, comment: '' });
 
-    const fetchData = async () => {
-        setIsLoading(true);
+    const fetchData = async (showLoader = true) => {
+        if (showLoader) setIsLoading(true);
         setError(null);
         try {
             const hasValidLocation =
@@ -81,7 +81,15 @@ const ProductDetailPage = () => {
         if (id) {
             fetchData();
         }
-    }, [id, currentLocation?.latitude, currentLocation?.longitude]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id]);
+
+    useEffect(() => {
+        if (id && product) {
+            fetchData(false);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentLocation?.latitude, currentLocation?.longitude]);
 
     const handleReviewSubmit = async (e) => {
         e.preventDefault();

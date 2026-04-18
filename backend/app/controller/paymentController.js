@@ -10,11 +10,24 @@ import {
   validateSchema,
 } from "../validation/paymentValidation.js";
 
+function resolvePaymentErrorMessage(error) {
+  const directMessage = String(error?.message || "").trim();
+  if (directMessage) return directMessage;
+
+  const responseStatusText = String(error?.response?.statusText || "").trim();
+  if (responseStatusText) return `PhonePe gateway error: ${responseStatusText}`;
+
+  const causeCode = String(error?.cause?.code || error?.code || "").trim();
+  if (causeCode) return `PhonePe gateway request failed (${causeCode})`;
+
+  return "Unable to initiate payment with PhonePe right now";
+}
+
 export const createPaymentOrder = async (req, res) => {
   try {
     const payload = validateSchema(createPaymentOrderSchema, req.body || {});
     const result = await createPaymentOrderForOrderRef({
-      orderRef: payload.orderId || payload.orderRef,
+      orderRef: payload.orderRef || payload.orderId,
       userId: req.user?.id,
       idempotencyKey: req.headers["idempotency-key"] || null,
       correlationId: req.correlationId || null,
@@ -31,7 +44,21 @@ export const createPaymentOrder = async (req, res) => {
       },
     );
   } catch (error) {
-    return handleResponse(res, error.statusCode || 500, error.message);
+    console.error("[PaymentController] createPaymentOrder failed", {
+      message: error?.message,
+      statusCode: error?.statusCode || error?.status || 500,
+      code: error?.code || error?.cause?.code || null,
+      responseStatus: error?.response?.status || null,
+      responseStatusText: error?.response?.statusText || null,
+      orderRef: req.body?.orderRef || req.body?.orderId || null,
+      userId: req.user?.id || null,
+      correlationId: req.correlationId || null,
+    });
+    return handleResponse(
+      res,
+      error.statusCode || error.status || 500,
+      resolvePaymentErrorMessage(error),
+    );
   }
 };
 

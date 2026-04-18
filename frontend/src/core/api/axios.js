@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { resolveApiBaseUrl } from './resolveApiBaseUrl';
+import { getStoredAuthToken } from '@core/utils/authStorage';
 
 const ROLE_STORAGE_KEYS = ['auth_seller', 'auth_admin', 'auth_delivery', 'auth_customer'];
 
@@ -29,33 +30,33 @@ axiosInstance.interceptors.request.use(
         // 1. If we are on a module-specific page (e.g. /seller/dashboard), prioritize that module's token
         // This is crucial for shared APIs like /products or /admin/categories
         if (pagePath.startsWith('/seller')) {
-            token = localStorage.getItem('auth_seller');
+            token = getStoredAuthToken('auth_seller');
         } else if (pagePath.startsWith('/admin')) {
-            token = localStorage.getItem('auth_admin');
+            token = getStoredAuthToken('auth_admin');
         } else if (pagePath.startsWith('/delivery')) {
-            token = localStorage.getItem('auth_delivery');
+            token = getStoredAuthToken('auth_delivery');
         } else if (pagePath.startsWith('/customer')) {
-            token = localStorage.getItem('auth_customer');
+            token = getStoredAuthToken('auth_customer');
         }
 
         // 2. Fallback to URL-based detection
         if (!token) {
-            if (url.startsWith('/seller')) token = localStorage.getItem('auth_seller');
-            else if (url.startsWith('/admin')) token = localStorage.getItem('auth_admin');
-            else if (url.startsWith('/delivery')) token = localStorage.getItem('auth_delivery');
+            if (url.startsWith('/seller')) token = getStoredAuthToken('auth_seller');
+            else if (url.startsWith('/admin')) token = getStoredAuthToken('auth_admin');
+            else if (url.startsWith('/delivery')) token = getStoredAuthToken('auth_delivery');
             else if (url.startsWith('/customer') || url.startsWith('/cart') || url.startsWith('/wishlist') || url.startsWith('/categories') || url.startsWith('/products') || url.startsWith('/payments')) {
-                token = localStorage.getItem('auth_customer');
+                token = getStoredAuthToken('auth_customer');
             }
         }
 
         // 3. Final default: if we are on a general page and STILL no token, try customer token
         if (!token && !pagePath.startsWith('/admin') && !pagePath.startsWith('/seller') && !pagePath.startsWith('/delivery')) {
-            token = localStorage.getItem('auth_customer');
+            token = getStoredAuthToken('auth_customer');
         }
 
         // 3. Last fallback: Check common 'token' key if implemented
         if (!token) {
-            token = localStorage.getItem('token');
+            token = getStoredAuthToken('token');
         }
 
         if (token) {

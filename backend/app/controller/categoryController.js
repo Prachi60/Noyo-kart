@@ -141,7 +141,7 @@ export const getCategories = async (req, res) => {
 export const createCategory = async (req, res) => {
   try {
     const categoryData = {};
-    const allowedKeys = ["name", "slug", "description", "type", "parentId", "status", "headerColor", "adminCommission", "adminCommissionType", "adminCommissionValue", "handlingFees", "handlingFeeType", "handlingFeeValue"];
+    const allowedKeys = ["name", "slug", "description", "type", "parentId", "status", "iconId", "headerColor", "adminCommission", "adminCommissionType", "adminCommissionValue", "handlingFees", "handlingFeeType", "handlingFeeValue"];
     
     // Strict Whitelisting and Sanitization
     for (const key of allowedKeys) {
@@ -219,7 +219,7 @@ export const updateCategory = async (req, res) => {
     }
 
     const categoryData = {};
-    const allowedKeys = ["name", "slug", "description", "type", "parentId", "status", "headerColor", "adminCommission", "adminCommissionType", "adminCommissionValue", "handlingFees", "handlingFeeType", "handlingFeeValue"];
+    const allowedKeys = ["name", "slug", "description", "type", "parentId", "status", "iconId", "headerColor", "adminCommission", "adminCommissionType", "adminCommissionValue", "handlingFees", "handlingFeeType", "handlingFeeValue"];
     
     for (const key of allowedKeys) {
       if (Object.prototype.hasOwnProperty.call(req.body, key)) {
