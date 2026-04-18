@@ -125,6 +125,46 @@ export async function sendSellerVerificationOtpEmail({
   };
 }
 
+export async function sendForgotPasswordEmail(email, otp) {
+  if (!useRealEmailOTP()) {
+    logger.info("Forgot password OTP generated in mock mode", {
+      email,
+      otp,
+      mode: "mock",
+    });
+    return {
+      delivered: false,
+      mode: "mock",
+    };
+  }
+
+  const transporter = getTransporter();
+  await transporter.sendMail({
+    from: getMailFrom(),
+    to: email,
+    subject: "Password Reset Code",
+    text: `Your password reset code is ${otp}. This code expires in 10 minutes.`,
+    html: `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; rounded: 12px;">
+        <h2 style="color: #4f46e5; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">Password Reset Request</h2>
+        <p>We received a request to reset your password. Use the code below to proceed:</p>
+        <div style="background: #f8fafc; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
+          <span style="font-size: 32px; font-weight: 800; letter-spacing: 8px; color: #0f172a;">${otp}</span>
+        </div>
+        <p style="color: #64748b; font-size: 14px;">This code will expire in 10 minutes. If you didn't request this, you can safely ignore this email.</p>
+        <footer style="margin-top: 30px; border-top: 1px solid #f1f5f9; pt-20px; font-size: 12px; color: #94a3b8;">
+          Sent by Noyo Platform Security Team
+        </footer>
+      </div>
+    `,
+  });
+
+  return {
+    delivered: true,
+    mode: "real",
+  };
+}
+
 export function __resetEmailTransportForTests() {
   cachedTransporter = null;
 }

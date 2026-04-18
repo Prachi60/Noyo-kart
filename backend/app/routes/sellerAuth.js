@@ -4,6 +4,9 @@ import {
     loginSeller,
     sendSellerSignupOtp,
     verifySellerSignupOtp,
+    forgotPasswordRequest,
+    verifyForgotPasswordOtp,
+    resetPassword,
 } from "../controller/sellerAuthController.js";
 import { getSellerProfile, updateSellerProfile, requestWithdrawal, getNearbySellers } from "../controller/sellerController.js";
 import { getSellerStats, getSellerEarnings } from "../controller/sellerStatsController.js";
@@ -38,12 +41,14 @@ router.post(
     verifySellerSignupOtp
 );
 
-router.post(
-    "/signup",
+router.post("/signup",
     upload.any(),
     signupSeller
 );
 router.post("/login", loginSeller);
+router.post("/forgot-password/request", authRouteRateLimiter, sellerOtpPayloadGuard, forgotPasswordRequest);
+router.post("/forgot-password/verify", authRouteRateLimiter, sellerOtpPayloadGuard, verifyForgotPasswordOtp);
+router.post("/forgot-password/reset", authRouteRateLimiter, sellerOtpPayloadGuard, resetPassword);
 router.get("/nearby", getNearbySellers);
 
 // Profile routes

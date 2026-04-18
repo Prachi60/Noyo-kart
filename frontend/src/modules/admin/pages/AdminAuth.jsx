@@ -22,7 +22,58 @@ const AdminAuth = () => {
     const [isLogin, setIsLogin] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [isForgot, setIsForgot] = useState(false);
+    const [forgotStep, setForgotStep] = useState(1);
+    const [forgotOtp, setForgotOtp] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [resetToken, setResetToken] = useState('');
     const { login } = useAuth();
+
+    const handleForgotRequest = async () => {
+        if (!formData.email) return toast.error("Please enter your email");
+        setIsLoading(true);
+        try {
+            await adminApi.forgotPasswordRequest(formData.email);
+            toast.success("OTP sent to your email");
+            setForgotStep(2);
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Failed to send OTP");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleVerifyOtp = async () => {
+        if (forgotOtp.length !== 4) return toast.error("Enter a 4-digit code");
+        setIsLoading(true);
+        try {
+            const res = await adminApi.forgotPasswordVerify({ email: formData.email, otp: forgotOtp });
+            toast.success("OTP verified!");
+            setResetToken(res.data.result.resetToken);
+            setForgotStep(3);
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Invalid OTP");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleResetPassword = async () => {
+        if (newPassword.length < 10) return toast.error("Password must be at least 10 characters");
+        setIsLoading(true);
+        try {
+            await adminApi.resetPassword({ email: formData.email, resetToken, newPassword });
+            toast.success("Password reset successful! Please login.");
+            setIsForgot(false);
+            setForgotStep(1);
+            setForgotOtp('');
+            setNewPassword('');
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Failed to reset password");
+        } finally {
+            setIsLoading(false);
+        }
+    };
     const { settings } = useSettings();
     const navigate = useNavigate();
     const appName = settings?.appName || 'App';
@@ -127,114 +178,247 @@ const AdminAuth = () => {
                 {/* Left Side: Form */}
                 <div className="w-full md:w-[45%] p-12 md:p-20 flex flex-col justify-center relative z-10 bg-white">
                     <AnimatePresence mode="wait">
-                        <motion.div
-                            key={isLogin ? 'login' : 'signup'}
-                            initial={{ x: -30, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            exit={{ x: 30, opacity: 0 }}
-                            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                            className="space-y-10"
-                        >
-                            <div className="space-y-3">
-                                <motion.h1
-                                    className="text-5xl font-black text-indigo-900 tracking-tight"
-                                    layoutId="auth-title"
-                                >
-                                    {isLogin ? 'Login' : 'Sign Up'}
-                                </motion.h1>
-                                <p className="text-gray-400 font-medium text-base">
-                                    {isLogin
-                                        ? `Welcome to ${appName} Admin Platform`
-                                        : 'Start managing your platform today'}
-                                </p>
-                            </div>
+                        {!isForgot ? (
+                            <motion.div
+                                key={isLogin ? 'login' : 'signup'}
+                                initial={{ x: -30, opacity: 0 }}
+                                animate={{ x: 0, opacity: 1 }}
+                                exit={{ x: 30, opacity: 0 }}
+                                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                                className="space-y-10"
+                            >
+                                <div className="space-y-3">
+                                    <motion.h1
+                                        className="text-5xl font-black text-indigo-900 tracking-tight"
+                                        layoutId="auth-title"
+                                    >
+                                        {isLogin ? 'Login' : 'Sign Up'}
+                                    </motion.h1>
+                                    <p className="text-gray-400 font-medium text-base">
+                                        {isLogin
+                                            ? `Welcome to ${appName} Admin Platform`
+                                            : 'Start managing your platform today'}
+                                    </p>
+                                </div>
 
-                            <form onSubmit={handleSubmit} className="space-y-5">
-                                <AnimatePresence mode="popLayout">
-                                    {!isLogin && (
-                                        <motion.div
-                                            initial={{ height: 0, opacity: 0, y: -10 }}
-                                            animate={{ height: 'auto', opacity: 1, y: 0 }}
-                                            exit={{ height: 0, opacity: 0, y: -10 }}
-                                            className="group relative"
+                                <form onSubmit={handleSubmit} className="space-y-5">
+                                    <AnimatePresence mode="popLayout">
+                                        {!isLogin && (
+                                            <motion.div
+                                                initial={{ height: 0, opacity: 0, y: -10 }}
+                                                animate={{ height: 'auto', opacity: 1, y: 0 }}
+                                                exit={{ height: 0, opacity: 0, y: -10 }}
+                                                className="group relative"
+                                            >
+                                                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-600 transition-colors">
+                                                    <User size={20} />
+                                                </div>
+                                                <input
+                                                    type="text"
+                                                    name="name"
+                                                    required
+                                                    value={formData.name}
+                                                    onChange={handleChange}
+                                                    placeholder="Full Name"
+                                                    className="w-full pl-14 pr-5 py-5 bg-[#f8f9ff] border-2 border-transparent rounded-[24px] text-sm font-bold text-gray-700 outline-none focus:bg-white focus:border-indigo-100 focus:ring-8 focus:ring-indigo-50/50 transition-all placeholder:text-gray-300"
+                                                />
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+
+                                    <div className="group relative">
+                                        <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-600 transition-colors">
+                                            <Mail size={20} />
+                                        </div>
+                                        <input
+                                            type="email"
+                                            name="email"
+                                            required
+                                            value={formData.email}
+                                            onChange={handleChange}
+                                            placeholder="Username or email"
+                                            className="w-full pl-14 pr-5 py-5 bg-[#f8f9ff] border-2 border-transparent rounded-[24px] text-sm font-bold text-gray-700 outline-none focus:bg-white focus:border-indigo-100 focus:ring-8 focus:ring-indigo-50/50 transition-all placeholder:text-gray-300"
+                                        />
+                                    </div>
+
+                                    <div className="group relative">
+                                        <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-600 transition-colors">
+                                            <Lock size={20} />
+                                        </div>
+                                        <input
+                                            type={showPassword ? "text" : "password"}
+                                            name="password"
+                                            required
+                                            minLength={10}
+                                            maxLength={128}
+                                            autoComplete="current-password"
+                                            value={formData.password}
+                                            onChange={handleChange}
+                                            placeholder="Password (min 10 chars)"
+                                            className="w-full pl-14 pr-14 py-5 bg-[#f8f9ff] border-2 border-transparent rounded-[24px] text-sm font-bold text-gray-700 outline-none focus:bg-white focus:border-indigo-100 focus:ring-8 focus:ring-indigo-50/50 transition-all placeholder:text-gray-300"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-indigo-600 transition-colors focus:outline-none"
                                         >
+                                            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                        </button>
+                                    </div>
+
+                                    <div className="flex justify-end pr-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsForgot(true)}
+                                            className="text-[12px] font-bold text-gray-400 hover:text-indigo-600 transition-colors"
+                                        >
+                                            Forgot Password?
+                                        </button>
+                                    </div>
+
+                                    <button
+                                        type="submit"
+                                        disabled={isLoading}
+                                        className="w-full bg-indigo-600 text-white rounded-[24px] py-5 text-base font-black shadow-2xl shadow-indigo-200 hover:bg-indigo-700 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-3"
+                                    >
+                                        {isLoading ? (
+                                            <motion.div
+                                                animate={{ rotate: 360 }}
+                                                transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                                                className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full"
+                                            />
+                                        ) : (
+                                            <>
+                                                <span>{isLogin ? 'Login Now' : 'Create Account'}</span>
+                                                <ArrowRight size={20} />
+                                            </>
+                                        )}
+                                    </button>
+                                </form>
+                            </motion.div>
+                        ) : (
+                            <motion.div
+                                key="forgot-password-flow"
+                                initial={{ x: 30, opacity: 0 }}
+                                animate={{ x: 0, opacity: 1 }}
+                                exit={{ x: -30, opacity: 0 }}
+                                transition={{ duration: 0.4 }}
+                                className="space-y-10"
+                            >
+                                <div className="space-y-3">
+                                    <h1 className="text-4xl font-black text-indigo-900 tracking-tight">
+                                        {forgotStep === 1 ? 'Reset Password' : forgotStep === 2 ? 'Verify OTP' : 'New Password'}
+                                    </h1>
+                                    <p className="text-gray-400 font-medium text-sm">
+                                        {forgotStep === 1
+                                            ? "Enter your email to receive a reset code."
+                                            : forgotStep === 2
+                                                ? `We've sent a 4-digit code to ${formData.email}`
+                                                : "Create a strong new password for your account."}
+                                    </p>
+                                </div>
+
+                                <form
+                                    onSubmit={(e) => {
+                                        e.preventDefault();
+                                        if (forgotStep === 1) handleForgotRequest();
+                                        else if (forgotStep === 2) handleVerifyOtp();
+                                        else handleResetPassword();
+                                    }}
+                                    className="space-y-5"
+                                >
+                                    {forgotStep === 1 && (
+                                        <div className="group relative">
                                             <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-600 transition-colors">
-                                                <User size={20} />
+                                                <Mail size={20} />
+                                            </div>
+                                            <input
+                                                type="email"
+                                                name="email"
+                                                required
+                                                value={formData.email}
+                                                onChange={handleChange}
+                                                placeholder="Admin Email"
+                                                className="w-full pl-14 pr-5 py-5 bg-[#f8f9ff] border-2 border-transparent rounded-[24px] text-sm font-bold text-gray-700 outline-none focus:bg-white focus:border-indigo-100 transition-all"
+                                            />
+                                        </div>
+                                    )}
+
+                                    {forgotStep === 2 && (
+                                        <div className="group relative">
+                                            <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-600 transition-colors">
+                                                <ShieldCheck size={20} />
                                             </div>
                                             <input
                                                 type="text"
-                                                name="name"
+                                                maxLength={4}
                                                 required
-                                                value={formData.name}
-                                                onChange={handleChange}
-                                                placeholder="Full Name"
-                                                className="w-full pl-14 pr-5 py-5 bg-[#f8f9ff] border-2 border-transparent rounded-[24px] text-sm font-bold text-gray-700 outline-none focus:bg-white focus:border-indigo-100 focus:ring-8 focus:ring-indigo-50/50 transition-all placeholder:text-gray-300"
+                                                value={forgotOtp}
+                                                onChange={(e) => setForgotOtp(e.target.value.replace(/\D/g, ''))}
+                                                placeholder="4-Digit Code"
+                                                className="w-full pl-14 pr-5 py-5 bg-[#f8f9ff] border-2 border-transparent rounded-[24px] text-center tracking-[10px] text-lg font-black text-gray-700 outline-none focus:bg-white focus:border-indigo-100 transition-all"
                                             />
-                                        </motion.div>
+                                        </div>
                                     )}
-                                </AnimatePresence>
 
-                                <div className="group relative">
-                                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-600 transition-colors">
-                                        <Mail size={20} />
-                                    </div>
-                                    <input
-                                        type="email"
-                                        name="email"
-                                        required
-                                        value={formData.email}
-                                        onChange={handleChange}
-                                        placeholder="Username or email"
-                                        className="w-full pl-14 pr-5 py-5 bg-[#f8f9ff] border-2 border-transparent rounded-[24px] text-sm font-bold text-gray-700 outline-none focus:bg-white focus:border-indigo-100 focus:ring-8 focus:ring-indigo-50/50 transition-all placeholder:text-gray-300"
-                                    />
-                                </div>
-
-                                <div className="group relative">
-                                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-600 transition-colors">
-                                        <Lock size={20} />
-                                    </div>
-                                    <input
-                                        type={showPassword ? "text" : "password"}
-                                        name="password"
-                                        required
-                                        minLength={10}
-                                        maxLength={128}
-                                        autoComplete="current-password"
-                                        value={formData.password}
-                                        onChange={handleChange}
-                                        placeholder="Password (min 10 chars)"
-                                        className="w-full pl-14 pr-14 py-5 bg-[#f8f9ff] border-2 border-transparent rounded-[24px] text-sm font-bold text-gray-700 outline-none focus:bg-white focus:border-indigo-100 focus:ring-8 focus:ring-indigo-50/50 transition-all placeholder:text-gray-300"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-indigo-600 transition-colors focus:outline-none"
-                                    >
-                                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                                    </button>
-                                </div>
-
-                                <button
-                                    type="submit"
-                                    disabled={isLoading}
-                                    className="w-full bg-indigo-600 text-white rounded-[24px] py-5 text-base font-black shadow-2xl shadow-indigo-200 hover:bg-indigo-700 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-3"
-                                >
-                                    {isLoading ? (
-                                        <motion.div
-                                            animate={{ rotate: 360 }}
-                                            transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                                            className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full"
-                                        />
-                                    ) : (
-                                        <>
-                                            <span>{isLogin ? 'Login Now' : 'Create Account'}</span>
-                                            <ArrowRight size={20} />
-                                        </>
+                                    {forgotStep === 3 && (
+                                        <div className="group relative">
+                                            <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-600 transition-colors">
+                                                <Lock size={20} />
+                                            </div>
+                                            <input
+                                                type={showPassword ? "text" : "password"}
+                                                required
+                                                minLength={10}
+                                                value={newPassword}
+                                                onChange={(e) => setNewPassword(e.target.value)}
+                                                placeholder="Enter New Password"
+                                                className="w-full pl-14 pr-14 py-5 bg-[#f8f9ff] border-2 border-transparent rounded-[24px] text-sm font-bold text-gray-700 outline-none focus:bg-white focus:border-indigo-100 transition-all"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400"
+                                            >
+                                                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                            </button>
+                                        </div>
                                     )}
-                                </button>
-                            </form>
 
-                        </motion.div>
+                                    <div className="space-y-3">
+                                        <button
+                                            type="submit"
+                                            disabled={isLoading}
+                                            className="w-full bg-indigo-600 text-white rounded-[24px] py-5 text-base font-black shadow-2xl shadow-indigo-200 hover:bg-indigo-700 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-3"
+                                        >
+                                            {isLoading ? (
+                                                <motion.div
+                                                    animate={{ rotate: 360 }}
+                                                    transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                                                    className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full"
+                                                />
+                                            ) : (
+                                                <>
+                                                    <span>{forgotStep === 1 ? 'Send OTP' : forgotStep === 2 ? 'Verify Code' : 'Update Password'}</span>
+                                                    <ArrowRight size={20} />
+                                                </>
+                                            )}
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                if (forgotStep === 1) setIsForgot(false);
+                                                else setForgotStep(prev => prev - 1);
+                                            }}
+                                            className="w-full text-sm font-bold text-gray-400 hover:text-indigo-600 transition-colors py-2"
+                                        >
+                                            Back to Login
+                                        </button>
+                                    </div>
+                                </form>
+                            </motion.div>
+                        )}
                     </AnimatePresence>
                 </div>
 

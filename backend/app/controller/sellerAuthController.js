@@ -326,3 +326,65 @@ export const loginSeller = async (req, res) => {
         return handleResponse(res, 500, error.message);
     }
 };
+
+import {
+    issueResetOtp,
+    verifyResetOtp,
+    validateResetToken,
+    clearResetSession
+} from "../services/passwordResetService.js";
+
+/* ===============================
+   FORGOT PASSWORD
+================================ */
+export const forgotPasswordRequest = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) return handleResponse(res, 400, "Email is required");
+
+        const seller = await Seller.findOne({ email: email.toLowerCase().trim() });
+        if (!seller) {
+            return handleResponse(res, 404, "Seller account not found with this email");
+        }
+
+        await issueResetOtp(email);
+        return handleResponse(res, 200, "OTP for password reset has been sent to your email");
+    } catch (error) {
+        return handleResponse(res, error.statusCode || 500, error.message);
+    }
+};
+
+export const verifyForgotPasswordOtp = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+        if (!email || !otp) return handleResponse(res, 400, "Email and OTP are required");
+
+        const result = await verifyResetOtp(email, otp);
+        return handleResponse(res, 200, "OTP verified successfully", result);
+    } catch (error) {
+        return handleResponse(res, error.statusCode || 400, error.message);
+    }
+};
+
+export const resetPassword = async (req, res) => {
+    try {
+        const { email, resetToken, newPassword } = req.body;
+        if (!email || !resetToken || !newPassword) {
+            return handleResponse(res, 400, "Email, reset token and new password are required");
+        }
+
+        validateResetToken(resetToken, email);
+
+        const seller = await Seller.findOne({ email: email.toLowerCase().trim() });
+        if (!seller) return handleResponse(res, 404, "Seller not found");
+
+        seller.password = newPassword;
+        await seller.save();
+
+        await clearResetSession(email);
+
+        return handleResponse(res, 200, "Password has been reset successfully. You can now login.");
+    } catch (error) {
+        return handleResponse(res, error.statusCode || 400, error.message);
+    }
+};

@@ -3,6 +3,9 @@ import axiosInstance from '@core/api/axios';
 export const adminApi = {
     login: (data) => axiosInstance.post('/admin/login', data),
     signup: (data) => axiosInstance.post('/admin/signup', data),
+    forgotPasswordRequest: (email) => axiosInstance.post('/admin/forgot-password/request', { email }),
+    forgotPasswordVerify: (data) => axiosInstance.post('/admin/forgot-password/verify', data),
+    resetPassword: (data) => axiosInstance.post('/admin/forgot-password/reset', data),
     getStats: () => axiosInstance.get('/admin/stats'),
     getUsers: (params) => axiosInstance.get('/admin/users', { params }),
     getUserById: (id) => axiosInstance.get(`/admin/users/${id}`),
