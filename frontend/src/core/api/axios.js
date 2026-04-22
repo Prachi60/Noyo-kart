@@ -21,8 +21,10 @@ axiosInstance.interceptors.request.use(
             // Let the browser set the multipart boundary for FormData uploads.
             if (typeof config.headers?.delete === 'function') {
                 config.headers.delete('Content-Type');
+                config.headers.delete('content-type');
             } else if (config.headers) {
                 delete config.headers['Content-Type'];
+                delete config.headers['content-type'];
             }
         }
 

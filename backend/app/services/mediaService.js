@@ -30,7 +30,7 @@ function getOptimizedImageFormat() {
 }
 
 function getOptimizedImageQuality() {
-  return String(process.env.CLOUDINARY_IMAGE_UPLOAD_QUALITY || "auto:good")
+  return String(process.env.CLOUDINARY_IMAGE_UPLOAD_QUALITY || "auto")
     .trim();
 }
 
@@ -38,17 +38,12 @@ function isImageMimeType(mimeType = "") {
   return String(mimeType || "").trim().toLowerCase().startsWith("image/");
 }
 
-function buildImageUploadTransformation() {
-  const quality = getOptimizedImageQuality();
-  return quality ? `q_${quality}` : "";
-}
-
 function getImageUploadOptions() {
   const format = getOptimizedImageFormat();
-  const transformation = buildImageUploadTransformation();
+  const quality = getOptimizedImageQuality();
   return {
-    ...(format ? { format } : {}),
-    ...(transformation ? { transformation } : {}),
+    ...(format ? { fetch_format: format } : {}),
+    ...(quality ? { quality } : {}),
   };
 }
 

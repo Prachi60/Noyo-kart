@@ -100,22 +100,27 @@ export const signupSeller = async (req, res) => {
             radius
         } = req.body || {};
 
-        // 1. Handle file uploads if they exist in req.files (multipart form)
-        const documentFiles = req.files || [];
+        // 1. Handle file uploads if they exist in req.files
         const uploadedDocs = {};
+        if (req.files) {
+            const files = Array.isArray(req.files) 
+                ? req.files 
+                : Object.values(req.files).flat();
 
-        if (Array.isArray(documentFiles) && documentFiles.length > 0) {
-            for (const file of documentFiles) {
-                try {
-                    const fieldName = file.fieldname;
-                    if (fieldName && REQUIRED_SELLER_DOCUMENT_FIELDS.includes(fieldName)) {
-                        const url = await uploadToCloudinary(file.buffer, "docs", {
+            for (const file of files) {
+                const fieldName = file.fieldname;
+                if (fieldName && REQUIRED_SELLER_DOCUMENT_FIELDS.includes(fieldName)) {
+                    try {
+                        const result = await uploadToCloudinary(file.buffer, "docs", {
                             mimeType: file.mimetype,
                         });
-                        uploadedDocs[fieldName] = url;
+                        if (result && result.secure_url) {
+                            uploadedDocs[fieldName] = result.secure_url;
+                        }
+                    } catch (err) {
+                        console.error(`Failed to upload ${fieldName} to Cloudinary:`, err);
+                        throw err; // Re-throw to be caught by the outer catch block
                     }
-                } catch (err) {
-                    console.error("Failed to upload document to Cloudinary", err);
                 }
             }
         }
@@ -172,10 +177,17 @@ export const signupSeller = async (req, res) => {
             const readableMissing = missingRequiredDocuments
                 .map((field) => SELLER_DOCUMENT_FIELDS[field] || field)
                 .join(", ");
+            
+            // Debugging: If files were sent but didn't result in URLs, mention it
+            const filesReceived = req.files ? (Array.isArray(req.files) ? req.files.length : Object.keys(req.files).length) : 0;
+            const detail = filesReceived > 0 
+                ? ". Documents were received but failed to upload correctly." 
+                : ". No documents were detected in the request.";
+
             return handleResponse(
                 res,
                 400,
-                `All required documents must be uploaded: ${readableMissing}`
+                `All required documents must be uploaded: ${readableMissing}${detail}`
             );
         }
 
