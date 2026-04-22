@@ -33,7 +33,7 @@ function isMockPaymentEnabled() {
 function getPhonePeClient() {
   if (phonePeClient) return phonePeClient;
 
-  const clientId = String(process.env.PHONEPE_CLIENT_ID || "").trim();
+  const clientId = String(process.env.PHONEPE_CLIENT_ID || process.env.PHONEPE_MERCHANT_ID || "").trim();
   const clientSecret = String(process.env.PHONEPE_CLIENT_SECRET || "").trim();
   const clientVersion = parseInt(process.env.PHONEPE_CLIENT_VERSION || "1", 10);
   const isProd = String(process.env.PHONEPE_ENV || "").toUpperCase() === "PRODUCTION";

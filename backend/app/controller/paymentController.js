@@ -12,6 +12,11 @@ import {
 
 function resolvePaymentErrorMessage(error) {
   const directMessage = String(error?.message || "").trim();
+  
+  if (directMessage.includes("Unauthorized") || error?.httpStatusCode === 401) {
+    return "Payment gateway authentication failed. Please check merchant credentials.";
+  }
+  
   if (directMessage) return directMessage;
 
   const responseStatusText = String(error?.response?.statusText || "").trim();
