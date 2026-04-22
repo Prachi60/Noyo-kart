@@ -163,7 +163,7 @@ const AppRouter = () => {
                         { path: 'profile/edit', element: <ProtectedRoute><EditProfilePage /></ProtectedRoute> },
                         { path: 'wallet', element: <ProtectedRoute><WalletPage /></ProtectedRoute> },
                         { path: 'search', element: <SearchPage /> },
-                        { path: 'print-store', element: <PrintStore /> },
+                        { path: 'print-store', element: <ProtectedRoute><PrintStore /></ProtectedRoute> },
                     ]
                 },
                 {
