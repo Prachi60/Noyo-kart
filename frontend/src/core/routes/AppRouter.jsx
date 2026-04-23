@@ -138,6 +138,10 @@ const AppRouter = () => {
                     element: <div className="flex h-screen items-center justify-center font-outfit">Unauthorized Access</div>,
                 },
                 {
+                    path: 'payment-status',
+                    element: <PaymentStatusPage />,
+                },
+                {
                     element: <CustomerLayoutWrapper />,
                     children: [
                         { index: true, element: <Home /> },
@@ -158,7 +162,6 @@ const AppRouter = () => {
                         { path: 'support', element: <ProtectedRoute><SupportPage /></ProtectedRoute> },
                         { path: 'chat', element: <ProtectedRoute><ChatPage /></ProtectedRoute> },
                         { path: 'checkout', element: <ProtectedRoute><CheckoutPage /></ProtectedRoute> },
-                        { path: 'payment-status', element: <PaymentStatusPage /> },
                         { path: 'profile', element: <ProtectedRoute><ProfilePage /></ProtectedRoute> },
                         { path: 'profile/edit', element: <ProtectedRoute><EditProfilePage /></ProtectedRoute> },
                         { path: 'wallet', element: <ProtectedRoute><WalletPage /></ProtectedRoute> },
