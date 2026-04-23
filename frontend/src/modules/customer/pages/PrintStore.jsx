@@ -59,7 +59,7 @@ const PrintStore = () => {
       name: f.name,
       file: f,
       status: 'uploading',
-      config: { isColor: false, isDoubleSided: false, copies: 1 }
+      config: { isColor: false, isDoubleSided: false, copies: 1, orientation: 'portrait', printType: 'document', photoSize: 'passport' }
     }));
 
     setFiles(prev => [...prev, ...newFiles]);
@@ -109,7 +109,10 @@ const PrintStore = () => {
         pageCount: f.pageCount,
         copies: f.config.copies,
         isColor: f.config.isColor,
-        isDoubleSided: f.config.isDoubleSided
+        isDoubleSided: f.config.isDoubleSided,
+        orientation: f.config.orientation,
+        printType: f.config.printType,
+        photoSize: f.config.printType === 'photo' ? f.config.photoSize : undefined,
       }));
 
       const res = await customerApi.calculatePrintQuote({
@@ -152,6 +155,9 @@ const PrintStore = () => {
         isColor: f.config.isColor,
         isDoubleSided: f.config.isDoubleSided,
         copies: f.config.copies,
+        orientation: f.config.orientation,
+        printType: f.config.printType,
+        photoSize: f.config.printType === 'photo' ? f.config.photoSize : undefined,
         price: 0 // Will be recalculated by checkout preview
       })),
       sellerId: quote.seller._id,
@@ -400,7 +406,54 @@ const PrintStore = () => {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4 md:gap-8">
+                      <div className="grid grid-cols-2 gap-3">
+                        {/* Print Type */}
+                        <div className="space-y-3 col-span-2">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[3px] ml-1">Print Type</p>
+                          <div className="flex p-1 bg-slate-100/70 rounded-xl gap-1">
+                            {[{ label: '📄 Document', value: 'document' }, { label: '📷 Photograph', value: 'photo' }].map(opt => (
+                              <button
+                                key={opt.value}
+                                onClick={() => updateFileConfig(f.id, { printType: opt.value })}
+                                className={`flex-1 py-2.5 px-2 rounded-lg transition-all text-[10px] sm:text-[11px] font-black tracking-wider ${
+                                  f.config.printType === opt.value
+                                    ? 'bg-primary text-white shadow-md shadow-primary/30'
+                                    : 'text-slate-400 hover:text-slate-600'
+                                }`}
+                              >
+                                {opt.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Photo Size — only when printType is photo */}
+                        {f.config.printType === 'photo' && (
+                          <div className="space-y-3 col-span-2">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[3px] ml-1">Photo Size</p>
+                            <div className="flex p-1 bg-slate-100/70 rounded-xl gap-1">
+                              {[
+                                { label: 'Passport Size', sublabel: '3.5×4.5 cm', value: 'passport' },
+                                { label: '4×6 Print', sublabel: '10×15 cm', value: '4x6' },
+                              ].map(opt => (
+                                <button
+                                  key={opt.value}
+                                  onClick={() => updateFileConfig(f.id, { photoSize: opt.value })}
+                                  className={`flex-1 py-2.5 px-2 rounded-lg transition-all text-center ${
+                                    f.config.photoSize === opt.value
+                                      ? 'bg-primary text-white shadow-md shadow-primary/30'
+                                      : 'text-slate-400 hover:text-slate-600'
+                                  }`}
+                                >
+                                  <p className="text-[10px] sm:text-[11px] font-black tracking-wider">{opt.label}</p>
+                                  <p className={`text-[8px] font-bold mt-0.5 ${f.config.photoSize === opt.value ? 'text-white/70' : 'text-slate-400'}`}>{opt.sublabel}</p>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Color */}
                         <div className="space-y-3">
                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-[3px] ml-1">Color</p>
                           <div className="flex p-1 bg-slate-100/70 rounded-xl gap-1">
@@ -409,8 +462,8 @@ const PrintStore = () => {
                                 key={opt.label}
                                 onClick={() => updateFileConfig(f.id, { isColor: opt.value })}
                                 className={`flex-1 py-2.5 px-1 rounded-lg transition-all text-[10px] sm:text-[11px] font-black tracking-wider ${
-                                  f.config.isColor === opt.value 
-                                    ? 'bg-primary text-white shadow-md shadow-primary/30' 
+                                  f.config.isColor === opt.value
+                                    ? 'bg-primary text-white shadow-md shadow-primary/30'
                                     : 'text-slate-400 hover:text-slate-600'
                                 }`}
                               >
@@ -420,16 +473,17 @@ const PrintStore = () => {
                           </div>
                         </div>
 
+                        {/* Orientation */}
                         <div className="space-y-3">
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[3px] ml-1">Sides</p>
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[3px] ml-1">Orientation</p>
                           <div className="flex p-1 bg-slate-100/70 rounded-xl gap-1">
-                            {[{ label: 'Single', value: false }, { label: 'Double', value: true }].map(opt => (
+                            {[{ label: 'Portrait', value: 'portrait' }, { label: 'Landscape', value: 'landscape' }].map(opt => (
                               <button
-                                key={opt.label}
-                                onClick={() => updateFileConfig(f.id, { isDoubleSided: opt.value })}
-                                className={`flex-1 py-2.5 px-1 rounded-lg transition-all text-[10px] sm:text-[11px] font-black tracking-wider ${
-                                  f.config.isDoubleSided === opt.value 
-                                    ? 'bg-primary text-white shadow-md shadow-primary/30' 
+                                key={opt.value}
+                                onClick={() => updateFileConfig(f.id, { orientation: opt.value })}
+                                className={`flex-1 py-2.5 px-1 rounded-lg transition-all text-[10px] sm:text-[11px] font-black tracking-wider truncate ${
+                                  f.config.orientation === opt.value
+                                    ? 'bg-primary text-white shadow-md shadow-primary/30'
                                     : 'text-slate-400 hover:text-slate-600'
                                 }`}
                               >
@@ -439,19 +493,42 @@ const PrintStore = () => {
                           </div>
                         </div>
 
-                        <div className="space-y-3 col-span-2 md:col-span-1">
+                        {/* Sides — only for document */}
+                        {f.config.printType === 'document' && (
+                          <div className="space-y-3">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[3px] ml-1">Sides</p>
+                            <div className="flex p-1 bg-slate-100/70 rounded-xl gap-1">
+                              {[{ label: 'Single', value: false }, { label: 'Double', value: true }].map(opt => (
+                                <button
+                                  key={opt.label}
+                                  onClick={() => updateFileConfig(f.id, { isDoubleSided: opt.value })}
+                                  className={`flex-1 py-2.5 px-1 rounded-lg transition-all text-[10px] sm:text-[11px] font-black tracking-wider ${
+                                    f.config.isDoubleSided === opt.value
+                                      ? 'bg-primary text-white shadow-md shadow-primary/30'
+                                      : 'text-slate-400 hover:text-slate-600'
+                                  }`}
+                                >
+                                  {opt.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Copies */}
+                        <div className="space-y-3">
                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-[3px] ml-1">Copies</p>
-                          <div className="flex items-center gap-4 bg-slate-100/70 p-1.5 rounded-xl">
-                            <button 
+                          <div className="flex items-center gap-2 bg-slate-100/70 p-1.5 rounded-xl">
+                            <button
                               onClick={() => updateFileConfig(f.id, { copies: Math.max(1, f.config.copies - 1) })}
-                              className="w-10 h-10 bg-white shadow-sm rounded-xl flex items-center justify-center text-slate-900 active:scale-90 transition-all font-black hover:bg-primary hover:text-white hover:rotate-[-10deg]"
+                              className="w-10 h-10 bg-white shadow-sm rounded-xl flex items-center justify-center text-slate-900 active:scale-90 transition-all font-black hover:bg-primary hover:text-white"
                             >
                               -
                             </button>
                             <span className="flex-1 text-center font-black text-slate-900 text-sm">{f.config.copies}</span>
-                            <button 
+                            <button
                               onClick={() => updateFileConfig(f.id, { copies: f.config.copies + 1 })}
-                              className="w-10 h-10 bg-white shadow-sm rounded-xl flex items-center justify-center text-slate-900 active:scale-90 transition-all font-black hover:bg-primary hover:text-white hover:rotate-[10deg]"
+                              className="w-10 h-10 bg-white shadow-sm rounded-xl flex items-center justify-center text-slate-900 active:scale-90 transition-all font-black hover:bg-primary hover:text-white"
                             >
                               +
                             </button>
@@ -523,7 +600,12 @@ const PrintStore = () => {
                                     {f.config.isColor ? "Color" : "B&W"}
                                 </Badge>
                                 <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">
-                                    {f.config.isDoubleSided ? "Double Sided" : "Single Sided"}
+                                    {f.config.printType === 'photo'
+                                      ? f.config.photoSize === 'passport' ? 'Passport Size' : '4×6 Print'
+                                      : f.config.isDoubleSided ? "Double Sided" : "Single Sided"}
+                                </span>
+                                <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">
+                                    {f.config.orientation === 'landscape' ? '↔ Landscape' : '↕ Portrait'}
                                 </span>
                             </div>
                          </div>
