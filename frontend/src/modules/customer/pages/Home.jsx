@@ -404,7 +404,9 @@ const EMPTY_HERO_CONFIG = {
 
 // In-memory Home cache survives SPA navigation and resets on browser refresh.
 // This avoids flashing static fallback data when users return to Home.
-const homePageDataCache = new Map();
+// TTL: 5 minutes — ensures price/product updates reflect without full refresh.
+const CACHE_TTL_MS = 5 * 60 * 1000;
+const homePageDataCache = new Map(); // key → { data, timestamp }
 const headerSectionsMemoryCache = {};
 const heroConfigMemoryCache = {};
 
@@ -415,8 +417,15 @@ const getHomePageDataCacheKey = (location) => {
   return `home:${lat.toFixed(5)}:${lng.toFixed(5)}`;
 };
 
-const getCachedHomePageData = (location) =>
-  homePageDataCache.get(getHomePageDataCacheKey(location)) || null;
+const getCachedHomePageData = (location) => {
+  const entry = homePageDataCache.get(getHomePageDataCacheKey(location));
+  if (!entry) return null;
+  if (Date.now() - entry.timestamp > CACHE_TTL_MS) {
+    homePageDataCache.delete(getHomePageDataCacheKey(location));
+    return null;
+  }
+  return entry.data;
+};
 
 const Home = () => {
   const { scrollY } = useScroll();
@@ -572,16 +581,16 @@ const Home = () => {
     });
 
     if (persist && cacheKey) {
-      homePageDataCache.set(cacheKey, data);
+      homePageDataCache.set(cacheKey, { data, timestamp: Date.now() });
     }
   };
 
   const fetchData = async ({ forceRefresh = false } = {}) => {
     const cacheKey = getHomePageDataCacheKey(currentLocation);
     if (!forceRefresh) {
-      const cached = homePageDataCache.get(cacheKey);
-      if (cached) {
-        applyHomePageData(cached, { cacheKey, persist: false });
+      const entry = homePageDataCache.get(cacheKey);
+      if (entry && Date.now() - entry.timestamp <= CACHE_TTL_MS) {
+        applyHomePageData(entry.data, { cacheKey, persist: false });
         setIsLoading(false);
         return;
       }

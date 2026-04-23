@@ -122,9 +122,9 @@ const AddProduct = () => {
       return;
     }
 
-    // Validate all three category levels are selected
-    if (!formData.header || !formData.category || !formData.subcategory) {
-      toast.error("Please select all three category levels: Main Group, Specific Category, and Sub-Category");
+    // Validate main group and category are selected
+    if (!formData.header || !formData.category) {
+      toast.error("Please select Main Group and Specific Category");
       return;
     }
 
@@ -155,7 +155,7 @@ const AddProduct = () => {
       // Category IDs
       data.append("headerId", formData.header);
       data.append("categoryId", formData.category);
-      data.append("subcategoryId", formData.subcategory);
+      if (formData.subcategory) data.append("subcategoryId", formData.subcategory);
 
       // Tags
       data.append("tags", formData.tags);
@@ -560,7 +560,7 @@ const AddProduct = () => {
               <div className="grid grid-cols-1 gap-6">
                 <div className="space-y-1.5 flex flex-col">
                   <label className="text-[10px] sm:text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">
-                    Sub-Category <span className="text-rose-500">*</span>
+                    Sub-Category
                   </label>
                   <select
                     value={formData.subcategory}

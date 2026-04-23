@@ -247,7 +247,7 @@ const ProductManagement = () => {
 
   const handleSave = async () => {
     try {
-      if (!formData.name || !formData.price || !formData.stock || !formData.header || !formData.category || !formData.subcategory) {
+      if (!formData.name || !formData.price || !formData.stock || !formData.header || !formData.category) {
         toast.error("Please fill all required fields, including categories");
         return;
       }
@@ -257,12 +257,20 @@ const ProductManagement = () => {
       data.append("slug", formData.slug);
       data.append("sku", formData.sku);
       data.append("description", formData.description);
-      data.append("price", Number(formData.price));
-      data.append("salePrice", Number(formData.salePrice) || 0);
+
+      // Always derive top-level price from first variant so listing cards stay in sync
+      const firstVariant = Array.isArray(formData.variants) && formData.variants.length > 0
+        ? formData.variants[0]
+        : null;
+      const topPrice = firstVariant ? Number(firstVariant.price) || Number(formData.price) : Number(formData.price);
+      const topSalePrice = firstVariant ? Number(firstVariant.salePrice) || 0 : Number(formData.salePrice) || 0;
+
+      data.append("price", topPrice);
+      data.append("salePrice", topSalePrice);
       data.append("stock", Number(formData.stock));
       data.append("headerId", formData.header);
       data.append("categoryId", formData.category);
-      data.append("subcategoryId", formData.subcategory);
+      if (formData.subcategory) data.append("subcategoryId", formData.subcategory);
       data.append("status", formData.status);
       data.append("brand", formData.brand);
       data.append("weight", formData.weight);
@@ -1008,7 +1016,7 @@ const ProductManagement = () => {
                       </div>
                       <div className="space-y-1.5 flex flex-col">
                         <label className="text-[10px] sm:text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">
-                          Sub-Category <span className="text-rose-500">*</span>
+                          Sub-Category
                         </label>
                         <select
                           value={formData.subcategory}
