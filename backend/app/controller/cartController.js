@@ -35,7 +35,6 @@ export const addToCart = async (req, res) => {
     const normalizedVariantSku = String(variantSku || "").trim();
 
     let cart = await Cart.findOne({ customerId });
-
     if (!cart) {
       cart = new Cart({ customerId, items: [] });
     }
@@ -53,11 +52,9 @@ export const addToCart = async (req, res) => {
     }
 
     await cart.save();
-    const updatedCart = await Cart.findById(cart._id)
-      .populate("items.productId", CART_POPULATE_FIELDS)
-      .lean();
+    await cart.populate("items.productId", CART_POPULATE_FIELDS);
 
-    return handleResponse(res, 200, "Item added to cart", updatedCart);
+    return handleResponse(res, 200, "Item added to cart", cart.toObject());
   } catch (error) {
     return handleResponse(res, 500, error.message);
   }
@@ -73,7 +70,6 @@ export const updateQuantity = async (req, res) => {
     const normalizedVariantSku = String(variantSku || "").trim();
 
     let cart = await Cart.findOne({ customerId });
-
     if (!cart) {
       return handleResponse(res, 404, "Cart not found");
     }
@@ -94,11 +90,9 @@ export const updateQuantity = async (req, res) => {
     }
 
     await cart.save();
-    const updatedCart = await Cart.findById(cart._id)
-      .populate("items.productId", CART_POPULATE_FIELDS)
-      .lean();
+    await cart.populate("items.productId", CART_POPULATE_FIELDS);
 
-    return handleResponse(res, 200, "Cart updated successfully", updatedCart);
+    return handleResponse(res, 200, "Cart updated successfully", cart.toObject());
   } catch (error) {
     return handleResponse(res, 500, error.message);
   }
@@ -130,12 +124,12 @@ export const removeFromCart = async (req, res) => {
     });
 
     await cart.save();
-    const updatedCart = await Cart.findById(cart._id).populate(
+    await cart.populate(
       "items.productId",
       "name slug price salePrice mainImage stock status headerId categoryId subcategoryId sellerId",
     );
 
-    return handleResponse(res, 200, "Item removed from cart", updatedCart);
+    return handleResponse(res, 200, "Item removed from cart", cart.toObject());
   } catch (error) {
     return handleResponse(res, 500, error.message);
   }

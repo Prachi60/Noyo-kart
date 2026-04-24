@@ -19,6 +19,7 @@ import Card from "@/shared/components/ui/Card";
 
 import { useAuth } from "@core/context/AuthContext";
 import { deliveryApi } from "../services/deliveryApi";
+import { useOrderSound } from "@/shared/hooks/useOrderSound";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -27,6 +28,9 @@ const Dashboard = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [activeTab, setActiveTab] = useState("delivery"); // 'delivery' or 'return'
   const [availableOrders, setAvailableOrders] = useState([]);
+  const prevOrderCountRef = React.useRef(null);
+  const hasLoadedRef = React.useRef(false);
+  const playOrderSound = useOrderSound();
   const [earnings, setEarnings] = useState({
     today: 0,
     deliveries: 0,
@@ -73,6 +77,13 @@ const Dashboard = () => {
       if (response.data.success) {
         const orders = response.data.results || response.data.result || [];
         setAvailableOrders(orders);
+
+        // Play sound only when polling finds NEW orders (not on first load)
+        if (prevOrderCountRef.current !== null && orders.length > prevOrderCountRef.current) {
+          playOrderSound();
+        }
+        prevOrderCountRef.current = orders.length;
+        hasLoadedRef.current = true;
       }
     } catch (error) {
       console.error("Failed to fetch available orders:", error);
@@ -83,6 +94,15 @@ const Dashboard = () => {
     fetchStats();
     fetchNotifications();
     if (isOnline) fetchAvailableOrders();
+  }, [isOnline, activeTab]);
+
+  // Poll every 15s for new available orders while online
+  useEffect(() => {
+    if (!isOnline) return;
+    const interval = setInterval(() => {
+      fetchAvailableOrders();
+    }, 15000);
+    return () => clearInterval(interval);
   }, [isOnline, activeTab]);
 
   const handleOnlineToggle = async () => {
@@ -213,7 +233,7 @@ const Dashboard = () => {
               className={cn(
                 "w-1/2 h-full rounded-xl shadow-md flex items-center justify-center gap-2 z-10 border transition-all duration-500 cursor-grab active:cursor-grabbing",
                 isOnline 
-                  ? "bg-gradient-to-r from-[#45B0E2] to-[#38bdf8] border-[#389ecb] text-white" 
+                  ? "bg-gradient-to-r from-[#0284c7] to-[#38bdf8] border-[#389ecb] text-white" 
                   : "bg-gradient-to-r from-slate-700 to-slate-800 border-slate-900 text-white"
               )}
               animate={{ x: isOnline ? "100%" : "0%" }}

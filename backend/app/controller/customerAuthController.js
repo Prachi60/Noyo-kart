@@ -127,8 +127,21 @@ export const updateCustomerProfile = async (req, res) => {
 };
 
 /* ===============================
-   GET WALLET TRANSACTIONS
+   DELETE ACCOUNT
 ================================ */
+export const deleteCustomerAccount = async (req, res) => {
+    try {
+        const customer = await Customer.findByIdAndDelete(req.user.id);
+        if (!customer) {
+            return handleResponse(res, 404, "Customer not found");
+        }
+        return handleResponse(res, 200, "Account deleted successfully");
+    } catch (error) {
+        return handleResponse(res, 500, error.message);
+    }
+};
+
+
 export const getCustomerTransactions = async (req, res) => {
     try {
         const customerId = req.user.id;

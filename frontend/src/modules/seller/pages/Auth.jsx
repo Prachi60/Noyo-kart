@@ -522,7 +522,7 @@ const Auth = () => {
 
         {/* Form Content Side */}
         <div
-          className="w-full md:w-[55%] min-h-0 p-8 pt-12 md:p-12 md:pt-16 flex flex-col justify-center bg-white overflow-y-auto overscroll-contain touch-pan-y custom-scrollbar relative"
+          className="w-full md:w-[55%] min-h-0 p-5 pt-8 md:p-12 md:pt-16 flex flex-col justify-center bg-white overflow-y-auto overscroll-contain touch-pan-y custom-scrollbar relative"
           style={{ WebkitOverflowScrolling: "touch" }}>
           <div className="hidden md:flex absolute top-8 right-8 z-20">
             <div className="w-20 h-20 rounded-2xl bg-slate-50 border border-slate-200 shadow-sm flex items-center justify-center overflow-hidden">
@@ -681,7 +681,7 @@ const Auth = () => {
                   {(isLogin || signupStep === 1) && (
                     <>
                       {!isLogin && (
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div className="relative group">
                             <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-violet-600 transition-colors">
                               <User size={18} />
@@ -724,7 +724,7 @@ const Auth = () => {
                           inputMode="email"
                           autoComplete="email"
                           placeholder="Business Email"
-                          className={`w-full pl-12 ${isLogin ? "pr-6" : "pr-28"} py-4 bg-slate-50 border-2 border-transparent rounded-lg text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-200 transition-all placeholder:text-slate-300`}
+                          className={`w-full pl-12 ${isLogin ? "pr-6" : "pr-24"} py-4 bg-slate-50 border-2 border-transparent rounded-lg text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-200 transition-all placeholder:text-slate-300`}
                           value={formData.email}
                           onChange={handleChange}
                         />
@@ -754,7 +754,7 @@ const Auth = () => {
                         )}
                       </div>
                       {!isLogin && verifications.email.isOtpVisible && verifications.email.status !== "verified" && (
-                        <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
                           <input
                             type="text"
                             inputMode="numeric"
@@ -766,13 +766,13 @@ const Auth = () => {
                                 otp: e.target.value.replace(/\D/g, "").slice(0, 4),
                               })
                             }
-                            className="flex-1 bg-transparent text-sm font-bold text-slate-700 outline-none placeholder:text-slate-400"
+                            className="flex-1 bg-transparent text-sm font-bold text-slate-700 outline-none placeholder:text-slate-400 py-1"
                           />
                           <button
                             type="button"
                             onClick={() => handleVerifyOtp("email")}
                             disabled={verifications.email.isVerifying || verifications.email.otp.length !== 4}
-                            className="rounded-md bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-700 shadow-sm ring-1 ring-slate-200 hover:bg-slate-100 disabled:opacity-50"
+                            className="rounded-md bg-white px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-700 shadow-sm ring-1 ring-slate-200 hover:bg-slate-100 disabled:opacity-50 whitespace-nowrap"
                           >
                             {verifications.email.isVerifying ? "Checking..." : "Confirm OTP"}
                           </button>
@@ -796,7 +796,7 @@ const Auth = () => {
                               name="phone"
                               required
                               placeholder="Contact Number"
-                              className="w-full pl-12 pr-28 py-4 bg-slate-50 border-2 border-transparent rounded-lg text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-200 transition-all placeholder:text-slate-300"
+                              className="w-full pl-12 pr-24 py-4 bg-slate-50 border-2 border-transparent rounded-lg text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-200 transition-all placeholder:text-slate-300"
                               value={formData.phone}
                               onChange={handleChange}
                             />
@@ -824,7 +824,7 @@ const Auth = () => {
                             </button>
                           </div>
                           {verifications.phone.isOtpVisible && verifications.phone.status !== "verified" && (
-                            <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
                               <input
                                 type="text"
                                 inputMode="numeric"
@@ -836,13 +836,13 @@ const Auth = () => {
                                     otp: e.target.value.replace(/\D/g, "").slice(0, 4),
                                   })
                                 }
-                                className="flex-1 bg-transparent text-sm font-bold text-slate-700 outline-none placeholder:text-slate-400"
+                                className="flex-1 bg-transparent text-sm font-bold text-slate-700 outline-none placeholder:text-slate-400 py-1"
                               />
                               <button
                                 type="button"
                                 onClick={() => handleVerifyOtp("phone")}
                                 disabled={verifications.phone.isVerifying || verifications.phone.otp.length !== 4}
-                                className="rounded-md bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-700 shadow-sm ring-1 ring-slate-200 hover:bg-slate-100 disabled:opacity-50"
+                                className="rounded-md bg-white px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-700 shadow-sm ring-1 ring-slate-200 hover:bg-slate-100 disabled:opacity-50 whitespace-nowrap"
                               >
                                 {verifications.phone.isVerifying ? "Checking..." : "Confirm OTP"}
                               </button>

@@ -95,7 +95,7 @@ const DeliveryLayout = () => {
       isReturnPickup: payload.type === "RETURN_PICKUP" || payload.isReturnPickup === true,
       items: payload.items || [],
     });
-    const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+    const audio = new Audio("/sound.mp3");
     audio.play().catch(() => {});
     return true;
   }, []);
@@ -135,7 +135,7 @@ const DeliveryLayout = () => {
       isReturnPickup,
       items: newOrder.items || [],
     });
-    const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+    const audio = new Audio("/sound.mp3");
     audio.play().catch(() => {});
   }, []);
 

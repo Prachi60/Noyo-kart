@@ -105,11 +105,12 @@ const productSchema = new mongoose.Schema(
 // Optimize performance for common queries on home/search pages
 productSchema.index({ status: 1, isFeatured: 1, createdAt: -1 });
 productSchema.index({ status: 1, createdAt: -1, _id: -1 });
-productSchema.index({ headerId: 1, status: 1 });
-productSchema.index({ categoryId: 1, status: 1 });
+productSchema.index({ headerId: 1, status: 1, createdAt: -1 });
+productSchema.index({ categoryId: 1, status: 1, createdAt: -1 });
 productSchema.index({ subcategoryId: 1, status: 1 });
-productSchema.index({ sellerId: 1, status: 1 });
+productSchema.index({ sellerId: 1, status: 1, createdAt: -1 });
 productSchema.index({ sellerId: 1, createdAt: -1, _id: -1 });
-productSchema.index({ name: "text", tags: "text" }); // For better search if regex is too slow
+productSchema.index({ sellerId: 1, stock: 1 }); // stock filter queries
+productSchema.index({ name: "text", tags: "text", brand: "text" }); // full-text search
 
 export default mongoose.model("Product", productSchema);

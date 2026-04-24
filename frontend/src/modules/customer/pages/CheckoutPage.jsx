@@ -1044,7 +1044,7 @@ const CheckoutPage = () => {
           </p>
           <Link
             to="/"
-            className="group relative inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-[#45B0E2] to-[#38bdf8] text-white font-bold rounded-2xl overflow-hidden shadow-xl shadow-cyan-600/20 transition-all hover:scale-[1.02] active:scale-95 w-full sm:w-auto">
+            className="group relative inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-[#0284c7] to-[#38bdf8] text-white font-bold rounded-2xl overflow-hidden shadow-xl shadow-cyan-600/20 transition-all hover:scale-[1.02] active:scale-95 w-full sm:w-auto">
             <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
             <span className="relative flex items-center gap-2 text-lg">
               Start Shopping <ChevronRight size={20} />
@@ -1114,7 +1114,7 @@ const CheckoutPage = () => {
             <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 mt-3">
               <div className="flex items-center gap-3">
                 <div className="h-12 w-12 rounded-full bg-brand-50 flex items-center justify-center flex-shrink-0">
-                  <Clock size={24} className="text-[#45B0E2]" />
+                  <Clock size={24} className="text-[#0284c7]" />
                 </div>
                 <div>
                   <h3 className="font-black text-slate-800 text-lg">Delivery in 12-15 mins</h3>
@@ -1252,11 +1252,11 @@ const CheckoutPage = () => {
                 disabled={isResolvingAddressCoords}
                 className={`w-full p-4 rounded-2xl border-2 text-left transition-all ${
                   currentAddress.id === addr.id
-                    ? "border-[#45B0E2] bg-brand-50 shadow-sm"
+                    ? "border-[#0284c7] bg-brand-50 shadow-sm"
                     : "border-slate-100 bg-white hover:border-slate-200"
                 }`}>
                 <div className="flex items-center gap-3 mb-2">
-                  <div className={`p-2 rounded-full ${currentAddress.id === addr.id ? "bg-[#45B0E2] text-white" : "bg-slate-100 text-slate-500"}`}>
+                  <div className={`p-2 rounded-full ${currentAddress.id === addr.id ? "bg-[#0284c7] text-white" : "bg-slate-100 text-slate-500"}`}>
                     <MapPin size={16} />
                   </div>
                   <span className="font-black text-slate-800 uppercase tracking-widest text-[10px]">{addr.label}</span>
@@ -1334,7 +1334,7 @@ const CheckoutPage = () => {
               </Button>
               <Button
                 onClick={handleSaveEditedAddress}
-                className="bg-[#45B0E2] hover:bg-[#0b721b] text-white font-bold">
+                className="bg-[#0284c7] hover:bg-[#0b721b] text-white font-bold">
                 Save changes
               </Button>
             </DialogFooter>

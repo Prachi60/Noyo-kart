@@ -212,7 +212,7 @@ const SearchPage = () => {
         <div className="min-h-screen bg-white font-outfit">
             {/* Header / Search Input */}
             <div className={cn(
-                "sticky top-0 z-50 bg-linear-to-r from-[#45B0E2] to-[#38bdf8] shadow-[0_4px_20px_rgba(0,0,0,0.12)] relative overflow-hidden",
+                "sticky top-0 z-50 bg-linear-to-r from-[#0284c7] to-[#38bdf8] shadow-[0_4px_20px_rgba(0,0,0,0.12)] relative overflow-hidden",
                 isProductDetailOpen && "hidden md:block"
             )}>
                 {/* Decorative background elements */}
@@ -256,7 +256,7 @@ const SearchPage = () => {
                                     onClick={handleVoiceSearch}
                                     className={cn(
                                         "p-2 transition-all rounded-full relative",
-                                        isListening ? "text-red-500 bg-red-50 scale-110" : "text-slate-400 hover:text-[#45B0E2] hover:bg-slate-50"
+                                        isListening ? "text-red-500 bg-red-50 scale-110" : "text-slate-400 hover:text-[#0284c7] hover:bg-slate-50"
                                     )}
                                 >
                                     <Mic size={20} strokeWidth={2.5} className={cn(isListening && "animate-pulse")} />

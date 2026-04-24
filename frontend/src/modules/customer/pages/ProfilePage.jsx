@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
     User, MapPin, Package, CreditCard, Wallet, ChevronRight,
-    LogOut, ShieldCheck, Heart, HelpCircle, Info, Edit2, ChevronLeft, Bell
+    LogOut, ShieldCheck, Heart, HelpCircle, Info, Edit2, ChevronLeft, Bell, Trash2
 } from 'lucide-react';
 import { useAuth } from '@core/context/AuthContext';
 import { useSettings } from '@core/context/SettingsContext';
@@ -19,6 +19,22 @@ const ProfilePage = () => {
     const { settings } = useSettings();
     const appName = settings?.appName || 'App';
     const [isTestingPush, setIsTestingPush] = React.useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
+    const [isDeletingAccount, setIsDeletingAccount] = React.useState(false);
+
+    const handleDeleteAccount = async () => {
+        setIsDeletingAccount(true);
+        try {
+            await customerApi.deleteAccount();
+            toast.success("Account deleted successfully");
+            logout();
+        } catch (error) {
+            toast.error(error?.response?.data?.message || "Failed to delete account");
+        } finally {
+            setIsDeletingAccount(false);
+            setShowDeleteConfirm(false);
+        }
+    };
 
     const formatIndiaPhone = (value) => {
         const raw = String(value || '').trim();
@@ -145,7 +161,7 @@ const ProfilePage = () => {
                                 label="Your Orders"
                                 sub="Track, return or buy things again"
                                 path="/orders"
-                                color="#45B0E2"
+                                color="#0284c7"
                                 bg="rgba(16,185,129,0.10)"
                             />
                             <MenuItem
@@ -177,7 +193,7 @@ const ProfilePage = () => {
                                 label="Saved Addresses"
                                 sub="Manage your delivery locations"
                                 path="/addresses"
-                                color="#45B0E2"
+                                color="#0284c7"
                                 bg="rgba(56,189,248,0.10)"
                             />
                         </div>
@@ -222,6 +238,52 @@ const ProfilePage = () => {
                     <LogOut size={20} />
                     Sign out
                 </button>
+
+                {/* Delete Account Button */}
+                <button
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="w-full py-3 rounded-lg border border-rose-200 text-rose-500 font-semibold bg-white hover:bg-rose-50 transition-colors flex items-center justify-center gap-2"
+                >
+                    <Trash2 size={18} />
+                    Delete Account
+                </button>
+
+                {/* Delete Confirmation Modal */}
+                {showDeleteConfirm && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+                            <div className="flex flex-col items-center text-center space-y-3">
+                                <div className="h-14 w-14 rounded-full bg-rose-50 flex items-center justify-center">
+                                    <Trash2 size={26} className="text-rose-500" />
+                                </div>
+                                <h3 className="text-lg font-bold text-slate-900">Delete Account?</h3>
+                                <p className="text-sm text-slate-500 leading-relaxed">
+                                    This will permanently delete your account and all associated data. This action <span className="font-semibold text-slate-700">cannot be undone</span>.
+                                </p>
+                            </div>
+                            <div className="flex gap-3 pt-1">
+                                <button
+                                    onClick={() => setShowDeleteConfirm(false)}
+                                    disabled={isDeletingAccount}
+                                    className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-semibold text-sm hover:bg-slate-50 transition-colors disabled:opacity-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleDeleteAccount}
+                                    disabled={isDeletingAccount}
+                                    className="flex-1 py-2.5 rounded-xl bg-rose-500 text-white font-semibold text-sm hover:bg-rose-600 transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+                                >
+                                    {isDeletingAccount ? (
+                                        <span className="h-4 w-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                                    ) : (
+                                        "Yes, Delete"
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 <div className="text-center pb-8">
                     <p className="text-[10px] text-slate-400 font-medium">Version 2.4.0 - {appName}</p>

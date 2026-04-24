@@ -46,7 +46,7 @@ const CheckoutAddressSection = React.memo(function CheckoutAddressSection({
         </span>
         <button
           onClick={onToggleRecipientForm}
-          className="text-[#45B0E2] text-xs font-bold hover:underline">
+          className="text-[#0284c7] text-xs font-bold hover:underline">
           {showRecipientForm
             ? "Close"
             : savedRecipient
@@ -59,14 +59,14 @@ const CheckoutAddressSection = React.memo(function CheckoutAddressSection({
       {savedRecipient && !showRecipientForm && (
         <div className="mb-4 p-4 bg-cyan-50 border border-cyan-100 rounded-2xl flex items-start justify-between">
           <div className="flex gap-3">
-            <div className="h-10 w-10 rounded-full bg-cyan-100 flex items-center justify-center text-[#45B0E2] flex-shrink-0">
+            <div className="h-10 w-10 rounded-full bg-cyan-100 flex items-center justify-center text-[#0284c7] flex-shrink-0">
               <Contact2 size={18} />
             </div>
             <div>
               <p className="text-sm font-bold text-slate-800">
                 {savedRecipient.name}
               </p>
-              <p className="text-xs text-[#45B0E2] font-bold mb-1">
+              <p className="text-xs text-[#0284c7] font-bold mb-1">
                 {savedRecipient.phone}
               </p>
               <p className="text-xs text-slate-500 leading-tight">
@@ -105,7 +105,7 @@ const CheckoutAddressSection = React.memo(function CheckoutAddressSection({
                     onChange={(e) =>
                       onRecipientDataChange({ ...recipientData, completeAddress: e.target.value })
                     }
-                    className="h-12 rounded-xl border-slate-200 focus:ring-[#45B0E2] focus:border-[#45B0E2] text-sm"
+                    className="h-12 rounded-xl border-slate-200 focus:ring-[#0284c7] focus:border-[#0284c7] text-sm"
                   />
                   <Input
                     placeholder="Find landmark (optional)"
@@ -113,7 +113,7 @@ const CheckoutAddressSection = React.memo(function CheckoutAddressSection({
                     onChange={(e) =>
                       onRecipientDataChange({ ...recipientData, landmark: e.target.value })
                     }
-                    className="h-12 rounded-xl border-slate-200 focus:ring-[#45B0E2] focus:border-[#45B0E2] text-sm"
+                    className="h-12 rounded-xl border-slate-200 focus:ring-[#0284c7] focus:border-[#0284c7] text-sm"
                   />
                   <Input
                     placeholder="Enter pin code (optional)"
@@ -121,7 +121,7 @@ const CheckoutAddressSection = React.memo(function CheckoutAddressSection({
                     onChange={(e) =>
                       onRecipientDataChange({ ...recipientData, pincode: e.target.value })
                     }
-                    className="h-12 rounded-xl border-slate-200 focus:ring-[#45B0E2] focus:border-[#45B0E2] text-sm"
+                    className="h-12 rounded-xl border-slate-200 focus:ring-[#0284c7] focus:border-[#0284c7] text-sm"
                   />
                 </div>
               </div>
@@ -140,7 +140,7 @@ const CheckoutAddressSection = React.memo(function CheckoutAddressSection({
                     onChange={(e) =>
                       onRecipientDataChange({ ...recipientData, name: e.target.value })
                     }
-                    className="h-12 rounded-xl border-slate-200 focus:ring-[#45B0E2] focus:border-[#45B0E2] text-sm"
+                    className="h-12 rounded-xl border-slate-200 focus:ring-[#0284c7] focus:border-[#0284c7] text-sm"
                   />
                   <div className="relative">
                     <Input
@@ -149,7 +149,7 @@ const CheckoutAddressSection = React.memo(function CheckoutAddressSection({
                       onChange={(e) =>
                         onRecipientDataChange({ ...recipientData, phone: e.target.value })
                       }
-                      className="h-12 rounded-xl border-slate-200 focus:ring-[#45B0E2] focus:border-[#45B0E2] text-sm pr-10"
+                      className="h-12 rounded-xl border-slate-200 focus:ring-[#0284c7] focus:border-[#0284c7] text-sm pr-10"
                     />
                     <Contact2
                       size={18}
@@ -176,10 +176,10 @@ const CheckoutAddressSection = React.memo(function CheckoutAddressSection({
       </div>
 
       {/* Active address card */}
-      <div className="border rounded-xl p-3 mb-3 relative cursor-pointer transition-all border-[#45B0E2] bg-brand-50/50">
+      <div className="border rounded-xl p-3 mb-3 relative cursor-pointer transition-all border-[#0284c7] bg-brand-50/50">
         <div className="flex items-start gap-3">
           <div className="mt-1">
-            <div className="h-5 w-5 rounded-full bg-[#45B0E2] flex items-center justify-center">
+            <div className="h-5 w-5 rounded-full bg-[#0284c7] flex items-center justify-center">
               <Check size={12} className="text-white stroke-[4]" />
             </div>
           </div>
@@ -194,7 +194,7 @@ const CheckoutAddressSection = React.memo(function CheckoutAddressSection({
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); onSelectAddress(); }}
-                  className="text-[#45B0E2] text-xs font-bold hover:underline">
+                  className="text-[#0284c7] text-xs font-bold hover:underline">
                   Change
                 </button>
               </div>

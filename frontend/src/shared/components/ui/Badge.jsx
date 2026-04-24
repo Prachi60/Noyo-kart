@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 const Badge = ({ children, variant = 'gray', className, ...props }) => {
     const variantStyles = {
         primary: 'bg-primary-50 text-primary-700 border-primary-100 hover:bg-primary-100',
-        success: 'bg-cyan-50 text-[#45B0E2] border-cyan-100 hover:bg-cyan-100',
+        success: 'bg-cyan-50 text-[#0284c7] border-cyan-100 hover:bg-cyan-100',
         warning: 'bg-yellow-50 text-yellow-700 border-yellow-100 hover:bg-yellow-100',
         error: 'bg-red-50 text-red-700 border-red-100 hover:bg-red-100',
         info: 'bg-blue-50 text-blue-700 border-blue-100 hover:bg-blue-100',

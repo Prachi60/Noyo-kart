@@ -89,24 +89,31 @@ const ApplicationPending = () => {
             <div className="mt-6 rounded-2xl border border-blue-400/30 bg-blue-500/10 px-4 py-3 text-sm text-blue-200 flex items-start gap-3">
               <CheckCircle2 className="h-5 w-5 mt-0.5 shrink-0 text-blue-400" />
               <p className="font-semibold">
-                Approval usually takes less than 24 hours. You can return to login and try again later.
+                Your application is still under review. Once approved, please login from the seller login page to access your dashboard.
               </p>
             </div>
           ) : null}
 
           <div className="mt-8 flex flex-col sm:flex-row gap-3">
-            <Link
-              to="/seller/auth"
-              className="inline-flex items-center justify-center rounded-xl bg-white text-slate-900 px-5 py-3 text-sm font-black tracking-wide hover:bg-slate-100 transition-colors"
-            >
-              Back To Seller Login
-            </Link>
-            <Link
-              to="/"
-              className="inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/5 text-white px-5 py-3 text-sm font-bold hover:bg-white/10 transition-colors"
-            >
-              Go To Home
-            </Link>
+            {isRejected ? (
+              <>
+                <Link
+                  to="/seller/auth"
+                  className="inline-flex items-center justify-center rounded-xl bg-white text-slate-900 px-5 py-3 text-sm font-black tracking-wide hover:bg-slate-100 transition-colors"
+                >
+                  Back To Seller Signup
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/seller/auth"
+                  className="inline-flex items-center justify-center rounded-xl bg-white text-slate-900 px-5 py-3 text-sm font-black tracking-wide hover:bg-slate-100 transition-colors"
+                >
+                  Go To Seller Login
+                </Link>
+              </>
+            )}
           </div>
         </motion.div>
       </div>

@@ -14,6 +14,7 @@ import {
   HiOutlineTrash,
   HiOutlinePlus,
   HiOutlineSquaresPlus,
+  HiOutlineXMark,
 } from "react-icons/hi2";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -184,27 +185,47 @@ const AddProduct = () => {
     }
   };
 
-  const handleImageUpload = (e, type) => {
+  const handleImageUpload = (e, type, galleryIndex = null) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       const reader = new FileReader();
       reader.onloadend = () => {
         if (type === "main") {
-          setFormData({
-            ...formData,
+          setFormData((prev) => ({
+            ...prev,
             mainImage: reader.result,
-            mainImageFile: file
-          });
+            mainImageFile: file,
+          }));
         } else {
-          setFormData({
-            ...formData,
-            galleryImages: [...formData.galleryImages, reader.result],
-            galleryFiles: [...(formData.galleryFiles || []), file]
+          setFormData((prev) => {
+            const newGalleryImages = [...(prev.galleryImages || [])];
+            const newGalleryFiles = [...(prev.galleryFiles || [])];
+            if (galleryIndex !== null && galleryIndex < newGalleryImages.length) {
+              newGalleryImages[galleryIndex] = reader.result;
+              newGalleryFiles[galleryIndex] = file;
+            } else {
+              newGalleryImages.push(reader.result);
+              newGalleryFiles.push(file);
+            }
+            return { ...prev, galleryImages: newGalleryImages, galleryFiles: newGalleryFiles };
           });
         }
       };
       reader.readAsDataURL(file);
     }
+    e.target.value = "";
+  };
+
+  const handleRemoveMainImage = () => {
+    setFormData((prev) => ({ ...prev, mainImage: null, mainImageFile: null }));
+  };
+
+  const handleRemoveGalleryImage = (idx) => {
+    setFormData((prev) => {
+      const newGalleryImages = (prev.galleryImages || []).filter((_, i) => i !== idx);
+      const newGalleryFiles = (prev.galleryFiles || []).filter((_, i) => i !== idx);
+      return { ...prev, galleryImages: newGalleryImages, galleryFiles: newGalleryFiles };
+    });
   };
 
   return (
@@ -595,14 +616,21 @@ const AddProduct = () => {
                   <div className="w-48 aspect-square rounded-lg border-2 border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center group hover:border-primary hover:bg-primary/5 transition-all cursor-pointer overflow-hidden relative">
                     <input
                       type="file"
+                      accept="image/*"
                       className="absolute inset-0 opacity-0 cursor-pointer z-10"
                       onChange={(e) => handleImageUpload(e, "main")}
                     />
                     {formData.mainImage ? (
-                      <img
-                        src={formData.mainImage}
-                        className="w-full h-full object-cover"
-                      />
+                      <>
+                        <img src={formData.mainImage} className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); handleRemoveMainImage(); }}
+                          className="absolute top-1.5 right-1.5 z-20 bg-white/90 hover:bg-rose-50 text-slate-500 hover:text-rose-500 rounded-full p-1 shadow transition-colors"
+                        >
+                          <HiOutlineXMark className="h-3.5 w-3.5" />
+                        </button>
+                      </>
                     ) : (
                       <>
                         <HiOutlinePhoto className="h-10 w-10 text-slate-200 group-hover:text-primary transition-colors" />
@@ -620,9 +648,6 @@ const AddProduct = () => {
                       We show this image on the search page and the main
                       store listing. Make sure it is clear and bright.
                     </p>
-                    <button className="text-[10px] font-black text-primary uppercase tracking-wider hover:underline">
-                      Pick from Library
-                    </button>
                   </div>
                 </div>
               </div>
@@ -633,19 +658,34 @@ const AddProduct = () => {
                   Gallery Photos (Max 5)
                 </label>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                  {[1, 2, 3, 4, 5].map((i) => (
+                  {[0, 1, 2, 3, 4].map((i) => (
                     <div
                       key={i}
                       className="aspect-square rounded-md border-2 border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center group hover:border-primary hover:bg-primary/5 transition-all cursor-pointer relative overflow-hidden">
-                      {formData.galleryImages[i - 1] ? (
-                        <img
-                          src={formData.galleryImages[i - 1]}
-                          className="w-full h-full object-cover"
-                        />
+                      {formData.galleryImages[i] ? (
+                        <>
+                          <img src={formData.galleryImages[i]} className="w-full h-full object-cover" />
+                          {/* Click to replace */}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                            onChange={(e) => handleImageUpload(e, "gallery", i)}
+                          />
+                          {/* Remove button */}
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); handleRemoveGalleryImage(i); }}
+                            className="absolute top-1.5 right-1.5 z-20 bg-white/90 hover:bg-rose-50 text-slate-500 hover:text-rose-500 rounded-full p-1 shadow opacity-0 group-hover:opacity-100 transition-all"
+                          >
+                            <HiOutlineXMark className="h-3.5 w-3.5" />
+                          </button>
+                        </>
                       ) : (
                         <>
                           <input
                             type="file"
+                            accept="image/*"
                             className="absolute inset-0 opacity-0 cursor-pointer z-10"
                             onChange={(e) => handleImageUpload(e, "gallery")}
                           />

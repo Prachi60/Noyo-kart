@@ -27,7 +27,7 @@ const BottomNav = () => {
                         className="flex-1 flex flex-col items-center justify-center h-full relative group transition-all"
                     >
                         {isActive && (
-                            <div className="absolute -inset-y-2 -inset-x-4 bg-[#45B0E2]/5 rounded-[20px] -z-10 transition-opacity duration-300" />
+                            <div className="absolute -inset-y-2 -inset-x-4 bg-[#0284c7]/5 rounded-[20px] -z-10 transition-opacity duration-300" />
                         )}
 
                         <div className="flex flex-col items-center justify-center relative">
@@ -42,7 +42,7 @@ const BottomNav = () => {
                                     strokeWidth={isActive ? 2.5 : 2}
                                     className={cn(
                                         "transition-colors duration-300",
-                                        isActive ? "text-[#45B0E2]" : "text-gray-400"
+                                        isActive ? "text-[#0284c7]" : "text-gray-400"
                                     )}
                                 />
                             </div>
@@ -50,7 +50,7 @@ const BottomNav = () => {
                             <span
                                 className={cn(
                                     "text-[9px] font-bold tracking-tight mt-1 transition-all duration-300",
-                                    isActive ? "text-[#45B0E2]" : "text-gray-400"
+                                    isActive ? "text-[#0284c7]" : "text-gray-400"
                                 )}
                                 style={{ transform: isActive ? "translateY(1px)" : "translateY(0)" }}
                             >
@@ -60,7 +60,7 @@ const BottomNav = () => {
 
                         {/* Top Accent Line for Active State */}
                         {isActive && (
-                            <div className="absolute -top-[1px] w-8 h-[3px] bg-[#45B0E2] rounded-full transition-opacity duration-300" />
+                            <div className="absolute -top-[1px] w-8 h-[3px] bg-[#0284c7] rounded-full transition-opacity duration-300" />
                         )}
                     </Link>
                 );

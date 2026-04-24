@@ -22,7 +22,7 @@ const CheckoutOrderSuccess = React.memo(function CheckoutOrderSuccess({ orderId,
             initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", damping: 12 }}
-            className="w-24 h-24 bg-brand-100 rounded-full flex items-center justify-center text-[#45B0E2] mb-6">
+            className="w-24 h-24 bg-brand-100 rounded-full flex items-center justify-center text-[#0284c7] mb-6">
             <Check size={48} strokeWidth={4} />
           </motion.div>
           <motion.h2
@@ -47,7 +47,7 @@ const CheckoutOrderSuccess = React.memo(function CheckoutOrderSuccess({ orderId,
             animate={{ width: "100%" }}
             transition={{ duration: 2.5, ease: "linear" }}
             className="w-48 h-1.5 bg-brand-100 rounded-full overflow-hidden">
-            <div className="h-full bg-[#45B0E2]" />
+            <div className="h-full bg-[#0284c7]" />
           </motion.div>
         </motion.div>
       )}

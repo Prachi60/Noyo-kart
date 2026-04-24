@@ -124,7 +124,7 @@ const OrderDetail = () => {
                     const style = clonedDoc.createElement('style');
                     style.innerHTML = `
                         :root {
-                            --primary: #45B0E2 !important;
+                            --primary: #0284c7 !important;
                             --secondary: #64748b !important;
                             --background: #ffffff !important;
                             --foreground: #0f172a !important;

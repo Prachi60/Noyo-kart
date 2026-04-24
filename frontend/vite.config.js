@@ -83,6 +83,13 @@ export default defineConfig({
           if (id.includes('framer-motion')) return 'vendor-motion'
           if (id.includes('firebase')) return 'vendor-firebase'
           if (id.includes('recharts')) return 'vendor-charts'
+          if (id.includes('socket.io-client') || id.includes('engine.io-client')) return 'vendor-socket'
+          if (id.includes('react-dom')) return 'vendor-react-dom'
+          if (id.includes('react-router')) return 'vendor-router'
+          if (id.includes('lucide-react') || id.includes('react-icons')) return 'vendor-icons'
+          if (id.includes('axios')) return 'vendor-axios'
+          if (id.includes('lottie')) return 'vendor-lottie'
+          if (id.includes('mapbox') || id.includes('@react-google-maps') || id.includes('leaflet')) return 'vendor-maps'
         },
       },
     },

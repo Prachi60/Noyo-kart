@@ -18,9 +18,9 @@ export const BACKGROUND_COLOR_OPTIONS = [
   {
     id: "green",
     label: "Green",
-    value: "#45B0E2",
+    value: "#0284c7",
     start: "#BBF7D0",
-    end: "#45B0E2",
+    end: "#0284c7",
   },
   {
     id: "blue",

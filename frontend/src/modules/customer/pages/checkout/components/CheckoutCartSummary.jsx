@@ -65,7 +65,7 @@ const CheckoutCartSummary = React.memo(function CheckoutCartSummary({
             {item.type !== "print" && (
               <button
                 onClick={() => onMoveToWishlist(item)}
-                className="text-xs text-slate-500 underline hover:text-[#45B0E2] transition-colors">
+                className="text-xs text-slate-500 underline hover:text-[#0284c7] transition-colors">
                 Move to wishlist
               </button>
             )}
@@ -81,7 +81,7 @@ const CheckoutCartSummary = React.memo(function CheckoutCartSummary({
                 </span>
               </div>
             ) : (
-              <div className="flex items-center gap-2 bg-[#45B0E2] rounded-lg px-2 py-1">
+              <div className="flex items-center gap-2 bg-[#0284c7] rounded-lg px-2 py-1">
                 <button
                   onClick={() =>
                     item.quantity > 1

@@ -134,7 +134,7 @@ const ProductDetailPage = () => {
     if (isLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-white">
-                <div className="w-16 h-16 border-4 border-[#45B0E2] border-t-transparent rounded-full animate-spin" />
+                <div className="w-16 h-16 border-4 border-[#0284c7] border-t-transparent rounded-full animate-spin" />
             </div>
         );
     }
@@ -150,7 +150,7 @@ const ProductDetailPage = () => {
                     )}
                 </div>
                 <h3 className="text-3xl font-[1000] text-slate-800 tracking-tighter mb-4 uppercase">
-                    Item <span className="text-[#45B0E2]">Unavailable</span>
+                    Item <span className="text-[#0284c7]">Unavailable</span>
                 </h3>
                 <p className="text-slate-500 font-bold text-sm max-w-[280px] mb-8 leading-relaxed">
                     {error === "Product not available in your area" 
@@ -181,7 +181,7 @@ const ProductDetailPage = () => {
 
     return (
         <div className="relative z-10 py-8 w-full max-w-[1920px] mx-auto px-4 md:px-[50px] animate-in fade-in duration-700 mt-24">
-            <Link to={-1} className="inline-flex items-center gap-2 text-slate-500 hover:text-[#45B0E2] font-bold mb-6 transition-colors group">
+            <Link to={-1} className="inline-flex items-center gap-2 text-slate-500 hover:text-[#0284c7] font-bold mb-6 transition-colors group">
                 <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" /> Back
             </Link>
 
@@ -212,7 +212,7 @@ const ProductDetailPage = () => {
                                 onClick={() => setActiveImage(img)}
                                 className={cn(
                                     "relative h-20 w-20 md:h-24 md:w-24 rounded-2xl overflow-hidden flex-shrink-0 transition-all border-2",
-                                    activeImage === img ? "border-[#45B0E2] shadow-lg scale-95" : "border-transparent opacity-70 hover:opacity-100"
+                                    activeImage === img ? "border-[#0284c7] shadow-lg scale-95" : "border-transparent opacity-70 hover:opacity-100"
                                 )}
                             >
                                 <img src={applyCloudinaryTransform(img)} alt={`Angle ${idx}`} loading="lazy" className="w-full h-full object-contain p-1" />
@@ -224,7 +224,7 @@ const ProductDetailPage = () => {
                 <div className="lg:w-[55%] xl:w-[60%] space-y-6 md:space-y-8">
                     <div>
                         <div className="flex items-center gap-3 mb-4">
-                            <span className="bg-[#45B0E2]/10 text-[#45B0E2] px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border border-[#45B0E2]/20">
+                            <span className="bg-[#0284c7]/10 text-[#0284c7] px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border border-[#0284c7]/20">
                                 {product.categoryId?.name || 'Essential'}
                             </span>
                             <div className="flex items-center gap-1 text-orange-500 font-bold bg-orange-50 px-3 py-0.5 rounded-full text-xs">
@@ -237,7 +237,7 @@ const ProductDetailPage = () => {
                         </h1>
 
                         <div className="flex items-baseline gap-4 mb-5">
-                            <span className="text-4xl font-black text-[#45B0E2]">₹{product.salePrice || product.price}</span>
+                            <span className="text-4xl font-black text-[#0284c7]">₹{product.salePrice || product.price}</span>
                             {(product.salePrice && product.salePrice < product.price) && (
                                 <span className="text-lg text-slate-400 line-through font-bold">₹{product.price}</span>
                             )}
@@ -255,7 +255,7 @@ const ProductDetailPage = () => {
 
                     <div className="flex flex-col sm:flex-row items-center gap-6 p-6 bg-slate-50 rounded-[2.5rem] border border-slate-100">
                         {quantity > 0 ? (
-                            <div className="flex items-center bg-[#45B0E2] text-white rounded-2xl h-16 w-full sm:w-auto px-2 shadow-xl shadow-brand-100">
+                            <div className="flex items-center bg-[#0284c7] text-white rounded-2xl h-16 w-full sm:w-auto px-2 shadow-xl shadow-brand-100">
                                 <button
                                     onClick={() => updateQuantity(product.id, -1, "")}
                                     className="w-12 h-12 flex items-center justify-center hover:bg-white/20 rounded-xl transition-all"
@@ -276,14 +276,14 @@ const ProductDetailPage = () => {
                                     addToCart(product);
                                     showToast(`${product.name} added to cart`, 'success');
                                 }}
-                                className="h-16 w-full sm:w-64 bg-[#45B0E2] hover:bg-[#38bdf8] text-white text-lg font-black rounded-2xl shadow-xl transition-all hover:-translate-y-1"
+                                className="h-16 w-full sm:w-64 bg-[#0284c7] hover:bg-[#38bdf8] text-white text-lg font-black rounded-2xl shadow-xl transition-all hover:-translate-y-1"
                             >
                                 <Plus className="mr-2" size={24} strokeWidth={3} /> ADD TO CART
                             </Button>
                         )}
 
                         <div className="flex flex-col gap-1 text-center sm:text-left">
-                            <span className="text-xs font-black text-[#45B0E2] uppercase tracking-widest flex items-center justify-center sm:justify-start gap-1">
+                            <span className="text-xs font-black text-[#0284c7] uppercase tracking-widest flex items-center justify-center sm:justify-start gap-1">
                                 <ShieldCheck size={14} /> Quality Guaranteed
                             </span>
                             <span className="text-sm font-bold text-slate-400 flex items-center justify-center sm:justify-start gap-1">
@@ -342,7 +342,7 @@ const ProductDetailPage = () => {
                                         value={newReview.comment}
                                         onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })}
                                         placeholder="What did you like or dislike?"
-                                        className="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm font-bold min-h-[120px] outline-none ring-1 ring-transparent focus:ring-[#45B0E2]/20 transition-all"
+                                        className="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm font-bold min-h-[120px] outline-none ring-1 ring-transparent focus:ring-[#0284c7]/20 transition-all"
                                     />
                                 </div>
 
@@ -360,15 +360,15 @@ const ProductDetailPage = () => {
                     <div className="lg:w-[60%] space-y-8">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-3xl font-black text-slate-800">Customer Reviews</h3>
-                            <div className="flex items-center gap-2 px-4 py-2 bg-[#45B0E2]/5 rounded-xl border border-[#45B0E2]/10">
-                                <MessageSquare size={18} className="text-[#45B0E2]" />
-                                <span className="font-black text-[#45B0E2]">{reviews.length} Verified</span>
+                            <div className="flex items-center gap-2 px-4 py-2 bg-[#0284c7]/5 rounded-xl border border-[#0284c7]/10">
+                                <MessageSquare size={18} className="text-[#0284c7]" />
+                                <span className="font-black text-[#0284c7]">{reviews.length} Verified</span>
                             </div>
                         </div>
 
                         {reviewLoading ? (
                             <div className="flex justify-center p-20">
-                                <div className="w-8 h-8 border-4 border-[#45B0E2] border-t-transparent rounded-full animate-spin" />
+                                <div className="w-8 h-8 border-4 border-[#0284c7] border-t-transparent rounded-full animate-spin" />
                             </div>
                         ) : reviews.length > 0 ? (
                             <div className="space-y-6">

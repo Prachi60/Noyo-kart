@@ -35,6 +35,7 @@ import { getLegacyStatusFromOrder } from '@/shared/utils/orderStatus';
 import { Loader2 } from 'lucide-react';
 import Pagination from '@shared/components/ui/Pagination';
 import { DatePicker } from "@/components/ui/date-picker";
+import { useOrderSound } from '@shared/hooks/useOrderSound';
 
 
 const Orders = () => {
@@ -55,6 +56,8 @@ const Orders = () => {
     const [pageSize, setPageSize] = useState(20);
     const [total, setTotal] = useState(0);
     const hasMountedRef = useRef(false);
+    const prevOrderCountRef = useRef(null);
+    const playOrderSound = useOrderSound();
 
     // Initial load: show full-page loader once
     useEffect(() => {
@@ -68,6 +71,15 @@ const Orders = () => {
     useEffect(() => {
         if (!hasMountedRef.current) return;
         fetchOrders(page, false);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [page, startDate, endDate]);
+
+    // Poll every 30s for new orders and play sound if pending count increases
+    useEffect(() => {
+        const interval = setInterval(() => {
+            if (hasMountedRef.current) fetchOrders(page, false);
+        }, 30000);
+        return () => clearInterval(interval);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [page, startDate, endDate]);
 
@@ -129,6 +141,13 @@ const Orders = () => {
             } else {
                 setTotal(formattedOrders.length);
             }
+
+            // Play sound only when polling finds NEW pending orders (not on first load)
+            const pendingCount = formattedOrders.filter(o => o.status.toLowerCase() === 'pending').length;
+            if (prevOrderCountRef.current !== null && pendingCount > prevOrderCountRef.current) {
+                playOrderSound();
+            }
+            prevOrderCountRef.current = pendingCount;
         } catch (error) {
             console.error("Failed to fetch orders:", error);
             showToast("Failed to fetch orders", "error");

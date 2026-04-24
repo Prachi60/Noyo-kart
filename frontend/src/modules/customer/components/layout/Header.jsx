@@ -145,7 +145,7 @@ const Header = () => {
                                 <input
                                     type="search"
                                     placeholder={searchPlaceholder}
-                                    className="w-full rounded-full border-none bg-slate-100/50 md:bg-white md:border md:border-slate-200 pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-[#45B0E2] transition-all outline-none"
+                                    className="w-full rounded-full border-none bg-slate-100/50 md:bg-white md:border md:border-slate-200 pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-[#0284c7] transition-all outline-none"
                                 />
                             </div>
                         </div>
@@ -156,7 +156,7 @@ const Header = () => {
                         <Link to="/wishlist" className="relative flex items-center justify-center p-2 hover:bg-slate-50 rounded-full transition-colors group">
                             <Heart className="h-6 w-6 text-slate-600 group-hover:text-[var(--primary)] transition-colors" />
                             {wishlistCount > 0 && (
-                                <span className="absolute top-0 right-0 h-5 w-5 rounded-full bg-[#45B0E2] text-[10px] font-bold text-white flex items-center justify-center border-2 border-white shadow-sm animate-in zoom-in duration-300">
+                                <span className="absolute top-0 right-0 h-5 w-5 rounded-full bg-[#0284c7] text-[10px] font-bold text-white flex items-center justify-center border-2 border-white shadow-sm animate-in zoom-in duration-300">
                                     {wishlistCount}
                                 </span>
                             )}
@@ -165,7 +165,7 @@ const Header = () => {
                         <Link to="/checkout" id="header-cart-icon" className="relative flex items-center justify-center p-2 hover:bg-slate-50 rounded-full transition-colors group">
                             <ShoppingCart className="h-6 w-6 text-slate-600 group-hover:text-[var(--primary)] transition-colors" />
                             {cartCount > 0 && (
-                                <span className="absolute top-0 right-0 h-5 w-5 rounded-full bg-[#45B0E2] text-[10px] font-bold text-white flex items-center justify-center border-2 border-white shadow-sm animate-in zoom-in duration-300">
+                                <span className="absolute top-0 right-0 h-5 w-5 rounded-full bg-[#0284c7] text-[10px] font-bold text-white flex items-center justify-center border-2 border-white shadow-sm animate-in zoom-in duration-300">
                                     {cartCount}
                                 </span>
                             )}

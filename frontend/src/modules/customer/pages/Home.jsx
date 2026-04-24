@@ -70,7 +70,7 @@ import {
 import { applyCloudinaryTransform } from "@/core/utils/imageUtils";
 
 const DEFAULT_CATEGORY_THEME = {
-  gradient: "linear-gradient(to bottom, #45B0E2, #38bdf8)",
+  gradient: "linear-gradient(to bottom, #0284c7, #38bdf8)",
   shadow: "shadow-cyan-500/20",
   accent: "text-[#1A1A1A]",
 };
@@ -521,7 +521,7 @@ const Home = () => {
       frameColor: "#f0d98a",
     },
     {
-      bgFrom: "#45B0E2",
+      bgFrom: "#0284c7",
       bgVia: "#cffafe",
       bgTo: "#ecfeff",
       glowColor: "rgba(97,218,251,0.18)",
@@ -1116,7 +1116,7 @@ const Home = () => {
             )}
           </div>
           <h3 className="text-3xl md:text-5xl font-[1000] text-slate-800 tracking-tighter mb-4 text-center px-4 uppercase">
-            Service <span className="text-[#45B0E2]">Unavailable</span>
+            Service <span className="text-[#0284c7]">Unavailable</span>
           </h3>
           <p className="text-slate-500 font-bold max-w-md text-center px-10 text-sm md:text-lg leading-relaxed opacity-80">
             Ah! We haven't reached your neighborhood yet. We're expanding
@@ -1126,7 +1126,7 @@ const Home = () => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => window.location.reload()}
-            className="mt-12 px-10 py-4 bg-[#45B0E2] text-white font-[1000] rounded-[24px] uppercase text-[13px] tracking-[0.2em] transition-all">
+            className="mt-12 px-10 py-4 bg-[#0284c7] text-white font-[1000] rounded-[24px] uppercase text-[13px] tracking-[0.2em] transition-all">
             Check Again
           </motion.button>
         </div>
@@ -1161,18 +1161,18 @@ const Home = () => {
                       onClick={() => navigate("/category/all")}
                       whileTap={{ scale: 0.96 }}
                       className="min-w-full">
-                      <div className="w-full h-[190px] bg-[#ecfeff] p-6 relative overflow-hidden flex items-center border-y border-[#45B0E2]/10 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
+                      <div className="w-full h-[190px] bg-[#ecfeff] p-6 relative overflow-hidden flex items-center border-y border-[#0284c7]/10 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
                         <div className="relative z-10 w-3/5 flex flex-col items-start gap-2">
                           <div className="flex flex-col gap-0.5">
                             <h4 className="text-2xl font-[1000] text-[#1A1A1A] tracking-tighter leading-none">
                               Get{" "}
-                              <span className="text-[#45B0E2]">Products</span>
+                              <span className="text-[#0284c7]">Products</span>
                             </h4>
                             <div className="flex items-center gap-1.5 mt-1">
                               <span className="text-sm font-black text-gray-700">
                                 at
                               </span>
-                              <div className="bg-[#45B0E2] text-white px-2 py-0.5 rounded-lg flex items-center gap-1 shadow-sm">
+                              <div className="bg-[#0284c7] text-white px-2 py-0.5 rounded-lg flex items-center gap-1 shadow-sm">
                                 <VerifiedIcon sx={{ fontSize: 16 }} />
                                 <span className="text-xl font-[1000]">₹0</span>
                               </div>
@@ -1195,7 +1195,7 @@ const Home = () => {
                             className="w-full h-full object-contain rotate-3 scale-110"
                           />
                         </div>
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-[#45B0E2]/5 rounded-full blur-2xl -mt-12 -mr-12" />
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-[#0284c7]/5 rounded-full blur-2xl -mt-12 -mr-12" />
                       </div>
                     </motion.div>
                     <motion.div
@@ -1216,18 +1216,18 @@ const Home = () => {
                       onClick={() => navigate("/category/all")}
                       whileTap={{ scale: 0.96 }}
                       className="min-w-full">
-                      <div className="w-full h-[190px] bg-[#ecfeff] p-6 relative overflow-hidden flex items-center border-y border-[#45B0E2]/10 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
+                      <div className="w-full h-[190px] bg-[#ecfeff] p-6 relative overflow-hidden flex items-center border-y border-[#0284c7]/10 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
                         <div className="relative z-10 w-3/5 flex flex-col items-start gap-2">
                           <div className="flex flex-col gap-0.5">
                             <h4 className="text-2xl font-[1000] text-[#1A1A1A] tracking-tighter leading-none">
                               Get{" "}
-                              <span className="text-[#45B0E2]">Products</span>
+                              <span className="text-[#0284c7]">Products</span>
                             </h4>
                             <div className="flex items-center gap-1.5 mt-1">
                               <span className="text-sm font-black text-gray-700">
                                 at
                               </span>
-                              <div className="bg-[#45B0E2] text-white px-2 py-0.5 rounded-lg flex items-center gap-1 shadow-sm">
+                              <div className="bg-[#0284c7] text-white px-2 py-0.5 rounded-lg flex items-center gap-1 shadow-sm">
                                 <VerifiedIcon sx={{ fontSize: 16 }} />
                                 <span className="text-xl font-[1000]">₹0</span>
                               </div>
@@ -1251,7 +1251,7 @@ const Home = () => {
                             className="w-full h-full object-contain rotate-3 scale-110"
                           />
                         </div>
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-[#45B0E2]/5 rounded-full blur-2xl -mt-12 -mr-12" />
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-[#0284c7]/5 rounded-full blur-2xl -mt-12 -mr-12" />
                       </div>
                     </motion.div>
                   </div>
@@ -1262,9 +1262,9 @@ const Home = () => {
 
           {/* Promo Marquee Strip */}
           <div className="w-full -mt-[2px] md:-mt-[2px] mb-4">
-            <div className="relative overflow-hidden border-y border-[#389ecb] bg-[#45B0E2] shadow-[0_10px_30px_rgba(15,23,42,0.08)]">
-              <div className="absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-[#45B0E2] via-[#45B0E2]/90 to-transparent pointer-events-none" />
-              <div className="absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[#45B0E2] via-[#45B0E2]/90 to-transparent pointer-events-none" />
+            <div className="relative overflow-hidden border-y border-[#389ecb] bg-[#0284c7] shadow-[0_10px_30px_rgba(15,23,42,0.08)]">
+              <div className="absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-[#0284c7] via-[#0284c7]/90 to-transparent pointer-events-none" />
+              <div className="absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[#0284c7] via-[#0284c7]/90 to-transparent pointer-events-none" />
               <div className="classic-marquee-track flex w-max items-center gap-4 px-3 py-1.5 text-sm font-semibold text-white -translate-y-[5px] md:px-6 md:py-2 md:text-base">
                 {[...MARQUEE_MESSAGES, ...MARQUEE_MESSAGES].map(
                   (message, idx) => (
@@ -1304,7 +1304,7 @@ const Home = () => {
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
                     onClick={() => scrollQuickCats("left")}
-                    className="h-10 w-10 bg-white/90 backdrop-blur-md shadow-xl rounded-full flex items-center justify-center border border-gray-100 cursor-pointer hover:bg-white text-[#45B0E2] transition-all">
+                    className="h-10 w-10 bg-white/90 backdrop-blur-md shadow-xl rounded-full flex items-center justify-center border border-gray-100 cursor-pointer hover:bg-white text-[#0284c7] transition-all">
                     <ChevronLeft size={22} strokeWidth={3} />
                   </motion.button>
                 </div>
@@ -1369,7 +1369,7 @@ const Home = () => {
                             className="absolute left-1/2 top-3 z-10 h-[68px] w-[68px] -translate-x-1/2 object-contain drop-shadow-[0_5px_12px_rgba(0,0,0,0.10)] mix-blend-multiply group-hover/item:scale-110 transition-transform duration-500"
                           />
                           <div className="absolute inset-x-2 bottom-1.5 z-20 text-center">
-                            <span className="block text-[10px] md:text-[11px] lg:text-[12px] font-semibold text-[#1f2b20] leading-tight whitespace-nowrap overflow-hidden text-ellipsis drop-shadow-[0_1px_0_rgba(255,255,255,0.65)] group-hover/item:text-[#45B0E2] transition-colors">
+                            <span className="block text-[10px] md:text-[11px] lg:text-[12px] font-semibold text-[#1f2b20] leading-tight whitespace-nowrap overflow-hidden text-ellipsis drop-shadow-[0_1px_0_rgba(255,255,255,0.65)] group-hover/item:text-[#0284c7] transition-colors">
                               {cat.name}
                             </span>
                           </div>
@@ -1385,7 +1385,7 @@ const Home = () => {
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
                     onClick={() => scrollQuickCats("right")}
-                    className="h-10 w-10 bg-white/90 backdrop-blur-md shadow-xl rounded-full flex items-center justify-center border border-gray-100 cursor-pointer hover:bg-white text-[#45B0E2] transition-all">
+                    className="h-10 w-10 bg-white/90 backdrop-blur-md shadow-xl rounded-full flex items-center justify-center border border-gray-100 cursor-pointer hover:bg-white text-[#0284c7] transition-all">
                     <ChevronRight size={22} strokeWidth={3} />
                   </motion.button>
                 </div>
@@ -1395,20 +1395,20 @@ const Home = () => {
 
           {/* Lowest Price ever Section  (kept as static for now) */}
           <div className="-mt-[40px] mb-4 md:-mt-[40px] md:mb-8">
-            <div className="relative overflow-hidden bg-linear-to-br from-[#45B0E2]/10 via-[#45B0E2]/5 to-transparent py-7 md:py-16 border-y border-[#45B0E2]/10 shadow-sm md:shadow-[inset_0_-10px_40px_rgba(0,0,0,0.02)]">
+            <div className="relative overflow-hidden bg-linear-to-br from-[#0284c7]/10 via-[#0284c7]/5 to-transparent py-7 md:py-16 border-y border-[#0284c7]/10 shadow-sm md:shadow-[inset_0_-10px_40px_rgba(0,0,0,0.02)]">
               {/* Background Decoration */}
-              <div className="absolute -top-10 -right-10 h-40 w-40 md:h-80 md:w-80 bg-[#45B0E2]/10 rounded-full blur-3xl opacity-60" />
+              <div className="absolute -top-10 -right-10 h-40 w-40 md:h-80 md:w-80 bg-[#0284c7]/10 rounded-full blur-3xl opacity-60" />
               <div className="absolute -bottom-10 -left-10 h-40 w-40 md:h-80 md:w-80 bg-yellow-400/10 rounded-full blur-3xl opacity-60" />
 
               <div className="container mx-auto px-4 md:px-8 lg:px-[50px] relative z-10">
                 <div className="flex justify-between items-center mb-6 md:mb-10 px-1">
                   <div className="flex flex-col">
                     <h3 className="text-xl md:text-4xl font-[1000] text-[#1A1A1A] tracking-tighter uppercase leading-none pt-[25px]">
-                      Lowest Price <span className="text-[#45B0E2]">ever</span>
+                      Lowest Price <span className="text-[#0284c7]">ever</span>
                     </h3>
                     <div className="flex items-center gap-1.5 md:gap-2 mt-1.5 md:mt-3">
-                      <div className="h-1 w-1 md:h-2 md:w-2 bg-[#45B0E2] rounded-full animate-pulse shadow-[0_0_8px_rgba(12,131,31,0.5)]" />
-                      <span className="text-[10px] md:text-xs font-black text-[#45B0E2] uppercase tracking-wider md:tracking-[0.2em] opacity-80">
+                      <div className="h-1 w-1 md:h-2 md:w-2 bg-[#0284c7] rounded-full animate-pulse shadow-[0_0_8px_rgba(12,131,31,0.5)]" />
+                      <span className="text-[10px] md:text-xs font-black text-[#0284c7] uppercase tracking-wider md:tracking-[0.2em] opacity-80">
                         Unbeatable Savings • Updated hourly
                       </span>
                     </div>
@@ -1417,7 +1417,7 @@ const Home = () => {
                     onClick={() => navigate("/category/all")}
                     whileHover={{ x: 5, scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="flex items-center gap-1 bg-white px-2.5 py-1 md:px-4 md:py-2 rounded-full text-[#45B0E2] font-black text-[11px] md:text-sm cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.05)] md:shadow-md border border-[#45B0E2]/10 transition-all whitespace-nowrap">
+                    className="flex items-center gap-1 bg-white px-2.5 py-1 md:px-4 md:py-2 rounded-full text-[#0284c7] font-black text-[11px] md:text-sm cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.05)] md:shadow-md border border-[#0284c7]/10 transition-all whitespace-nowrap">
                     See all
                     <ChevronRight
                       size={12}

@@ -90,10 +90,19 @@ const ProductManagement = () => {
   const categories = dbCategories;
 
   const [searchTerm, setSearchTerm] = useState(qFromUrl);
+  const searchDebounceRef = useRef(null);
 
   React.useEffect(() => {
     if (qFromUrl !== searchTerm) setSearchTerm(qFromUrl);
   }, [qFromUrl]);
+
+  const handleSearchChange = (value) => {
+    setSearchTerm(value);
+    const next = new URLSearchParams(searchParams);
+    if (value) next.set("q", value);
+    else next.delete("q");
+    setSearchParams(next);
+  };
 
   const [filterCategory, setFilterCategory] = useState("all");
   const [filterStatus, setFilterStatus] = useState("All");
@@ -161,7 +170,12 @@ const ProductManagement = () => {
   }, [isFilterOpen]);
 
   React.useEffect(() => {
-    fetchProducts(1);
+    // Debounce search, immediate for other filters
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => {
+      fetchProducts(1);
+    }, 400);
+    return () => clearTimeout(searchDebounceRef.current);
   }, [searchTerm, filterCategory, filterStatus, sortBy, pageSize]);
 
   const [formData, setFormData] = useState({
@@ -278,8 +292,22 @@ const ProductManagement = () => {
       data.append("variants", JSON.stringify(formData.variants));
 
       if (formData.mainImageFile) {
+        // New file selected — upload it
         data.append("mainImage", formData.mainImageFile);
+      } else if (formData.mainImage && formData.mainImage.startsWith("http")) {
+        // No new file — preserve existing Cloudinary URL
+        data.append("existingMainImage", formData.mainImage);
       }
+
+      // Existing gallery URLs (not new files) — preserve them
+      const existingGalleryUrls = (formData.galleryImages || []).filter(
+        (img) => typeof img === "string" && img.startsWith("http")
+      );
+      if (existingGalleryUrls.length > 0) {
+        data.append("existingGalleryImages", JSON.stringify(existingGalleryUrls));
+      }
+
+      // New gallery files to upload
       if (formData.galleryFiles && formData.galleryFiles.length > 0) {
         formData.galleryFiles.forEach((file) => data.append("galleryImages", file));
       }
@@ -300,23 +328,50 @@ const ProductManagement = () => {
     }
   };
 
-  const handleImageUpload = (e, type) => {
+  const handleImageUpload = (e, type, galleryIndex = null) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       const reader = new FileReader();
       reader.onloadend = () => {
         if (type === "main") {
-          setFormData({ ...formData, mainImage: reader.result, mainImageFile: file });
+          setFormData((prev) => ({
+            ...prev,
+            mainImage: reader.result,
+            mainImageFile: file,
+          }));
         } else {
-          setFormData({
-            ...formData,
-            galleryImages: [...formData.galleryImages, reader.result],
-            galleryFiles: [...(formData.galleryFiles || []), file]
+          setFormData((prev) => {
+            const newGalleryImages = [...(prev.galleryImages || [])];
+            const newGalleryFiles = [...(prev.galleryFiles || [])];
+            if (galleryIndex !== null && galleryIndex < newGalleryImages.length) {
+              // Replace existing slot
+              newGalleryImages[galleryIndex] = reader.result;
+              newGalleryFiles[galleryIndex] = file;
+            } else {
+              // Append new
+              newGalleryImages.push(reader.result);
+              newGalleryFiles.push(file);
+            }
+            return { ...prev, galleryImages: newGalleryImages, galleryFiles: newGalleryFiles };
           });
         }
       };
       reader.readAsDataURL(file);
     }
+    // Reset input so same file can be re-selected
+    e.target.value = "";
+  };
+
+  const handleRemoveMainImage = () => {
+    setFormData((prev) => ({ ...prev, mainImage: null, mainImageFile: null }));
+  };
+
+  const handleRemoveGalleryImage = (idx) => {
+    setFormData((prev) => {
+      const newGalleryImages = (prev.galleryImages || []).filter((_, i) => i !== idx);
+      const newGalleryFiles = (prev.galleryFiles || []).filter((_, i) => i !== idx);
+      return { ...prev, galleryImages: newGalleryImages, galleryFiles: newGalleryFiles };
+    });
   };
 
   const exportProducts = () => {
@@ -499,12 +554,7 @@ const ProductManagement = () => {
               type="text"
               value={searchTerm}
               onChange={(e) => {
-                const value = e.target.value;
-                setSearchTerm(value);
-                const next = new URLSearchParams(searchParams);
-                if (value) next.set("q", value);
-                else next.delete("q");
-                setSearchParams(next);
+                handleSearchChange(e.target.value);
               }}
               placeholder="Search by name, SKU or slug..."
               className="w-full pl-10 pr-4 py-2.5 bg-slate-100/50 border-none rounded-xl text-xs font-semibold text-slate-700 placeholder:text-slate-400 focus:ring-2 focus:ring-primary/5 transition-all outline-none"
@@ -1049,11 +1099,21 @@ const ProductManagement = () => {
                           <div className="w-48 aspect-square rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center group hover:border-primary hover:bg-primary/5 transition-all cursor-pointer overflow-hidden relative">
                             <input
                               type="file"
+                              accept="image/*"
                               className="absolute inset-0 opacity-0 cursor-pointer z-10"
                               onChange={(e) => handleImageUpload(e, "main")}
                             />
                             {formData.mainImage ? (
-                              <img src={formData.mainImage} alt="Main Preview" className="w-full h-full object-cover" />
+                              <>
+                                <img src={formData.mainImage} alt="Main Preview" className="w-full h-full object-cover" />
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); handleRemoveMainImage(); }}
+                                  className="absolute top-1.5 right-1.5 z-20 bg-white/90 hover:bg-rose-50 text-slate-500 hover:text-rose-500 rounded-full p-1 shadow transition-colors"
+                                >
+                                  <HiOutlineXMark className="h-3.5 w-3.5" />
+                                </button>
+                              </>
                             ) : (
                               <div className="flex flex-col items-center">
                                 <HiOutlinePhoto className="h-10 w-10 text-slate-200" />
@@ -1071,9 +1131,24 @@ const ProductManagement = () => {
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                           {(formData.galleryImages || []).slice(0, 4).map((img, idx) => (
                             <div
-                              key={`${img}-${idx}`}
-                              className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 overflow-hidden relative">
+                              key={idx}
+                              className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 overflow-hidden relative group/gallery">
                               <img src={img} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover" />
+                              {/* Replace on click */}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                                onChange={(e) => handleImageUpload(e, "gallery", idx)}
+                              />
+                              {/* Remove button */}
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); handleRemoveGalleryImage(idx); }}
+                                className="absolute top-1.5 right-1.5 z-20 bg-white/90 hover:bg-rose-50 text-slate-500 hover:text-rose-500 rounded-full p-1 shadow opacity-0 group-hover/gallery:opacity-100 transition-all"
+                              >
+                                <HiOutlineXMark className="h-3.5 w-3.5" />
+                              </button>
                             </div>
                           ))}
                           {Array.from({ length: Math.max(0, 4 - (formData.galleryImages || []).length) }).map((_, idx) => (
@@ -1082,6 +1157,7 @@ const ProductManagement = () => {
                               className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center group hover:border-primary hover:bg-primary/5 transition-all cursor-pointer overflow-hidden relative">
                               <input
                                 type="file"
+                                accept="image/*"
                                 className="absolute inset-0 opacity-0 cursor-pointer z-10"
                                 onChange={(e) => handleImageUpload(e, "gallery")}
                               />
@@ -1093,7 +1169,7 @@ const ProductManagement = () => {
                           ))}
                         </div>
                         <p className="text-[10px] text-slate-500 font-medium">
-                          Existing gallery images are shown here. Uploading new images will append them to the gallery.
+                          Click an existing image to replace it. Hover to remove.
                         </p>
                       </div>
                     </div>

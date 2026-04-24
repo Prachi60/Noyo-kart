@@ -378,32 +378,20 @@ export const createProduct = async (req, res) => {
     const productData = { ...req.body };
     productData.sellerId = req.user.id;
 
-    // Handle multipart files (mainImage and galleryImages)
+    // Handle multipart files — upload all in parallel
     const files = req.files || [];
     if (files.length > 0) {
-      const galleryUrls = [];
-      for (const file of files) {
-        try {
-          if (file.fieldname === "mainImage") {
-            const url = await uploadToCloudinary(file.buffer, "products", {
-              mimeType: file.mimetype,
-              resourceType: "image",
-            });
-            productData.mainImage = url;
-          } else if (file.fieldname === "galleryImages") {
-            const url = await uploadToCloudinary(file.buffer, "products", {
-              mimeType: file.mimetype,
-              resourceType: "image",
-            });
-            galleryUrls.push(url);
-          }
-        } catch (err) {
-          console.error("Cloudinary upload failed:", err);
-        }
-      }
-      if (galleryUrls.length > 0) {
-        productData.galleryImages = galleryUrls;
-      }
+      const mainFiles = files.filter(f => f.fieldname === "mainImage");
+      const galleryFiles = files.filter(f => f.fieldname === "galleryImages");
+
+      const [mainResults, galleryResults] = await Promise.all([
+        Promise.all(mainFiles.map(f => uploadToCloudinary(f.buffer, "products", { mimeType: f.mimetype, resourceType: "image" }).catch(() => null))),
+        Promise.all(galleryFiles.map(f => uploadToCloudinary(f.buffer, "products", { mimeType: f.mimetype, resourceType: "image" }).catch(() => null))),
+      ]);
+
+      if (mainResults[0]?.secure_url) productData.mainImage = mainResults[0].secure_url;
+      const galleryUrls = galleryResults.filter(Boolean).map(r => r.secure_url).filter(Boolean);
+      if (galleryUrls.length > 0) productData.galleryImages = galleryUrls;
     }
 
     // Parse JSON fields if they come as strings from FormData
@@ -503,32 +491,43 @@ export const updateProduct = async (req, res) => {
     const role = req.user.role;
     const productData = { ...req.body };
 
-    // Handle multipart files (mainImage and galleryImages)
+    // Handle multipart files — upload all in parallel
     const files = req.files || [];
+    const newGalleryUrls = [];
+
     if (files.length > 0) {
-      const galleryUrls = [];
-      for (const file of files) {
-        try {
-          if (file.fieldname === "mainImage") {
-            const url = await uploadToCloudinary(file.buffer, "products", {
-              mimeType: file.mimetype,
-              resourceType: "image",
-            });
-            productData.mainImage = url;
-          } else if (file.fieldname === "galleryImages") {
-            const url = await uploadToCloudinary(file.buffer, "products", {
-              mimeType: file.mimetype,
-              resourceType: "image",
-            });
-            galleryUrls.push(url);
-          }
-        } catch (err) {
-          console.error("Cloudinary upload failed during update:", err);
-        }
+      const mainFiles = files.filter(f => f.fieldname === "mainImage");
+      const galleryFiles = files.filter(f => f.fieldname === "galleryImages");
+
+      const [mainResults, galleryResults] = await Promise.all([
+        Promise.all(mainFiles.map(f => uploadToCloudinary(f.buffer, "products", { mimeType: f.mimetype, resourceType: "image" }).catch(() => null))),
+        Promise.all(galleryFiles.map(f => uploadToCloudinary(f.buffer, "products", { mimeType: f.mimetype, resourceType: "image" }).catch(() => null))),
+      ]);
+
+      if (mainResults[0]?.secure_url) productData.mainImage = mainResults[0].secure_url;
+      galleryResults.filter(Boolean).forEach(r => r.secure_url && newGalleryUrls.push(r.secure_url));
+    }
+
+    // Preserve existing main image if no new file was uploaded
+    if (!productData.mainImage && productData.existingMainImage) {
+      productData.mainImage = normalizeUrl(productData.existingMainImage);
+    }
+    delete productData.existingMainImage;
+
+    // Merge existing gallery URLs with newly uploaded ones
+    let existingGallery = [];
+    if (productData.existingGalleryImages) {
+      try {
+        existingGallery = JSON.parse(productData.existingGalleryImages);
+        if (!Array.isArray(existingGallery)) existingGallery = [];
+      } catch {
+        existingGallery = [];
       }
-      if (galleryUrls.length > 0) {
-        productData.galleryImages = galleryUrls;
-      }
+      delete productData.existingGalleryImages;
+    }
+    const mergedGallery = [...existingGallery, ...newGalleryUrls].filter(Boolean);
+    if (mergedGallery.length > 0) {
+      productData.galleryImages = mergedGallery;
     }
 
     // Parse JSON fields
@@ -549,12 +548,8 @@ export const updateProduct = async (req, res) => {
 
     // Admin bypasses sellerId check
     const query = role === "admin" ? { _id: id } : { _id: id, sellerId };
-    const product = await Product.findOne(query);
 
-    if (!product) {
-      return handleResponse(res, 404, "Product not found or unauthorized");
-    }
-
+    // Pre-process fields that need the existing product's values as fallback
     if (productData.name) {
       if (!productData.slug || productData.slug.trim() === "") {
         productData.slug = slugify(productData.name);
@@ -570,23 +565,10 @@ export const updateProduct = async (req, res) => {
           : productData.description || "";
     }
 
-    const skuBaseName = productData.name || product.name;
-    if (!productData.sku || String(productData.sku).trim() === "") {
-      productData.sku = product.sku || makeProductSku(skuBaseName, 1);
-    }
-
     applyMediaFields(productData);
 
     if (typeof productData.tags === "string") {
       productData.tags = productData.tags.split(",").map((tag) => tag.trim());
-    }
-
-    if (typeof productData.variants === "string") {
-      try {
-        productData.variants = JSON.parse(productData.variants);
-      } catch (e) {
-        // keep existing if invalid?
-      }
     }
 
     if (Array.isArray(productData.variants)) {
@@ -595,32 +577,30 @@ export const updateProduct = async (req, res) => {
         sku:
           variant?.sku && String(variant.sku).trim()
             ? variant.sku
-            : makeProductSku(skuBaseName, idx + 1),
+            : makeProductSku(productData.name || "", idx + 1),
       }));
     }
 
-    const updatedProduct = await Product.findByIdAndUpdate(
-      id,
+    // Single DB round-trip: auth check + update in one query
+    const updatedProduct = await Product.findOneAndUpdate(
+      query,
       { $set: productData },
       { new: true, runValidators: true },
     );
-    
-    // Enqueue search indexing asynchronously
-    await enqueueProductIndex(id);
-    await invalidate(`cache:catalog:product:${id}`);
 
-    try {
-      await invalidate(buildKey("catalog", "productList", "*"));
-    } catch (cacheErr) {
-      console.error("Cache invalidation error (updateProduct):", cacheErr);
+    if (!updatedProduct) {
+      return handleResponse(res, 404, "Product not found or unauthorized");
     }
 
-    return handleResponse(
-      res,
-      200,
-      "Product updated successfully",
-      updatedProduct,
-    );
+    // Respond immediately — don't block on cache/search
+    handleResponse(res, 200, "Product updated successfully", updatedProduct);
+
+    // Fire-and-forget: search indexing + cache invalidation in background
+    Promise.allSettled([
+      enqueueProductIndex(id),
+      invalidate(`cache:catalog:product:${id}`),
+      invalidate(buildKey("catalog", "productList", "*")),
+    ]).catch((err) => console.error("Post-update background task error:", err));
   } catch (error) {
     console.error("Update Product Error:", error);
     if (error.name === "ValidationError") {
