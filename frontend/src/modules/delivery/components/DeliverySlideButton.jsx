@@ -68,18 +68,23 @@ const DeliverySlideButton = ({
       }
     } catch (error) {
       // Handle different error types
-      const errorMessage = error.response?.data?.error?.message || error.message || "Failed to generate OTP";
-      const errorCode = error.response?.data?.error?.code;
+      // The backend returns { message, result: { error: { code, message, details } } }
+      const resData = error.response?.data;
+      const errorMessage = resData?.message || error.message || "Failed to generate OTP";
+      const errorCode = resData?.result?.error?.code || resData?.result?.code;
+      const errorDetails = resData?.result?.error?.details || resData?.result;
 
       // Display user-friendly error messages
       if (errorCode === "PROXIMITY_OUT_OF_RANGE") {
-        const details = error.response?.data?.error?.details;
-        const distance = details?.currentDistance;
-        const range = details?.requiredRange || "0-120m";
+        const distance = errorDetails?.currentDistance;
+        const range = errorDetails?.requiredRange || "0-500m";
+        const distanceText = distance > 1000 
+          ? `${(distance / 1000).toFixed(2)}km` 
+          : `${Math.round(distance)}m`;
         
         toast.error(
-          `You are too ${distance > 120 ? "far" : "close"}. You must be within ${range} of the delivery location.`,
-          { duration: 5000 }
+          `Proximity check failed. You are currently ${distanceText} away. You must be within ${range} of the delivery location.`,
+          { duration: 8000 }
         );
       } else if (errorCode === "LOCATION_REQUIRED" || errorCode === "LOCATION_STALE") {
         toast.error(errorMessage || "Location data is not available. Please ensure location tracking is enabled.");

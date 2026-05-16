@@ -119,10 +119,8 @@ const OtpInput = ({ orderId, isReturn = false, isReturnDrop = false, onSuccess, 
       setLastErrorCode(null);
       clearInputs();
     } catch (err) {
-      const errorMessage =
-        err.response?.data?.error?.message ||
-        err.message ||
-        "Failed to generate OTP";
+      const resData = err.response?.data;
+      const errorMessage = resData?.message || resData?.result?.error?.message || err.message || "Failed to generate OTP";
       toast.error(errorMessage);
       setError(errorMessage);
     } finally {
@@ -171,9 +169,10 @@ const OtpInput = ({ orderId, isReturn = false, isReturnDrop = false, onSuccess, 
       }
     } catch (err) {
       // Handle validation errors
-      const errorData = err.response?.data?.error;
+      const resData = err.response?.data;
+      const errorData = resData?.result?.error || resData?.result;
       const errorCode = errorData?.code;
-      const errorMessage = errorData?.message || "Failed to validate OTP";
+      const errorMessage = resData?.message || errorData?.message || "Failed to validate OTP";
       const remainingAttempts = errorData?.attemptsRemaining;
 
       setLastErrorCode(errorCode || null);

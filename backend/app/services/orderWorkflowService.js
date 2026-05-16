@@ -68,7 +68,7 @@ function deliveryBroadcastPayloadFromOrder(order, extra = {}) {
 const PICKUP_RADIUS_M = () =>
   parseInt(process.env.PICKUP_RADIUS_METERS || "150", 10);
 const OTP_RADIUS_M = () =>
-  parseInt(process.env.DELIVERY_OTP_RADIUS_METERS || "150", 10);
+  parseInt(process.env.DELIVERY_OTP_RADIUS_METERS || "500", 10);
 const OTP_EXPIRY_MS = () =>
   parseInt(process.env.DELIVERY_OTP_EXPIRY_MS || "300000", 10);
 

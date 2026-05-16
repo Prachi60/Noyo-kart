@@ -12,6 +12,9 @@ import { getRedisClient } from "../config/redis.js";
 import { distanceMeters } from "../utils/geoUtils.js";
 import { applyDeliveredSettlement } from "../services/orderSettlement.js";
 import { roundCurrency } from "../utils/money.js";
+import { generateDeliveryOtp as generateOtpService, validateDeliveryOtp as validateOtpService } from "../services/deliveryOtpService.js";
+import { emitToCustomer } from "../services/orderSocketEmitter.js";
+import { getIO } from "../socket/socketManager.js";
 
 const LOC_MIN_INTERVAL_MS = () =>
   parseInt(process.env.LOCATION_MIN_INTERVAL_MS || "3000", 10);
@@ -639,7 +642,12 @@ export const generateDeliveryOtp = async (req, res) => {
         let { location } = req.body || {};
         const deliveryBoyId = req.user.id;
 
-        // If location is not provided in request body, fetch from database
+        // If location is provided in body, validate it
+        if (location && (typeof location.lat !== 'number' || typeof location.lng !== 'number' || (Math.abs(location.lat) < 1e-5 && Math.abs(location.lng) < 1e-5))) {
+            location = null; // Treat as not provided to trigger DB fetch
+        }
+
+        // If location is not provided or invalid in request body, fetch from database
         if (!location) {
             const delivery = await Delivery.findById(deliveryBoyId).select('location lastLocationAt');
             
@@ -760,11 +768,8 @@ export const generateDeliveryOtp = async (req, res) => {
             });
         }
 
-        // Import the service dynamically to avoid circular dependencies
-        const { generateDeliveryOtp: generateOtp } = await import('../services/deliveryOtpService.js');
-        
-        // Generate OTP with proximity validation
-        const result = await generateOtp(order.orderId, location);
+        // Generate OTP with proximity validation using imported service
+        const result = await generateOtpService(order.orderId, location);
 
         if (!result.success) {
             // Determine appropriate status code based on error
@@ -786,15 +791,17 @@ export const generateDeliveryOtp = async (req, res) => {
                 error: {
                     code: errorCode,
                     ...(result.errorCode ? { subCode: result.errorCode } : {}),
-                    message: result.error
+                    message: result.error,
+                    details: {
+                        currentDistance: Math.round(result.distance || 0),
+                        requiredRange: "0-500m"
+                    }
                 }
             });
         }
 
-        // Emit Socket.IO event to customer using standardized emitter
+        // Emit Socket.IO event to customer
         try {
-            const { emitToCustomer } = await import('../services/orderSocketEmitter.js');
-            
             const otpPayload = {
                 orderId: order.orderId,
                 otp: result.otp,
@@ -818,10 +825,11 @@ export const generateDeliveryOtp = async (req, res) => {
             }
             
             // Also emit to order-specific room for clients that joined via join_order
-            const { getIO } = await import('../socket/socketManager.js');
             const io = getIO();
-            io.to(`order:${order.orderId}`).emit('delivery:otp:generated', otpPayload);
-            io.to(`order:${order.orderId}`).emit('order:otp', otpPayload);
+            if (io) {
+                io.to(`order:${order.orderId}`).emit('delivery:otp:generated', otpPayload);
+                io.to(`order:${order.orderId}`).emit('order:otp', otpPayload);
+            }
         } catch (socketError) {
             console.error('[generateDeliveryOtp] Error emitting Socket.IO event:', socketError);
         }
@@ -906,11 +914,8 @@ export const validateDeliveryOtp = async (req, res) => {
             });
         }
 
-        // Import the service dynamically to avoid circular dependencies
-        const { validateDeliveryOtp: validateOtp } = await import('../services/deliveryOtpService.js');
-
-        // Validate OTP
-        const result = await validateOtp(order.orderId, otp);
+        // Validate OTP using imported service
+        const result = await validateOtpService(order.orderId, otp);
 
         if (!result.valid) {
             // Determine appropriate status code based on error
@@ -986,24 +991,24 @@ export const validateDeliveryOtp = async (req, res) => {
 
         // Emit Socket.IO event to customer
         try {
-            const { getIO } = await import('../socket/socketManager.js');
             const io = getIO();
+            if (io) {
+                // Emit to customer's room
+                if (order.customer?._id) {
+                    io.to(`customer:${order.customer._id}`).emit('delivery:otp:validated', {
+                        orderId: order.orderId,
+                        status: "delivered",
+                        deliveredAt: now.toISOString()
+                    });
+                }
 
-            // Emit to customer's room
-            if (order.customer?._id) {
-                io.to(`customer:${order.customer._id}`).emit('delivery:otp:validated', {
+                // Also emit to order room
+                io.to(`order:${order.orderId}`).emit('delivery:otp:validated', {
                     orderId: order.orderId,
                     status: "delivered",
                     deliveredAt: now.toISOString()
                 });
             }
-
-            // Also emit to order room
-            io.to(`order:${order.orderId}`).emit('delivery:otp:validated', {
-                orderId: order.orderId,
-                status: "delivered",
-                deliveredAt: now.toISOString()
-            });
         } catch (socketError) {
             console.error('Error emitting Socket.IO event:', socketError);
             // Don't fail the request if socket emission fails
