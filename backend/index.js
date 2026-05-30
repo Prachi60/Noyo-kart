@@ -1,3 +1,6 @@
+import dns from "dns";
+dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
+
 import express from "express";
 import dotenv from "dotenv";
 import http from "http";
@@ -8,6 +11,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { Server } from "socket.io";
 import setupRoutes from "./app/routes/index.js";
+import spRoutes from "./app/modules/serviceProvider/routes/index.js";
 import { initSocket, getIO } from "./app/socket/socketManager.js";
 import { registerOrderSocketGetter } from "./app/services/orderSocketEmitter.js";
 import {
@@ -176,6 +180,9 @@ function createApp() {
 
   // Setup all routes (includes /health, /metrics, /api/*)
   setupRoutes(app);
+
+  // Service Provider module routes (mounted at /api/sp)
+  app.use('/api/sp', spRoutes);
   
   // Error handlers
   app.use(notFoundHandler);

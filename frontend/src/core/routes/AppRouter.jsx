@@ -1,9 +1,15 @@
 import React, { lazy, useMemo, Suspense } from 'react';
-import { createBrowserRouter, RouterProvider, Outlet, Navigate } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Outlet, Navigate, useLocation } from 'react-router-dom';
 import ProtectedRoute from '../guards/ProtectedRoute';
 import RoleGuard from '../guards/RoleGuard';
 import { UserRole } from '../constants/roles';
 import RootErrorBoundary from '../../shared/components/RootErrorBoundary';
+
+const RedirectToSP = () => {
+    const location = useLocation();
+    const target = `/sp${location.pathname}${location.search}${location.hash}`;
+    return <Navigate to={target} replace />;
+};
 
 // Providers for Customer Module
 import { WishlistProvider } from '../../modules/customer/context/WishlistContext';
@@ -50,6 +56,9 @@ const PrintStore = lazy(() => import('../../modules/customer/pages/PrintStore'))
 const SellerModule = lazy(() => import('../../modules/seller/routes/index'));
 const AdminModule = lazy(() => import('../../modules/admin/routes/index'));
 const DeliveryModule = lazy(() => import('../../modules/delivery/routes/index'));
+
+// Service Provider Module (lazy-loaded)
+const ServiceProviderModule = lazy(() => import('../../modules/serviceProvider/routes/index'));
 
 import CustomerLayout from '../../modules/customer/components/layout/CustomerLayout';
 
@@ -134,6 +143,14 @@ const AppRouter = () => {
                     ),
                 },
                 {
+                    path: 'sp/*',
+                    element: (
+                        <Suspense fallback={<div className="flex h-screen items-center justify-center font-outfit">Loading...</div>}>
+                            <ServiceProviderModule />
+                        </Suspense>
+                    ),
+                },
+                {
                     path: 'unauthorized',
                     element: <div className="flex h-screen items-center justify-center font-outfit">Unauthorized Access</div>,
                 },
@@ -168,6 +185,22 @@ const AppRouter = () => {
                         { path: 'search', element: <SearchPage /> },
                         { path: 'print-store', element: <ProtectedRoute><PrintStore /></ProtectedRoute> },
                     ]
+                },
+                {
+                    path: 'user/*',
+                    element: <RedirectToSP />
+                },
+                {
+                    path: 'worker/*',
+                    element: <RedirectToSP />
+                },
+                {
+                    path: 'vendor/*',
+                    element: <RedirectToSP />
+                },
+                {
+                    path: 'admin/*',
+                    element: <RedirectToSP />
                 },
                 {
                     path: '*',
