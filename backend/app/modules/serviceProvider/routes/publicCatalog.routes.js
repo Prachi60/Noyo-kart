@@ -1,0 +1,50 @@
+import { Router } from 'express';
+import { getCategories, getBrands, getServicesByCategory, getServiceById } from '../controllers/publicControllers/catalogController.js';
+import SpBrand from '../models/SpBrand.js';
+import SpHomeContent from '../models/SpHomeContent.js';
+import SpCategory from '../models/SpCategory.js';
+import SpUserService from '../models/SpUserService.js';
+
+const router = Router();
+
+router.get('/categories', getCategories);
+router.get('/brands', getBrands);
+router.get('/brands/slug/:slug', async (req, res) => {
+  try {
+    const brand = await SpBrand.findOne({ slug: req.params.slug, status: 'active' });
+    if (!brand) return res.status(404).json({ success: false, message: 'Brand not found' });
+    const services = await SpUserService.find({ brandId: brand._id, status: 'active' });
+    res.status(200).json({ success: true, data: { brand, services } });
+  } catch (error) { res.status(500).json({ success: false, message: 'Failed to fetch brand' }); }
+});
+router.get('/services', async (req, res) => {
+  try {
+    const { categoryId, brandId } = req.query;
+    const query = { status: 'active' };
+    if (categoryId) query.categoryId = categoryId;
+    if (brandId) query.brandId = brandId;
+    const services = await SpUserService.find(query);
+    res.status(200).json({ success: true, data: services });
+  } catch (error) { res.status(500).json({ success: false, message: 'Failed to fetch services' }); }
+});
+router.get('/services/:id', getServiceById);
+router.get('/categories/:categoryId/services', getServicesByCategory);
+router.get('/home-content', async (req, res) => {
+  try {
+    const { cityId } = req.query;
+    const homeContent = await SpHomeContent.getHomeContent(cityId || null);
+    res.status(200).json({ success: true, data: homeContent });
+  } catch (error) { res.status(500).json({ success: false, message: 'Failed to fetch home content' }); }
+});
+router.get('/home-data', async (req, res) => {
+  try {
+    const { cityId } = req.query;
+    const [homeContent, categories] = await Promise.all([
+      SpHomeContent.getHomeContent(cityId || null),
+      SpCategory.find({ status: 'active', showOnHome: true }).sort({ homeOrder: 1 })
+    ]);
+    res.status(200).json({ success: true, data: { homeContent, categories } });
+  } catch (error) { res.status(500).json({ success: false, message: 'Failed to fetch home data' }); }
+});
+
+export default router;
