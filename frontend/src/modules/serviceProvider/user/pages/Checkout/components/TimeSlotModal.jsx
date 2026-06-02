@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FiArrowLeft, FiX } from 'react-icons/fi';
-import { themeColors } from '../../../theme';
+import { themeColors } from '../../../../theme';
 
 const TimeSlotModal = ({
   isOpen,

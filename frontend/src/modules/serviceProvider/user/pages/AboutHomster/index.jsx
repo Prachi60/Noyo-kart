@@ -75,12 +75,6 @@ const AboutHomestr = () => {
     WebkitTextFillColor: 'transparent',
   };
 
-  const homestrTextGradient = {
-    background: homestrGradient,
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-  };
-
   return (
     <div ref={containerRef} className="min-h-screen bg-gray-50 pb-10">
       {/* SVG Gradient Definition */}

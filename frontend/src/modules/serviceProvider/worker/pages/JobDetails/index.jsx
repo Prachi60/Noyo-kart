@@ -12,7 +12,7 @@ const OtpVerificationModal = lazy(() => import('../../components/common/OtpVerif
 import workerService from '../../../services/workerService';
 import api from '../../../services/api';
 import { toast } from 'react-hot-toast';
-import { useAppNotifications } from '../../../hooks/useAppNotifications';
+import { useSocket } from '../../../context/SocketContext';
 import { useLocationTracking } from '../../../hooks/useLocationTracking';
 
 const JobDetails = () => {
@@ -72,7 +72,7 @@ const JobDetails = () => {
   }, [id]);
 
   // Socket for live location tracking
-  const socket = useAppNotifications('worker');
+  const socket = useSocket();
 
   // Optimized Live Location Tracking with distance filter and heading
   const isTrackingActive = job?.status === 'journey_started' || job?.status === 'visited' || job?.status === 'in_progress';

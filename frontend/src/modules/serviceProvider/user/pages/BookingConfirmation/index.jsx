@@ -18,7 +18,7 @@ import {
 } from 'react-icons/fi';
 import { bookingService } from '../../../services/bookingService';
 import NotificationBell from '../../components/common/NotificationBell';
-import ConfirmDialog from '../../../components/common/ConfirmDialog';
+import ConfirmDialog from '../../../vendor/components/common/ConfirmDialog';
 
 // Inline Searching Animation Component
 const SearchingAnimation = () => {

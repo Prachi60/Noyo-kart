@@ -8,7 +8,7 @@ import { FiArrowLeft, FiNavigation, FiMapPin, FiCrosshair, FiPhone, FiUser, FiSt
 import { bookingService } from '../../../services/bookingService';
 import { paymentService } from '../../../services/paymentService';
 import { toast } from 'react-hot-toast';
-import { useAppNotifications } from '../../../hooks/useAppNotifications';
+import { useSocket } from '../../../context/SocketContext';
 import LogoLoader from '@sp/user/components/common/LogoLoader';
 import PaymentVerificationModal from '../../components/booking/PaymentVerificationModal';
 
@@ -253,7 +253,7 @@ const BookingTrack = () => {
     }
   }, [isLoaded, refreshBooking]);
 
-  const socket = useAppNotifications('user');
+  const socket = useSocket();
 
   // Socket Listener
   useEffect(() => {

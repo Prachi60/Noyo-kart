@@ -4,7 +4,6 @@ import { toast } from 'react-hot-toast';
 import { FiX, FiCheckCircle } from 'react-icons/fi';
 import { verifySelfVisit } from '../../services/bookingService';
 import flutterBridge from '../../../utils/flutterBridge';
-import LocationAccessModal from '../../../components/common/LocationAccessModal';
 
 /**
  * Reusable Visit Verification Modal
@@ -241,12 +240,6 @@ const VisitVerificationModal = ({ isOpen, onClose, bookingId, onSuccess }) => {
             </button>
           </motion.div>
 
-          <LocationAccessModal
-            isOpen={showLocationModal}
-            onClose={() => setShowLocationModal(false)}
-            onSuccess={handleLocationSuccess}
-            userType={userType}
-          />
         </div>
       )}
     </AnimatePresence>

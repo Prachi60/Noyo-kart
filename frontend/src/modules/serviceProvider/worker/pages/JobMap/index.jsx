@@ -8,7 +8,7 @@ import { FiArrowLeft, FiNavigation, FiMapPin, FiCrosshair, FiPhone, FiCheckCircl
 import { toast } from 'react-hot-toast';
 import workerService from '../../../services/workerService';
 import VisitVerificationModal from '../../components/common/VisitVerificationModal';
-import useAppNotifications from '../../../hooks/useAppNotifications';
+import { useSocket } from '../../../context/SocketContext';
 
 const libraries = ['places', 'geometry'];
 const SHOW_SIMULATION_BUTTON = false; // Set to true for debugging
@@ -125,7 +125,7 @@ const JobMap = () => {
     }
   }, [isSimulating]); // Add isSimulating to dependency array
 
-  const socket = useAppNotifications('worker'); // Use worker namespace
+  const socket = useSocket(); // Use worker namespace
 
   // ... code ...
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import useAppNotifications from '../../../hooks/useAppNotifications';
+import { useSocket } from '../../../context/SocketContext';
 import { themeColors } from '../../../theme';
 import { MdQrCode } from 'react-icons/md';
 import {
@@ -32,7 +32,7 @@ import { paymentService } from '../../../services/paymentService';
 import { cartService } from '../../../services/cartService';
 import RatingModal from '../../components/booking/RatingModal';
 import PaymentVerificationModal from '../../components/booking/PaymentVerificationModal';
-import { ConfirmDialog } from '../../../../components/common';
+import ConfirmDialog from '../../../vendor/components/common/ConfirmDialog';
 import ReviewCard from '../../components/booking/ReviewCard';
 import NotificationBell from '../../components/common/NotificationBell';
 import api from '../../../services/api';
@@ -66,7 +66,7 @@ const BookingDetails = () => {
     phone: ''
   });
 
-  const socket = useAppNotifications();
+  const socket = useSocket();
 
   // Fetch support settings
   useEffect(() => {

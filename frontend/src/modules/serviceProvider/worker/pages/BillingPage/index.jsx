@@ -4,7 +4,7 @@ import { FiCheck, FiTool, FiPackage, FiFileText, FiPlus, FiTrash2, FiArrowLeft, 
 import { MdQrCode } from 'react-icons/md';
 import { toast } from 'react-hot-toast';
 import { workerTheme as themeColors } from '../../../theme';
-import { useAppNotifications } from '../../../hooks/useAppNotifications';
+import { useSocket } from '../../../context/SocketContext';
 import { OtpVerificationModal, ScanAndPayModal } from '../../components/common';
 import workerBillService from '../../../services/workerBillService';
 import workerService from '../../../services/workerService';
@@ -69,7 +69,7 @@ const BillingPage = () => {
   const [qrLoading, setQrLoading] = useState(false);
   const [paymentMode, setPaymentMode] = useState(null); // 'cash' | 'online'
 
-  const socket = useAppNotifications('worker');
+  const socket = useSocket();
 
   // --- Settings ---
   const [payoutSettings, setPayoutSettings] = useState({

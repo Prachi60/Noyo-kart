@@ -1,6 +1,6 @@
 import React from 'react';
 import SimpleServiceCard from '../../../components/common/SimpleServiceCard';
-import { themeColors } from '../../../theme';
+import { themeColors } from '../../../../theme';
 
 const ServiceCategorySection = ({ title, services, onSeeAllClick, onServiceClick }) => {
   return (

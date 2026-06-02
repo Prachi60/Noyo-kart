@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiX } from 'react-icons/fi';
-import { themeColors } from '../../../theme';
+import { themeColors } from '../../../../theme';
 
 const ServiceModal = ({ isOpen, onClose, service, location, cartCount }) => {
   const navigate = useNavigate();

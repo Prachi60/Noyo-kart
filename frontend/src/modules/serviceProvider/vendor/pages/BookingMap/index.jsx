@@ -9,7 +9,7 @@ import { getBookingById, verifySelfVisit } from '../../services/bookingService';
 import VisitVerificationModal from '../../components/common/VisitVerificationModal';
 import vendorService from '../../../services/vendorService';
 import { toast } from 'react-hot-toast';
-import { useAppNotifications } from '../../../hooks/useAppNotifications';
+import { useSocket } from '../../../context/SocketContext';
 
 // Simple toggle for the simulation button (Controlled via .env)
 const SHOW_SIMULATION_BUTTON = import.meta.env.VITE_ENABLE_MAP_SIMULATION === 'true';
@@ -154,7 +154,7 @@ const BookingMap = () => {
     }
   }, [isSimulating]); // Add isSimulating to dependency array
 
-  const socket = useAppNotifications('vendor'); // Get socket instance 
+  const socket = useSocket(); // Get socket instance 
 
   // ... 
 

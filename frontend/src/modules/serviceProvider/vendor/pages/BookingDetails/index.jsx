@@ -22,7 +22,7 @@ import { WorkCompletionModal } from '../../../worker/components/common';
 // import BillingModal from '../../components/bookings/BillingModal'; // Consumed by page now
 import vendorWalletService from '../../../services/vendorWalletService';
 import { toast } from 'react-hot-toast';
-import { useAppNotifications } from '../../../hooks/useAppNotifications';
+import { useSocket } from '../../../context/SocketContext';
 import { useLocationTracking } from '../../../hooks/useLocationTracking';
 
 export default function BookingDetails() {
@@ -154,7 +154,7 @@ export default function BookingDetails() {
 
 
   // ADDED: Socket for Live Location Tracking in Details Page
-  const socket = useAppNotifications('vendor'); // Get socket
+  const socket = useSocket(); // Get socket
 
   // Optimized Live Location Tracking with distance filter and heading
   const isTrackingActive = booking?.status === 'journey_started' || booking?.status === 'visited';

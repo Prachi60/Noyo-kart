@@ -4,7 +4,7 @@ import { FiUser, FiMail, FiPhone, FiFileText, FiUpload, FiX, FiArrowRight, FiChe
 import { toast } from 'react-hot-toast';
 import { themeColors } from '../../../theme';
 import { register, sendOTP as sendVendorOTP } from '../services/authService';
-import LogoLoader from '../../components/common/LogoLoader';
+import LogoLoader from '../components/common/LogoLoader';
 import Logo from '../../../components/common/Logo';
 import { compressImage } from '@sp/utils/imageCompression';
 
