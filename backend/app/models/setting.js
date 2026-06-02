@@ -147,6 +147,117 @@ const settingSchema = new mongoose.Schema(
             type: Boolean,
             default: true,
         },
+
+        // --- Ecommerce Dynamic Menus ---
+
+        customerBottomNav: {
+            type: [{
+                label: { type: String },
+                icon: { type: String },
+                path: { type: String }
+            }],
+            default: [
+                { label: 'Home', icon: 'Home', path: '/' },
+                { label: 'Category', icon: 'LayoutGrid', path: '/categories' },
+                { label: 'Print', icon: 'Printer', path: '/print-store' },
+                { label: 'Orders', icon: 'ShoppingBag', path: '/orders' },
+                { label: 'Profile', icon: 'User', path: '/profile' }
+            ]
+        },
+
+        customerHeaderNav: {
+            type: [{
+                label: { type: String },
+                path: { type: String }
+            }],
+            default: [
+                { label: 'Home', path: '/' },
+                { label: 'Categories', path: '/categories' },
+                { label: 'Offers', path: '/offers' }
+            ]
+        },
+
+        deliveryBottomNav: {
+            type: [{
+                label: { type: String },
+                icon: { type: String },
+                path: { type: String }
+            }],
+            default: [
+                { label: 'Home', icon: 'Home', path: '/delivery/dashboard' },
+                { label: 'Earnings', icon: 'IndianRupee', path: '/delivery/earnings' },
+                { label: 'History', icon: 'History', path: '/delivery/history' },
+                { label: 'Profile', icon: 'User', path: '/delivery/profile' }
+            ]
+        },
+
+        sellerSidebar: {
+            type: [{
+                label: { type: String },
+                icon: { type: String },
+                path: { type: String },
+                end: { type: Boolean, default: false }
+            }],
+            default: [
+                { label: 'Dashboard', path: '/seller', icon: 'HiOutlineSquares2X2', end: true },
+                { label: 'Products', path: '/seller/products', icon: 'HiOutlineCube' },
+                { label: 'Stock', path: '/seller/inventory', icon: 'HiOutlineArchiveBox' },
+                { label: 'Orders', path: '/seller/orders', icon: 'HiOutlineTruck' },
+                { label: 'Returns', path: '/seller/returns', icon: 'HiOutlineArchiveBox' },
+                { label: 'Track Orders', path: '/seller/tracking', icon: 'HiOutlineMapPin' },
+                { label: 'Sales Reports', path: '/seller/analytics', icon: 'HiOutlineChartBarSquare' },
+                { label: 'Money Request', path: '/seller/withdrawals', icon: 'HiOutlineCurrencyDollar' },
+                { label: 'Payment History', path: '/seller/transactions', icon: 'HiOutlineCreditCard' },
+                { label: 'Earnings', path: '/seller/earnings', icon: 'HiOutlineCurrencyDollar' },
+                { label: 'Profile', path: '/seller/profile', icon: 'HiOutlineUser' }
+            ]
+        },
+
+        adminSidebar: {
+            type: [{
+                label: { type: String },
+                icon: { type: String },
+                path: { type: String },
+                end: { type: Boolean, default: false }
+            }],
+            default: [
+                { label: 'Dashboard', path: '/admin', icon: 'HiOutlineSquares2X2', end: true },
+                { label: 'Customers', path: '/admin/customers', icon: 'HiOutlineUser' },
+                { label: 'Sellers', path: '/admin/sellers', icon: 'HiOutlineUserGroup' },
+                { label: 'Categories', path: '/admin/categories', icon: 'HiOutlineTag' },
+                { label: 'Products', path: '/admin/products', icon: 'HiOutlineCube' },
+                { label: 'Orders', path: '/admin/orders', icon: 'HiOutlineTruck' },
+                { label: 'Analytics', path: '/admin/analytics', icon: 'HiOutlineChartBarSquare' },
+                { label: 'Settings', path: '/admin/settings', icon: 'HiOutlineCog6Tooth' }
+            ]
+        },
+
+        // --- Ecommerce Static Pages ---
+        aboutUsData: {
+            heroDescription: { type: String, default: "Delivering happiness to your doorstep in minutes." },
+            missionTitle: { type: String, default: "Our Mission" },
+            missionDescription: { type: String, default: "To revolutionize quick commerce by providing the fastest, most reliable delivery of daily essentials, ensuring quality and convenience for every household." },
+            valuesTitle: { type: String, default: "Our Values" },
+            values: {
+                type: [{
+                    title: { type: String },
+                    description: { type: String }
+                }],
+                default: [
+                    { title: "Customer First", description: "Your satisfaction is our top priority." },
+                    { title: "Quality Assurance", description: "We deliver only the freshest and best products." },
+                    { title: "Speed with Safety", description: "Fast delivery without compromising on safety standards." }
+                ]
+            }
+        },
+        privacyPolicyText: {
+            type: String,
+            default: "At our platform, we take your privacy seriously. This Privacy Policy explains how we collect, use, and protect your personal information.\n\n1. Information We Collect\nWe collect information you provide directly, such as your name, address, phone number, and payment details. We also collect usage data automatically.\n\n2. How We Use Information\nWe use your data to process orders, improve our services, and communicate with you about promotions and updates.\n\n3. Data Security\nWe implement industry-standard security measures to protect your data. However, no method of transmission is 100% secure.\n\n4. Sharing of Information\nWe do not sell your personal data. We may share data with service providers (e.g., delivery partners) as necessary to fulfill your orders.\n\n5. Your Rights\nYou have the right to access, correct, or delete your personal data. Contact our support team for assistance."
+        },
+        termsText: {
+            type: String,
+            default: "Welcome to our platform. By using our services, you agree to these Terms and Conditions.\n\n1. Use of Service\nYou must provide accurate information when creating an account. You are responsible for maintaining the security of your account.\n\n2. Orders and Payments\nAll orders are subject to availability. Prices may change without notice. We reserve the right to cancel any order for any reason.\n\n3. Delivery\nDelivery times are estimates and not guaranteed. We are not liable for delays caused by external factors.\n\n4. Returns and Refunds\nPlease review our Return Policy for details on eligible returns and refund processing.\n\n5. Changes to Terms\nWe may update these terms at any time. Continued use of the service constitutes acceptance of updated terms."
+        }
     },
     {
         timestamps: true,

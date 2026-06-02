@@ -131,10 +131,15 @@ const Header = () => {
 
                     {/* Desktop Navigation */}
                     <nav className="hidden md:flex items-center gap-6">
-                        <Link to="/" className="text-sm font-medium transition-colors hover:text-[var(--primary)]">Home</Link>
-
-                        <Link to="/categories" className="text-sm font-medium transition-colors hover:text-[var(--primary)]">Categories</Link>
-                        <Link to="/offers" className="text-sm font-medium transition-colors hover:text-[var(--primary)]">Offers</Link>
+                        {(settings?.customerHeaderNav || [
+                            { label: 'Home', path: '/' },
+                            { label: 'Categories', path: '/categories' },
+                            { label: 'Offers', path: '/offers' }
+                        ]).map((navItem, idx) => (
+                            <Link key={idx} to={navItem.path} className="text-sm font-medium transition-colors hover:text-[var(--primary)]">
+                                {navItem.label}
+                            </Link>
+                        ))}
                     </nav>
 
                     {/* Search Bar - Hidden on checkout page */}

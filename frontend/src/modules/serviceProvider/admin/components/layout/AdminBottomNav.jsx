@@ -7,16 +7,40 @@ import {
   FiShoppingBag,
   FiSettings,
 } from "react-icons/fi";
+import { useState, useEffect } from "react";
+import { configService } from "../../../services/configService";
 
 const AdminBottomNav = () => {
   const location = useLocation();
 
-  const navItems = [
+  const [navItems, setNavItems] = useState([
     { path: "/sp/admin/dashboard", icon: FiHome, label: "Home" },
     { path: "/sp/admin/users", icon: FiUsers, label: "Users" },
     { path: "/sp/admin/bookings", icon: FiShoppingBag, label: "Bookings" },
     { path: "/sp/admin/settings", icon: FiSettings, label: "Settings" },
-  ];
+  ]);
+
+  const iconMap = {
+    FiHome, FiUsers, FiShoppingBag, FiSettings
+  };
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await configService.getSettings();
+        if (res.success && res.settings && res.settings.adminBottomNavigation) {
+          const mappedItems = res.settings.adminBottomNavigation.map(item => ({
+            ...item,
+            icon: iconMap[item.icon] || FiHome
+          }));
+          setNavItems(mappedItems);
+        }
+      } catch (error) {
+        console.error('Failed to fetch settings:', error);
+      }
+    };
+    fetchSettings();
+  }, []);
 
   const isActive = (path) => {
     if (path === "/sp/admin/dashboard") {

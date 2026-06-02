@@ -2,9 +2,22 @@ import React from "react";
 import { NavLink } from "react-router-dom";
 import { Home, IndianRupee, History, User } from "lucide-react";
 import { motion } from "framer-motion";
+import { useSettings } from "@core/context/SettingsContext";
+
+const iconMap = {
+  Home,
+  IndianRupee,
+  History,
+  User
+};
 
 const BottomNav = () => {
-  const navItems = [
+  const { settings } = useSettings();
+  
+  const navItems = settings?.deliveryBottomNav?.map(item => ({
+    ...item,
+    icon: iconMap[item.icon] || Home
+  })) || [
     { path: "/delivery/dashboard", label: "Home", icon: Home },
     { path: "/delivery/earnings", label: "Earnings", icon: IndianRupee },
     { path: "/delivery/history", label: "History", icon: History },

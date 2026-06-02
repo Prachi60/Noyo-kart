@@ -63,7 +63,24 @@ const spHomeContentSchema = new mongoose.Schema({
   isNoteworthyVisible: { type: Boolean, default: true },
   isBookedVisible: { type: Boolean, default: true },
   isCategorySectionsVisible: { type: Boolean, default: true },
-  isCategoriesVisible: { type: Boolean, default: true }
+  isCategoriesVisible: { type: Boolean, default: true },
+  
+  // Dynamic Scrap Promotion
+  isScrapPromoVisible: { type: Boolean, default: true },
+  scrapPromo: {
+    title: { type: String, default: "Turn Your Scrap into Instant Cash" },
+    subtitle: { type: String, default: "Accepting paper, plastic, metal, and electronics at best prices. We pick up directly from your doorstep." },
+    buttonText: { type: String, default: "Sell Scrap Now" },
+    route: { type: String, default: "/sp/user/scrap" }
+  },
+
+  // Dynamic Refer & Earn
+  isReferEarnVisible: { type: Boolean, default: true },
+  referEarn: {
+    title: { type: String, default: "Refer & Earn" },
+    subtitle: { type: String, default: "Invite your friends and earn rewards" },
+    buttonText: { type: String, default: "Invite Now" }
+  }
 }, { timestamps: true });
 
 spHomeContentSchema.statics.getHomeContent = async function (cityId = null) {

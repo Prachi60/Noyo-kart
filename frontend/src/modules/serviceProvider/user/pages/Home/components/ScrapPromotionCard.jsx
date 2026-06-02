@@ -3,7 +3,33 @@ import { motion } from 'framer-motion';
 import { FiArrowRight, FiRefreshCw, FiTrendingUp } from 'react-icons/fi';
 import { themeColors } from '@sp/theme';
 
-const ScrapPromotionCard = ({ onClick }) => {
+const ScrapPromotionCard = ({ onClick, data }) => {
+  // Use default texts if data is not provided
+  const title = data?.title || "Turn Your Scrap into Instant Cash";
+  const subtitle = data?.subtitle || "Accepting paper, plastic, metal, and electronics at best prices. We pick up directly from your doorstep.";
+  const buttonText = data?.buttonText || "Sell Scrap Now";
+
+  // Basic parsing for highlighting (e.g. Turn Your <span...>Scrap</span>)
+  // To keep it simple, we just render the raw string if we don't do complex splitting.
+  // We can do a simplistic split to highlight "Scrap" and "Cash" if present, or just render it directly.
+  // For safety, let's just render the text directly with some basic formatting or use the default markup if it matches the default string.
+  
+  const renderTitle = () => {
+    if (title === "Turn Your Scrap into Instant Cash") {
+      return (
+        <h2 className="text-2xl lg:text-3xl font-black text-white mb-2 leading-tight">
+          Turn Your <span className="text-teal-300">Scrap</span> into <br className="hidden md:block" />
+          Instant <span className="text-amber-400">Cash</span>
+        </h2>
+      );
+    }
+    return (
+        <h2 className="text-2xl lg:text-3xl font-black text-white mb-2 leading-tight">
+          {title}
+        </h2>
+    );
+  };
+
   return (
     <motion.div
       whileHover={{ y: -5 }}
@@ -30,13 +56,10 @@ const ScrapPromotionCard = ({ onClick }) => {
             <span>Eco-Friendly Service</span>
           </div>
           
-          <h2 className="text-2xl lg:text-3xl font-black text-white mb-2 leading-tight">
-            Turn Your <span className="text-teal-300">Scrap</span> into <br className="hidden md:block" />
-            Instant <span className="text-amber-400">Cash</span>
-          </h2>
+          {renderTitle()}
           
           <p className="text-teal-50/80 text-sm lg:text-base font-medium max-w-md mb-6 mx-auto md:mx-0">
-            Accepting paper, plastic, metal, and electronics at best prices. We pick up directly from your doorstep.
+            {subtitle}
           </p>
 
           <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
@@ -44,7 +67,7 @@ const ScrapPromotionCard = ({ onClick }) => {
               className="px-6 py-3 bg-white rounded-xl font-bold shadow-lg hover:shadow-white/20 transition-all flex items-center gap-2 group/btn"
               style={{ color: themeColors.brand.teal }}
             >
-              Sell Scrap Now
+              {buttonText}
               <FiArrowRight className="transition-transform group-hover/btn:translate-x-1" />
             </button>
             <div className="flex items-center gap-2 text-white/90 text-sm font-semibold">

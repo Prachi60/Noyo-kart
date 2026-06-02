@@ -11,34 +11,54 @@ import {
 import Button from "@/shared/components/ui/Button";
 import Card from "@/shared/components/ui/Card";
 import { motion, AnimatePresence } from "framer-motion";
+import axiosInstance from "@core/api/axios";
+
+const FAQ_CACHE_KEY = 'delivery_faqs_cache_v1';
+const FAQ_CACHE_TTL_MS = 5 * 60 * 1000;
 
 const HelpSupport = () => {
   const navigate = useNavigate();
 
-  const faqs = [
-    {
-      question: "How do I change my bank account details?",
-      answer:
-        "Go to Profile > Bank Account and tap on 'Request Change'. You will need to upload a cancelled cheque or passbook copy for verification.",
-    },
-    {
-      question: "What if I can't find the customer's location?",
-      answer:
-        "Use the in-app map navigation. If you're still stuck, you can call the customer directly using the 'Call' button on the order screen.",
-    },
-    {
-      question: "How are my earnings calculated?",
-      answer:
-        "Earnings are based on base fare + distance pay + surge pricing (if applicable). You can view detailed breakdown in the Earnings tab.",
-    },
-    {
-      question: "I had an accident during delivery. What to do?",
-      answer:
-        "Use the SOS button immediately in the Safety section. Our emergency response team will contact you and provide assistance.",
-    },
-  ];
-
+  const [faqs, setFaqs] = useState([]);
   const [openIndex, setOpenIndex] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    const fetchFaqs = async () => {
+      try {
+        const cached = sessionStorage.getItem(FAQ_CACHE_KEY);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          const isFresh = parsed?.ts && Date.now() - parsed.ts < FAQ_CACHE_TTL_MS;
+          if (isFresh && Array.isArray(parsed?.items)) {
+            setFaqs(parsed.items);
+            setLoading(false);
+            return;
+          }
+        }
+      } catch {
+        // ignore cache error
+      }
+
+      try {
+        const response = await axiosInstance.get('/public/faqs', {
+          params: { category: 'Delivery', status: 'published' }
+        });
+        const data = response.data?.result ?? response.data;
+        const list = Array.isArray(data?.items) ? data.items : Array.isArray(data?.results) ? data.results : [];
+        setFaqs(list);
+        sessionStorage.setItem(
+          FAQ_CACHE_KEY,
+          JSON.stringify({ ts: Date.now(), items: list })
+        );
+      } catch (error) {
+        console.error('Error fetching delivery FAQs:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchFaqs();
+  }, []);
 
   const toggleAccordion = (index) => {
     setOpenIndex(openIndex === index ? null : index);
@@ -84,36 +104,44 @@ const HelpSupport = () => {
             Asked Questions
           </h2>
           <div className="space-y-3">
-            {faqs.map((faq, index) => (
-              <Card
-                key={index}
-                className="overflow-hidden cursor-pointer"
-                onClick={() => toggleAccordion(index)}>
-                <div className="p-4 flex justify-between items-center bg-white">
-                  <h4 className="font-medium text-gray-800 text-sm pr-4">
-                    {faq.question}
-                  </h4>
-                  {openIndex === index ? (
-                    <ChevronUp size={18} className="text-gray-400" />
-                  ) : (
-                    <ChevronDown size={18} className="text-gray-400" />
-                  )}
-                </div>
-                <AnimatePresence>
-                  {openIndex === index && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="bg-gray-50">
-                      <div className="p-4 text-sm text-gray-600 border-t border-gray-100 leading-relaxed">
-                        {faq.answer}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </Card>
-            ))}
+            {loading ? (
+              <div className="text-center text-sm text-gray-400 py-4">Loading FAQs...</div>
+            ) : faqs.length > 0 ? (
+              faqs.map((faq, index) => (
+                <Card
+                  key={faq._id || index}
+                  className="overflow-hidden cursor-pointer"
+                  onClick={() => toggleAccordion(index)}>
+                  <div className="p-4 flex justify-between items-center bg-white">
+                    <h4 className="font-medium text-gray-800 text-sm pr-4">
+                      {faq.question}
+                    </h4>
+                    {openIndex === index ? (
+                      <ChevronUp size={18} className="text-gray-400" />
+                    ) : (
+                      <ChevronDown size={18} className="text-gray-400" />
+                    )}
+                  </div>
+                  <AnimatePresence>
+                    {openIndex === index && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="bg-gray-50">
+                        <div className="p-4 text-sm text-gray-600 border-t border-gray-100 leading-relaxed">
+                          {faq.answer}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </Card>
+              ))
+            ) : (
+              <div className="text-center text-sm text-gray-400 py-4 border rounded-xl bg-white border-gray-100">
+                No FAQs available at the moment.
+              </div>
+            )}
           </div>
         </section>
 

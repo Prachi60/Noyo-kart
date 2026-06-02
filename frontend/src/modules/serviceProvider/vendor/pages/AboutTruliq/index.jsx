@@ -3,9 +3,54 @@ import { useNavigate } from 'react-router-dom';
 import { FiArrowLeft, FiCheckCircle, FiUsers, FiShield, FiClock, FiAward, FiHeart, FiGlobe, FiSmile, FiSmartphone } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import Logo from '../../../components/common/Logo';
+import { configService } from '../../../services/configService';
+import { useState, useEffect } from 'react';
 
 const AboutTruliq = () => {
   const navigate = useNavigate();
+
+  const [aboutUsData, setAboutUsData] = useState({
+    heroDescription: "Your trusted partner for premium home and personal care services.",
+    missionTitle: "Our Mission",
+    missionDescription: "Truliq is dedicated to revolutionizing how you experience home services. We connect you with top-tier professionals to deliver safe, reliable, and high-quality services right at your doorstep. We believe in making life simpler, one service at a time.",
+    stats: [
+      { number: '10K+', label: 'Happy Customers' },
+      { number: '500+', label: 'Service Partners' },
+      { number: '4.8', label: 'App Rating' },
+    ],
+    features: [
+      { icon: 'FiUsers', title: 'Expert Providers', description: 'Verified professionals for all your needs' },
+      { icon: 'FiShield', title: 'Safe & Secure', description: 'Your safety is our top priority' },
+      { icon: 'FiClock', title: 'On-Time Service', description: 'Punctual delivery at your convenience' },
+      { icon: 'FiAward', title: 'Quality Assured', description: 'Service with 100% satisfaction guarantee' }
+    ],
+    howWeWork: [
+      { title: 'Book Details', desc: 'Select service & schedule time', icon: 'FiSmartphone' },
+      { title: 'Get Matched', desc: 'We assign a top-rated pro', icon: 'FiUsers' },
+      { title: 'Relax', desc: 'Enjoy high-quality service', icon: 'FiSmile' },
+    ]
+  });
+
+  const iconMap = {
+    FiUsers, FiShield, FiClock, FiAward, FiSmartphone, FiSmile
+  };
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await configService.getSettings();
+        if (res.success && res.settings && res.settings.aboutUs) {
+          setAboutUsData({
+            ...aboutUsData,
+            ...res.settings.aboutUs
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch settings:', error);
+      }
+    };
+    fetchSettings();
+  }, []);
 
   // Container animation variants
   const containerVariants = {
@@ -38,34 +83,6 @@ const AboutTruliq = () => {
     WebkitTextFillColor: 'transparent',
   };
 
-  const features = [
-    {
-      icon: FiUsers,
-      title: 'Expert Providers',
-      description: 'Verified professionals for all your needs'
-    },
-    {
-      icon: FiShield,
-      title: 'Safe & Secure',
-      description: 'Your safety is our top priority'
-    },
-    {
-      icon: FiClock,
-      title: 'On-Time Service',
-      description: 'Punctual delivery at your convenience'
-    },
-    {
-      icon: FiAward,
-      title: 'Quality Assured',
-      description: 'Service with 100% satisfaction guarantee'
-    }
-  ];
-
-  const stats = [
-    { number: '10K+', label: 'Happy Customers' },
-    { number: '500+', label: 'Service Partners' },
-    { number: '4.8', label: 'App Rating' },
-  ];
 
   return (
     <motion.div
@@ -118,13 +135,13 @@ const AboutTruliq = () => {
             Welcome to <span style={truliqTextGradient}>Truliq</span>
           </h1>
           <p className="text-gray-500 max-w-xs mx-auto leading-relaxed">
-            Your trusted partner for premium home and personal care services.
+            {aboutUsData.heroDescription}
           </p>
         </motion.div>
 
         {/* Stats Row */}
         <motion.div variants={itemVariants} className="flex justify-between bg-white rounded-2xl p-6 shadow-sm border border-gray-100 divide-x divide-gray-100">
-          {stats.map((stat, idx) => (
+          {aboutUsData.stats.map((stat, idx) => (
             <div key={idx} className="flex-1 text-center px-2">
               <div className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#347989] to-[#BB5F36]">
                 {stat.number}
@@ -142,9 +159,9 @@ const AboutTruliq = () => {
             <div className="absolute top-0 right-0 p-4 opacity-5">
               <FiGlobe className="w-24 h-24" />
             </div>
-            <h3 className="text-lg font-bold text-gray-800 mb-3">Our Mission</h3>
+            <h3 className="text-lg font-bold text-gray-800 mb-3">{aboutUsData.missionTitle}</h3>
             <p className="text-sm text-gray-600 leading-relaxed relative z-10">
-              Truliq is dedicated to revolutionizing how you experience home services. We connect you with top-tier professionals to deliver safe, reliable, and high-quality services right at your doorstep. We believe in making life simpler, one service at a time.
+              {aboutUsData.missionDescription}
             </p>
           </div>
         </motion.div>
@@ -153,19 +170,21 @@ const AboutTruliq = () => {
         <motion.div variants={itemVariants}>
           <h3 className="text-lg font-bold text-gray-800 mb-4 px-1">Why Choose Truliq?</h3>
           <div className="grid grid-cols-2 gap-3">
-            {features.map((feature, index) => (
+            {aboutUsData.features.map((feature, index) => {
+              const IconComp = iconMap[feature.icon] || FiCheckCircle;
+              return (
               <div
                 key={index}
                 className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow group"
               >
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300"
                   style={{ background: 'linear-gradient(135deg, rgba(52, 121, 137, 0.1), rgba(187, 95, 54, 0.1))' }}>
-                  <feature.icon className="w-5 h-5" style={{ stroke: 'url(#truliq-about-gradient)' }} />
+                  <IconComp className="w-5 h-5" style={{ stroke: 'url(#truliq-about-gradient)' }} />
                 </div>
                 <h4 className="text-sm font-bold text-gray-800 mb-1">{feature.title}</h4>
                 <p className="text-xs text-gray-500 leading-relaxed">{feature.description}</p>
               </div>
-            ))}
+            )})}
           </div>
         </motion.div>
 
@@ -173,11 +192,9 @@ const AboutTruliq = () => {
         <motion.div variants={itemVariants}>
           <h3 className="text-lg font-bold text-gray-800 mb-4 px-1">How We Work</h3>
           <div className="bg-white rounded-2xl p-1 shadow-sm border border-gray-100">
-            {[
-              { title: 'Book Details', desc: 'Select service & schedule time', icon: FiSmartphone },
-              { title: 'Get Matched', desc: 'We assign a top-rated pro', icon: FiUsers },
-              { title: 'Relax', desc: 'Enjoy high-quality service', icon: FiSmile },
-            ].map((step, i) => (
+            {aboutUsData.howWeWork.map((step, i) => {
+              const StepIcon = iconMap[step.icon] || FiCheckCircle;
+              return (
               <div key={i} className="flex items-center p-4 border-b last:border-0 border-gray-50 relative">
                 <div className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 mr-4 shadow-sm text-white font-bold text-lg relative overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-br from-[#347989] to-[#BB5F36]" />
@@ -188,7 +205,7 @@ const AboutTruliq = () => {
                   <p className="text-xs text-gray-500">{step.desc}</p>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         </motion.div>
 

@@ -4,6 +4,7 @@ import { FiHome, FiGift, FiShoppingCart, FiUser, FiTrash2, FiCalendar } from 're
 import { HiHome, HiGift, HiShoppingCart, HiUser, HiTrash, HiCalendar } from 'react-icons/hi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../../../context/CartContext';
+import { configService } from '../../../../serviceProvider/services/configService';
 
 // Colorful theme for each nav item
 const navItemColors = {
@@ -46,20 +47,50 @@ const BottomNav = React.memo(() => {
   const { cartCount } = useCart();
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
 
-  const navItems = useMemo(() => [
+  const defaultNavItems = [
     { id: 'home', label: 'Home', icon: FiHome, filledIcon: HiHome, path: '/user' },
     { id: 'bookings', label: 'Bookings', icon: FiCalendar, filledIcon: HiCalendar, path: '/user/my-bookings' },
     { id: 'scrap', label: 'Scrap', icon: FiTrash2, filledIcon: HiTrash, path: '/user/scrap' },
     { id: 'cart', label: 'Cart', icon: FiShoppingCart, filledIcon: HiShoppingCart, path: '/user/cart', isCart: true },
     { id: 'account', label: 'Account', icon: FiUser, filledIcon: HiUser, path: '/user/account' },
-  ], []);
+  ];
+
+  const [navItems, setNavItems] = useState(defaultNavItems);
+
+  const iconMap = {
+    FiHome, HiHome, FiCalendar, HiCalendar, FiTrash2, HiTrash, FiShoppingCart, HiShoppingCart, FiUser, HiUser, FiGift, HiGift
+  };
+
+  useEffect(() => {
+    const fetchNavItems = async () => {
+      try {
+        const res = await configService.getSettings();
+        if (res.success && res.settings && res.settings.bottomNavigation && res.settings.bottomNavigation.length > 0) {
+          const mappedItems = res.settings.bottomNavigation.map(item => ({
+            ...item,
+            icon: iconMap[item.icon] || FiHome,
+            filledIcon: iconMap[item.filledIcon] || HiHome
+          }));
+          setNavItems(mappedItems);
+        }
+      } catch (error) {
+        console.error('Failed to fetch bottom nav settings:', error);
+      }
+    };
+    fetchNavItems();
+  }, []);
 
   const getActiveTab = () => {
-    if (location.pathname === '/user' || location.pathname === '/user/') return 'home';
-    if (location.pathname === '/user/my-bookings') return 'bookings';
-    if (location.pathname === '/user/scrap') return 'scrap';
-    if (location.pathname === '/user/cart') return 'cart';
-    if (location.pathname === '/user/account') return 'account';
+    const currentPath = location.pathname;
+    
+    // Check dynamic items first
+    for (const item of navItems) {
+      if (item.path !== '/user' && currentPath.includes(item.path)) {
+        return item.id;
+      }
+    }
+    
+    // Default to home if no other path matches
     return 'home';
   };
 

@@ -7,6 +7,17 @@ const AboutPage = () => {
     const navigate = useNavigate();
     const { settings } = useSettings();
     const appName = settings?.appName || 'App';
+    const aboutData = settings?.aboutUsData || {
+        heroDescription: "Delivering happiness to your doorstep in minutes.",
+        missionTitle: "Our Mission",
+        missionDescription: "To revolutionize quick commerce by providing the fastest, most reliable delivery of daily essentials, ensuring quality and convenience for every household.",
+        valuesTitle: "Our Values",
+        values: [
+            { title: "Customer First", description: "Your satisfaction is our top priority." },
+            { title: "Quality Assurance", description: "We deliver only the freshest and best products." },
+            { title: "Speed with Safety", description: "Fast delivery without compromising on safety standards." }
+        ]
+    };
     return (
         <div className="min-h-screen bg-slate-50 font-sans pb-24">
             <div className="sticky top-0 z-30 bg-slate-50/95 backdrop-blur-sm px-4 pt-4 pb-3 border-b border-slate-200/60 mb-4 flex items-center gap-2">
@@ -28,7 +39,7 @@ const AboutPage = () => {
                             <ShoppingBag size={24} className="text-slate-700" />
                         </div>
                         <h2 className="text-xl font-semibold mb-1 tracking-tight text-slate-900">{appName}</h2>
-                        <p className="text-slate-600 text-sm max-w-sm mx-auto">Delivering happiness to your doorstep in minutes.</p>
+                        <p className="text-slate-600 text-sm max-w-sm mx-auto">{aboutData.heroDescription}</p>
                     </div>
                 </div>
 
@@ -38,10 +49,10 @@ const AboutPage = () => {
                         <div className="h-9 w-9 rounded-lg bg-slate-100 flex items-center justify-center text-slate-700">
                             <Truck size={18} />
                         </div>
-                        <h3 className="text-base font-semibold text-slate-800">Our Mission</h3>
+                        <h3 className="text-base font-semibold text-slate-800">{aboutData.missionTitle}</h3>
                     </div>
                     <p className="text-slate-600 leading-relaxed text-sm">
-                        To revolutionize quick commerce by providing the fastest, most reliable delivery of daily essentials, ensuring quality and convenience for every household.
+                        {aboutData.missionDescription}
                     </p>
                 </div>
 
@@ -51,21 +62,15 @@ const AboutPage = () => {
                         <div className="h-9 w-9 rounded-lg bg-slate-100 flex items-center justify-center text-slate-700">
                             <Heart size={18} />
                         </div>
-                        <h3 className="text-base font-semibold text-slate-800">Our Values</h3>
+                        <h3 className="text-base font-semibold text-slate-800">{aboutData.valuesTitle || "Our Values"}</h3>
                     </div>
                     <ul className="space-y-3 text-sm text-slate-600">
-                        <li className="flex gap-2">
-                            <span className="h-1.5 w-1.5 rounded-full bg-slate-300 mt-2 flex-shrink-0" />
-                            <span><strong>Customer First:</strong> Your satisfaction is our top priority.</span>
-                        </li>
-                        <li className="flex gap-2">
-                            <span className="h-1.5 w-1.5 rounded-full bg-slate-300 mt-2 flex-shrink-0" />
-                            <span><strong>Quality Assurance:</strong> We deliver only the freshest and best products.</span>
-                        </li>
-                        <li className="flex gap-2">
-                            <span className="h-1.5 w-1.5 rounded-full bg-slate-300 mt-2 flex-shrink-0" />
-                            <span><strong>Speed with Safety:</strong> Fast delivery without compromising on safety standards.</span>
-                        </li>
+                        {aboutData.values?.map((val, idx) => (
+                            <li key={idx} className="flex gap-2">
+                                <span className="h-1.5 w-1.5 rounded-full bg-slate-300 mt-2 flex-shrink-0" />
+                                <span><strong>{val.title}:</strong> {val.description}</span>
+                            </li>
+                        ))}
                     </ul>
                 </div>
 

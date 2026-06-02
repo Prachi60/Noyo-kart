@@ -8,6 +8,15 @@ import {
   FaFileInvoiceDollar, FaBars, FaTimes, FaMobileAlt, FaChartLine, FaTools
 } from 'react-icons/fa';
 import { configService } from '../../services/configService';
+import { publicCatalogService } from '../../services/catalogService';
+
+// Fallback icon mapping if DB strings don't map perfectly
+const IconMap = {
+  FaUser: <FaUser />, FaStore: <FaStore />, FaHammer: <FaHammer />,
+  FaToolbox: <FaToolbox />, FaTv: <FaTv />, FaTemperatureLow: <FaTemperatureLow />,
+  FaTshirt: <FaTshirt />, FaUtensils: <FaUtensils />, FaMicrochip: <FaMicrochip />,
+  FaBolt: <FaBolt />, FaShieldAlt: <FaShieldAlt />
+};
 
 const LandingPage = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -27,20 +36,40 @@ const LandingPage = () => {
       const data = await configService.getSettings();
       if (data?.success) setSettings(data.settings);
     };
+    
+    const fetchCategories = async () => {
+      const data = await publicCatalogService.getCategories();
+      if (data?.success && data?.categories) {
+        setCategories(data.categories);
+      }
+    };
+
     fetchSettings();
+    fetchCategories();
     
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const serviceCategories = [
-    { name: 'AC Repair', icon: <FaToolbox />, color: 'text-blue-500' },
-    { name: 'TV Repair', icon: <FaTv />, color: 'text-purple-500' },
-    { name: 'Refrigerator', icon: <FaTemperatureLow />, color: 'text-cyan-500' },
-    { name: 'Washing Machine', icon: <FaTshirt />, color: 'text-pink-500' },
-    { name: 'Microwave', icon: <FaUtensils />, color: 'text-orange-500' },
-    { name: 'Laptop/PC', icon: <FaMicrochip />, color: 'text-indigo-500' },
-    { name: 'Mixer/Grinder', icon: <FaBolt />, color: 'text-yellow-500' },
-    { name: 'More & Spares', icon: <FaShieldAlt />, color: 'text-brand' },
+  const [categories, setCategories] = useState([]);
+
+  // Use dynamic categories or fallback
+  const displayCategories = categories.length > 0 ? categories.slice(0, 8).map(c => ({
+    name: c.title,
+    // Using a generic icon if DB doesn't provide a specific React icon name, 
+    // or we could use the image URL. Let's use a generic icon for now based on title matching,
+    // or just fallback to FaToolbox. 
+    icon: c.iconName && IconMap[c.iconName] ? IconMap[c.iconName] : <FaToolbox />,
+    color: 'text-brand',
+    slug: c.slug
+  })) : [
+    { name: 'AC Repair', icon: <FaToolbox />, color: 'text-blue-500', slug: 'ac-repair' },
+    { name: 'TV Repair', icon: <FaTv />, color: 'text-purple-500', slug: 'tv-repair' },
+    { name: 'Refrigerator', icon: <FaTemperatureLow />, color: 'text-cyan-500', slug: 'refrigerator-repair' },
+    { name: 'Washing Machine', icon: <FaTshirt />, color: 'text-pink-500', slug: 'washing-machine-repair' },
+    { name: 'Microwave', icon: <FaUtensils />, color: 'text-orange-500', slug: 'microwave-repair' },
+    { name: 'Laptop/PC', icon: <FaMicrochip />, color: 'text-indigo-500', slug: 'laptop-repair' },
+    { name: 'Mixer/Grinder', icon: <FaBolt />, color: 'text-yellow-500', slug: 'mixer-repair' },
+    { name: 'More & Spares', icon: <FaShieldAlt />, color: 'text-brand', slug: 'more' },
   ];
 
   const menuItems = [
@@ -94,8 +123,8 @@ const LandingPage = () => {
       <section className="relative pt-20 sm:pt-24 pb-2 bg-white border-b border-gray-100 shadow-sm z-40 overflow-hidden">
         <div className="container mx-auto px-4 sm:px-8 max-w-7xl overflow-x-auto no-scrollbar scroll-smooth">
           <div className="flex justify-between min-w-[700px] lg:min-w-0 gap-6 lg:gap-0 py-4">
-            {serviceCategories.map((cat, idx) => (
-              <Link key={idx} to="/sp/user" className="flex flex-col items-center gap-2 group cursor-pointer flex-shrink-0 lg:flex-1">
+            {displayCategories.map((cat, idx) => (
+              <Link key={idx} to={`/sp/user?category=${cat.slug}`} className="flex flex-col items-center gap-2 group cursor-pointer flex-shrink-0 lg:flex-1">
                 <div className={`text-2xl lg:text-3xl ${cat.color} transition-all duration-500 group-hover:scale-125`}>{cat.icon}</div>
                 <span className="text-[9px] lg:text-[11px] font-black text-gray-400 group-hover:text-gray-900 transition-colors uppercase tracking-[0.1em] leading-none text-center">{cat.name}</span>
               </Link>
@@ -127,20 +156,21 @@ const LandingPage = () => {
       </section>
 
       {/* Join Platform */}
+      {(settings?.landingJoinUs?.isVisible !== false) && (
       <section id="join-platform" className="py-20 sm:py-32 bg-gray-900 rounded-[3rem] sm:rounded-[6rem] mx-2 sm:mx-8 mb-8 overflow-hidden relative">
         <div className="container mx-auto px-4 sm:px-8 max-w-7xl">
           <div className="text-center mb-16 sm:mb-24 text-white">
             <h2 className="text-3xl sm:text-5xl md:text-7xl font-black mb-4 sm:mb-6 tracking-tighter">Become a Part.</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-10">
-            {[
-              { to: "/sp/user", icon: <FaUser />, title: "As a User", btn: "Book Service" },
-              { to: "/sp/vendor/login", icon: <FaStore />, title: "Vendor Partner", btn: "Partner Now" },
-              { to: "/sp/worker/login", icon: <FaHammer />, title: "As an Xpert", btn: "Start Earning" },
-            ].map((box, idx) => (
+            {(settings?.landingJoinUs?.cards?.length > 0 ? settings.landingJoinUs.cards : [
+              { to: "/sp/user", icon: "FaUser", title: "As a User", btn: "Book Service" },
+              { to: "/sp/vendor/login", icon: "FaStore", title: "Vendor Partner", btn: "Partner Now" },
+              { to: "/sp/worker/login", icon: "FaHammer", title: "As an Xpert", btn: "Start Earning" },
+            ]).map((box, idx) => (
               <Link key={idx} to={box.to} className="group p-8 sm:p-12 bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] sm:rounded-[3.5rem] transition-all duration-700 hover:bg-white hover:shadow-2xl hover:-translate-y-2 flex flex-col items-center">
                 <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white/10 text-white rounded-[1.5rem] sm:rounded-3xl flex items-center justify-center mb-6 sm:mb-10 transition-all duration-500 group-hover:bg-brand group-hover:text-white">
-                  <div className="text-3xl sm:text-4xl">{box.icon}</div>
+                  <div className="text-3xl sm:text-4xl">{IconMap[box.icon] || <FaUser />}</div>
                 </div>
                 <h3 className="text-2xl sm:text-3xl font-black mb-6 sm:mb-10 tracking-tighter text-white group-hover:text-gray-900">{box.title}</h3>
                 <div className="flex items-center gap-3 text-brand font-black text-xs sm:text-sm uppercase tracking-widest group-hover:gap-5 transition-all">
@@ -151,6 +181,7 @@ const LandingPage = () => {
           </div>
         </div>
       </section>
+      )}
 
       {/* Footer */}
       <footer className="py-16 sm:py-24 bg-gray-900 text-white relative overflow-hidden">

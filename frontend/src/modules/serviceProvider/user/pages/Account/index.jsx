@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { themeColors } from '../../../theme';
 import { userAuthService } from '../../../services/authService';
+import api from '../../../services/api';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { motion } from 'framer-motion';
 import {
@@ -40,6 +41,38 @@ const Account = () => {
     plans: null
   });
   const [isLoading, setIsLoading] = useState(true);
+  
+  const [appSettings, setAppSettings] = useState({
+    appVersion: "Version 7.6.27 R547",
+    aboutAppName: "About Truliq",
+    accountMenus: [
+      {
+        group: "Shopping",
+        items: [
+          { label: "Scrap Deals", icon: "FiShoppingBag", path: "/sp/user/scrap" },
+          { label: "My Plans", icon: "FiFileText", path: "/sp/user/my-plan" }
+        ]
+      },
+      {
+        group: "Activity",
+        items: [
+          { label: "My Bookings", icon: "FiClipboard", path: "/sp/user/my-bookings" },
+          { label: "My Ratings", icon: "FiStar", path: "/sp/user/my-rating" }
+        ]
+      },
+      {
+        group: "Preferences",
+        items: [
+          { label: "Manage Addresses", icon: "FiMapPin", path: "/sp/user/manage-addresses" },
+          { label: "Settings", icon: "FiSettings", path: "/sp/user/settings" }
+        ]
+      }
+    ]
+  });
+
+  const iconMap = {
+    FiShoppingBag, FiFileText, FiClipboard, FiStar, FiMapPin, FiSettings, FiHeadphones, FiHelpCircle: FiCheckCircle
+  };
 
   // Fetch user profile from database
   useEffect(() => {
@@ -92,7 +125,24 @@ const Account = () => {
       }
     };
 
+    const fetchSettings = async () => {
+      try {
+        const response = await api.get('/public/config');
+        if (response.data?.success && response.data?.settings) {
+          const s = response.data.settings;
+          setAppSettings(prev => ({
+            appVersion: s.appVersion || prev.appVersion,
+            aboutAppName: s.aboutAppName || prev.aboutAppName,
+            accountMenus: s.accountMenus && s.accountMenus.length > 0 ? s.accountMenus : prev.accountMenus
+          }));
+        }
+      } catch (error) {
+        console.error('Failed to fetch settings:', error);
+      }
+    };
+
     fetchProfile();
+    fetchSettings();
   }, []);
 
   // Format phone number for display
@@ -365,53 +415,20 @@ const Account = () => {
             </button>
           </motion.div>
 
-          {/* Menu Groups */}
-
-          {/* Shopping */}
-          <motion.div variants={itemVariants} className="mb-6">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 pl-2">Shopping</h3>
-            <MenuItem
-              icon={FiShoppingBag}
-              label="Scrap Deals"
-              onClick={() => navigate('/user/scrap')}
-            />
-            <MenuItem
-              icon={FiFileText}
-              label="My Plans"
-              onClick={() => navigate('/user/my-plan')}
-            />
-          </motion.div>
-
-          {/* Activity */}
-          <motion.div variants={itemVariants} className="mb-6">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 pl-2">Activity</h3>
-            <MenuItem
-              icon={FiClipboard}
-              label="My Bookings"
-              onClick={() => navigate('/user/my-bookings')}
-            />
-            <MenuItem
-              icon={FiStar}
-              label="My Ratings"
-              onClick={() => navigate('/user/my-rating')}
-            />
-          </motion.div>
-
-          {/* Preferences */}
-          <motion.div variants={itemVariants} className="mb-6">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 pl-2">Preferences</h3>
-            <MenuItem
-              icon={FiMapPin}
-              label="Manage Addresses"
-              onClick={() => navigate('/user/manage-addresses')}
-            />
-
-            <MenuItem
-              icon={FiSettings}
-              label="Settings"
-              onClick={() => navigate('/user/settings')}
-            />
-          </motion.div>
+          {/* Dynamic Menus */}
+          {appSettings.accountMenus.map((menuGroup, idx) => (
+            <motion.div key={idx} variants={itemVariants} className="mb-6">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 pl-2">{menuGroup.group}</h3>
+              {menuGroup.items.map((item, i) => (
+                <MenuItem
+                  key={i}
+                  icon={iconMap[item.icon] || FiCheckCircle}
+                  label={item.label}
+                  onClick={() => navigate(item.path)}
+                />
+              ))}
+            </motion.div>
+          ))}
 
           {/* Support & Legal */}
           <motion.div variants={itemVariants} className="mb-8">
@@ -431,7 +448,7 @@ const Account = () => {
                   style={{ color: themeColors.brand.teal }}>
                   <span className="font-bold">H</span>
                 </div>
-                <span className="font-semibold text-gray-900">About Truliq</span>
+                <span className="font-semibold text-gray-900">{appSettings.aboutAppName}</span>
               </div>
               <FiChevronRight className="w-5 h-5 text-gray-300 group-hover:text-teal-500 transition-colors" />
             </motion.button>
@@ -447,7 +464,7 @@ const Account = () => {
           </motion.div>
 
           <motion.div variants={itemVariants} className="text-center pb-8">
-            <p className="text-xs font-medium text-gray-400">Version 7.6.27 R547</p>
+            <p className="text-xs font-medium text-gray-400">{appSettings.appVersion}</p>
           </motion.div>
 
         </motion.main>

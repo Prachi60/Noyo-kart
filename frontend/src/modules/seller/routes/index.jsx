@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
 import { ShoppingBag } from "lucide-react";
 import { useAuth } from "@core/context/AuthContext";
+import { useSettings } from "@core/context/SettingsContext";
 import { getOrderSocket, onSellerOrderNew } from "@/core/services/orderSocket";
 import {
   HiOutlineSquares2X2,
@@ -34,39 +35,57 @@ const DeliveryTracking = React.lazy(() => import("../pages/DeliveryTracking"));
 const Profile = React.lazy(() => import("../pages/Profile"));
 const Withdrawals = React.lazy(() => import("../pages/Withdrawals"));
 
-const navItems = [
-  { label: "Dashboard", path: "/seller", icon: HiOutlineSquares2X2, end: true },
-  { label: "Products", path: "/seller/products", icon: HiOutlineCube },
-  { label: "Stock", path: "/seller/inventory", icon: HiOutlineArchiveBox },
-  { label: "Orders", path: "/seller/orders", icon: HiOutlineTruck },
-  { label: "Returns", path: "/seller/returns", icon: HiOutlineArchiveBox },
-  { label: "Track Orders", path: "/seller/tracking", icon: HiOutlineMapPin },
+const defaultNavItems = [
+  { label: "Dashboard", path: "/seller", icon: "HiOutlineSquares2X2", end: true },
+  { label: "Products", path: "/seller/products", icon: "HiOutlineCube" },
+  { label: "Stock", path: "/seller/inventory", icon: "HiOutlineArchiveBox" },
+  { label: "Orders", path: "/seller/orders", icon: "HiOutlineTruck" },
+  { label: "Returns", path: "/seller/returns", icon: "HiOutlineArchiveBox" },
+  { label: "Track Orders", path: "/seller/tracking", icon: "HiOutlineMapPin" },
   {
     label: "Sales Reports",
     path: "/seller/analytics",
-    icon: HiOutlineChartBarSquare,
+    icon: "HiOutlineChartBarSquare",
   },
   {
     label: "Money Request",
     path: "/seller/withdrawals",
-    icon: HiOutlineCurrencyDollar,
+    icon: "HiOutlineCurrencyDollar",
   },
   {
     label: "Payment History",
     path: "/seller/transactions",
-    icon: HiOutlineCreditCard,
+    icon: "HiOutlineCreditCard",
   },
   {
     label: "Earnings",
     path: "/seller/earnings",
-    icon: HiOutlineCurrencyDollar,
+    icon: "HiOutlineCurrencyDollar",
   },
-  { label: "Profile", path: "/seller/profile", icon: HiOutlineUser },
+  { label: "Profile", path: "/seller/profile", icon: "HiOutlineUser" },
 ];
+
+const iconMap = {
+  HiOutlineSquares2X2,
+  HiOutlineCube,
+  HiOutlineCurrencyDollar,
+  HiOutlineUser,
+  HiOutlineTruck,
+  HiOutlineArchiveBox,
+  HiOutlineChartBarSquare,
+  HiOutlineCreditCard,
+  HiOutlineMapPin,
+};
 
 const SellerRoutes = () => {
   const { user } = useAuth();
+  const { settings } = useSettings();
   const [newOrder, setNewOrder] = React.useState(null);
+
+  const navItems = (settings?.sellerSidebar || defaultNavItems).map(item => ({
+    ...item,
+    icon: iconMap[item.icon] || HiOutlineSquares2X2
+  }));
 
   // Connect socket and listen for new orders
   React.useEffect(() => {

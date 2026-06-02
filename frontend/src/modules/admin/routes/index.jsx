@@ -17,9 +17,10 @@ import {
   RotateCcw,
   Settings,
   Terminal,
-  Sparkles,
   User,
+  Sparkles,
 } from "lucide-react";
+import { useSettings } from "@core/context/SettingsContext";
 
 const Dashboard = React.lazy(() => import("../pages/Dashboard"));
 const CategoryManagement = React.lazy(
@@ -91,17 +92,17 @@ const AdminSettings = React.lazy(() => import("../pages/AdminSettings"));
 const EnvSettings = React.lazy(() => import("../pages/EnvSettings"));
 const AdminProfile = React.lazy(() => import("../pages/AdminProfile"));
 
-const navItems = [
+const defaultNavItems = [
   {
     label: "Dashboard",
     path: "/admin",
-    icon: LayoutDashboard,
+    icon: "LayoutDashboard",
     color: "indigo",
     end: true,
   },
   {
     label: "Categories",
-    icon: Tag,
+    icon: "Tag",
     color: "rose",
     children: [
       { label: "All Categories", path: "/admin/categories/hierarchy" },
@@ -110,10 +111,10 @@ const navItems = [
       { label: "Sub-Categories", path: "/admin/categories/sub" },
     ],
   },
-  { label: "Products", path: "/admin/products", icon: Box, color: "amber" },
+  { label: "Products", path: "/admin/products", icon: "Box", color: "amber" },
   {
     label: "Marketing Tools",
-    icon: Sparkles,
+    icon: "Sparkles",
     color: "amber",
     children: [
       { label: "Create Sections", path: "/admin/experience-studio" },
@@ -126,7 +127,7 @@ const navItems = [
   },
   {
     label: "Customer Support",
-    icon: Receipt,
+    icon: "Receipt",
     color: "emerald",
     children: [
       { label: "Help Tickets", path: "/admin/support-tickets" },
@@ -135,7 +136,7 @@ const navItems = [
   },
   {
     label: "Sellers",
-    icon: Building2,
+    icon: "Building2",
     color: "blue",
     children: [
       { label: "Active Sellers", path: "/admin/sellers/active" },
@@ -145,7 +146,7 @@ const navItems = [
   },
   {
     label: "Delivery Drivers",
-    icon: Truck,
+    icon: "Truck",
     color: "emerald",
     children: [
       { label: "Active Drivers", path: "/admin/delivery-boys/active" },
@@ -154,30 +155,30 @@ const navItems = [
       { label: "Send Money", path: "/admin/delivery-funds" },
     ],
   },
-  { label: "Wallet", path: "/admin/wallet", icon: Wallet, color: "violet" },
+  { label: "Wallet", path: "/admin/wallet", icon: "Wallet", color: "violet" },
   {
     label: "Money Requests",
     path: "/admin/withdrawals",
-    icon: Banknote,
+    icon: "Banknote",
     color: "cyan",
   },
   {
     label: "Seller Payments",
     path: "/admin/seller-transactions",
-    icon: Receipt,
+    icon: "Receipt",
     color: "orange",
   },
   {
     label: "Collect Cash",
     path: "/admin/cash-collection",
-    icon: CircleDollarSign,
+    icon: "CircleDollarSign",
     color: "green",
   },
-  { label: "Customers", path: "/admin/customers", icon: Users, color: "sky" },
-  { label: "FAQs", path: "/admin/faqs", icon: HelpCircle, color: "pink" },
+  { label: "Customers", path: "/admin/customers", icon: "Users", color: "sky" },
+  { label: "FAQs", path: "/admin/faqs", icon: "HelpCircle", color: "pink" },
   {
     label: "Orders",
-    icon: ClipboardList,
+    icon: "ClipboardList",
     color: "fuchsia",
     children: [
       { label: "All Orders", path: "/admin/orders/all" },
@@ -193,22 +194,49 @@ const navItems = [
   {
     label: "Fees & Charges",
     path: "/admin/billing",
-    icon: RotateCcw,
+    icon: "RotateCcw",
     color: "red",
   },
   {
     label: "Settings",
     path: "/admin/settings",
-    icon: Settings,
+    icon: "Settings",
     color: "slate",
   },
-  { label: "My Profile", path: "/admin/profile", icon: User, color: "indigo" },
-  { label: "System Settings", path: "/admin/env", icon: Terminal, color: "dark" },
+  { label: "My Profile", path: "/admin/profile", icon: "User", color: "indigo" },
+  { label: "System Settings", path: "/admin/env", icon: "Terminal", color: "dark" },
 ];
+
+const iconMap = {
+  LayoutDashboard,
+  Tag,
+  Box,
+  Building2,
+  Truck,
+  Wallet,
+  Banknote,
+  Receipt,
+  CircleDollarSign,
+  Users,
+  HelpCircle,
+  ClipboardList,
+  RotateCcw,
+  Settings,
+  Terminal,
+  Sparkles,
+  User,
+};
 
 const BillingCharges = React.lazy(() => import("../pages/BillingCharges"));
 
 const AdminRoutes = () => {
+  const { settings } = useSettings();
+  
+  const navItems = (settings?.adminSidebar || defaultNavItems).map(item => ({
+    ...item,
+    icon: iconMap[item.icon] || LayoutDashboard
+  }));
+
   return (
     <DashboardLayout navItems={navItems} title="Admin Center">
       <Routes>

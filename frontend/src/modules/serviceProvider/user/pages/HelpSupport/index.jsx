@@ -19,24 +19,6 @@ const HelpSupport = () => {
     whatsapp: ''
   });
 
-  useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const response = await api.get('/public/config');
-        if (response.data?.success && response.data?.settings) {
-          const { supportEmail, supportPhone, supportWhatsapp } = response.data.settings;
-          setSupportInfo({
-            email: supportEmail || 'support@homestr.com',
-            phone: supportPhone || '',
-            whatsapp: supportWhatsapp || ''
-          });
-        }
-      } catch (error) {
-        console.error('Failed to fetch support settings:', error);
-      }
-    };
-    fetchSettings();
-  }, []);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -44,8 +26,16 @@ const HelpSupport = () => {
     message: ''
   });
 
-  // FAQ Categories
-  const categories = [
+  // Icon mapping for dynamic icons
+  const iconMap = {
+    FiBook: FiBook,
+    FiClock: FiClock,
+    FiAlertCircle: FiAlertCircle,
+    // Add fallback
+    default: FiHelpCircle
+  };
+
+  const [categories, setCategories] = useState([
     {
       id: 'booking',
       title: 'Booking & Services',
@@ -106,7 +96,35 @@ const HelpSupport = () => {
         },
       ]
     },
-  ];
+  ]);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const response = await api.get('/public/config');
+        if (response.data?.success && response.data?.settings) {
+          const { supportEmail, supportPhone, supportWhatsapp, faqCategories } = response.data.settings;
+          setSupportInfo({
+            email: supportEmail || 'support@homestr.com',
+            phone: supportPhone || '',
+            whatsapp: supportWhatsapp || ''
+          });
+          
+          if (faqCategories && faqCategories.length > 0) {
+            // Map the string icon to actual React component
+            const mappedCategories = faqCategories.map(cat => ({
+              ...cat,
+              icon: iconMap[cat.icon] || iconMap.default
+            }));
+            setCategories(mappedCategories);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch support settings:', error);
+      }
+    };
+    fetchSettings();
+  }, []);
 
   // Quick actions
   const quickActions = [

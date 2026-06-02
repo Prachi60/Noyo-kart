@@ -7,6 +7,22 @@ const PrivacyPage = () => {
     const navigate = useNavigate();
     const { settings } = useSettings();
     const appName = settings?.appName || 'App';
+    const privacyText = settings?.privacyPolicyText || `At ${appName}, we take your privacy seriously. This Privacy Policy explains how we collect, use, and protect your personal information.
+
+1. Information We Collect
+We collect information you provide directly, such as your name, address, phone number, and payment details. We also collect usage data automatically.
+
+2. How We Use Information
+We use your data to process orders, improve our services, and communicate with you about promotions and updates.
+
+3. Data Security
+We implement industry-standard security measures to protect your data. However, no method of transmission is 100% secure.
+
+4. Sharing of Information
+We do not sell your personal data. We may share data with service providers (e.g., delivery partners) as necessary to fulfill your orders.
+
+5. Your Rights
+You have the right to access, correct, or delete your personal data. Contact our support team for assistance.`;
     return (
         <div className="min-h-screen bg-slate-50 font-sans pb-10">
             {/* Header */}
@@ -33,34 +49,7 @@ const PrivacyPage = () => {
                     </div>
 
                     <div className="prose prose-slate prose-sm max-w-none text-slate-600 space-y-4">
-                        <p>
-                            At {appName}, we take your privacy seriously. This Privacy Policy explains how we collect, use, and protect your personal information.
-                        </p>
-
-                        <h3 className="text-slate-800 font-bold text-base mt-6">1. Information We Collect</h3>
-                        <p>
-                            We collect information you provide directly, such as your name, address, phone number, and payment details. We also collect usage data automatically.
-                        </p>
-
-                        <h3 className="text-slate-800 font-bold text-base mt-6">2. How We Use Information</h3>
-                        <p>
-                            We use your data to process orders, improve our services, and communicate with you about promotions and updates.
-                        </p>
-
-                        <h3 className="text-slate-800 font-bold text-base mt-6">3. Data Security</h3>
-                        <p>
-                            We implement industry-standard security measures to protect your data. However, no method of transmission is 100% secure.
-                        </p>
-
-                        <h3 className="text-slate-800 font-bold text-base mt-6">4. Sharing of Information</h3>
-                        <p>
-                            We do not sell your personal data. We may share data with service providers (e.g., delivery partners) as necessary to fulfill your orders.
-                        </p>
-
-                        <h3 className="text-slate-800 font-bold text-base mt-6">5. Your Rights</h3>
-                        <p>
-                            You have the right to access, correct, or delete your personal data. Contact our support team for assistance.
-                        </p>
+                        <div className="whitespace-pre-wrap">{privacyText}</div>
                     </div>
                 </div>
             </div>

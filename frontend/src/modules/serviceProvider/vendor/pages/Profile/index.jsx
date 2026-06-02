@@ -8,6 +8,7 @@ import { vendorAuthService } from '../../../services/authService';
 import Header from '../../components/layout/Header';
 import BottomNav from '../../components/layout/BottomNav';
 import LogoLoader from '../../components/common/LogoLoader';
+import { configService } from '../../../services/configService';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -20,7 +21,7 @@ const Profile = () => {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   };
 
-  const menuItems = [
+  const defaultMenuItems = [
     { id: 2, label: 'Wallet', icon: FaWallet, path: '/sp/vendor/wallet' },
     { id: 5, label: 'My Ratings', icon: FiStar, path: '/sp/vendor/my-ratings' },
     { id: 6, label: 'Manage Payment Methods', icon: FiCreditCard, path: '/sp/vendor/manage-payment-methods' },
@@ -28,6 +29,12 @@ const Profile = () => {
     { id: 8, label: 'Settings', icon: FiSettings, path: '/sp/vendor/settings' },
     { id: 9, label: 'About Truliq', icon: null, customIcon: 'T', path: '/sp/vendor/about-truliq' },
   ];
+
+  const [menuItems, setMenuItems] = useState(defaultMenuItems);
+
+  const iconMap = {
+    FaWallet, FiStar, FiCreditCard, FiMapPin, FiSettings, FiUser, FiEdit2, FiPhone, FiMail, FiBriefcase
+  };
 
   const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -131,6 +138,24 @@ const Profile = () => {
       window.removeEventListener('vendorDataUpdated', fetchProfile);
       window.removeEventListener('vendorProfileUpdated', fetchProfile);
     };
+  }, []);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await configService.getSettings();
+        if (res.success && res.settings && res.settings.vendorAccountMenus) {
+          const mappedMenus = res.settings.vendorAccountMenus.map(menu => ({
+            ...menu,
+            icon: iconMap[menu.icon] || null
+          }));
+          setMenuItems(mappedMenus);
+        }
+      } catch (error) {
+        console.error('Failed to fetch settings:', error);
+      }
+    };
+    fetchSettings();
   }, []);
 
   if (isLoading) {

@@ -8,7 +8,8 @@ const CancellationPolicy = () => {
   const navigate = useNavigate();
   const [fees, setFees] = useState({
     penalty: 49,
-    visitingCharges: 49
+    visitingCharges: 49,
+    policyText: "Our service partners reserve their time exclusively for your booking and may travel significant distances. The cancellation fee compensates them for their lost time and travel expenses if a confirmed booking is cancelled last minute."
   });
 
   useEffect(() => {
@@ -18,7 +19,8 @@ const CancellationPolicy = () => {
         if (res.success && res.settings) {
           setFees({
             penalty: res.settings.cancellationPenalty || 49,
-            visitingCharges: res.settings.visitedCharges || 49
+            visitingCharges: res.settings.visitedCharges || 49,
+            policyText: res.settings.cancellationPolicyText || "Our service partners reserve their time exclusively for your booking and may travel significant distances. The cancellation fee compensates them for their lost time and travel expenses if a confirmed booking is cancelled last minute."
           });
         }
       } catch (error) {
@@ -130,7 +132,7 @@ const CancellationPolicy = () => {
           </div>
 
           <div className="bg-gray-50 p-4 rounded-xl text-sm text-gray-600 leading-relaxed border border-gray-100">
-            Our service partners reserve their time exclusively for your booking and may travel significant distances. The cancellation fee compensates them for their lost time and travel expenses if a confirmed booking is cancelled last minute.
+            {fees.policyText}
           </div>
         </div>
 

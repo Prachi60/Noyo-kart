@@ -435,122 +435,88 @@ const SellerProfile = () => {
             </div>
           </Card>
 
-          {/* Print Service Settings Card */}
-          <Card className="p-8 border-none shadow-[0_20px_50px_rgba(0,0,0,0.05)] rounded-lg">
-            <div className="flex justify-between items-center mb-8 border-b border-slate-50 pb-4">
-              <h3 className="text-xl font-black text-slate-900">
-                Print Service Settings
-              </h3>
-              <button
-                type="button"
-                onClick={() =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    services: {
-                      ...prev.services,
-                      print: {
-                        ...prev.services.print,
-                        enabled: !prev.services.print?.enabled,
-                      },
-                    },
-                  }))
-                }
-                disabled={!isEditing}
-                className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
-                  formData.services?.print?.enabled
-                    ? "bg-emerald-500 text-white"
-                    : "bg-slate-200 text-slate-500"
-                }`}>
-                {formData.services?.print?.enabled ? "ENABLED" : "DISABLED"}
-              </button>
-            </div>
+          {/* Dynamic Service Settings Cards */}
+          {Object.entries(formData.services || {}).map(([serviceKey, serviceData]) => {
+            const serviceTitle = serviceKey.charAt(0).toUpperCase() + serviceKey.slice(1) + " Service";
+            
+            return (
+              <Card key={serviceKey} className="p-8 border-none shadow-[0_20px_50px_rgba(0,0,0,0.05)] rounded-lg">
+                <div className="flex justify-between items-center mb-8 border-b border-slate-50 pb-4">
+                  <h3 className="text-xl font-black text-slate-900">
+                    {serviceTitle} Settings
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        services: {
+                          ...prev.services,
+                          [serviceKey]: {
+                            ...prev.services[serviceKey],
+                            enabled: !prev.services[serviceKey]?.enabled,
+                          },
+                        },
+                      }))
+                    }
+                    disabled={!isEditing}
+                    className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                      serviceData?.enabled
+                        ? "bg-emerald-500 text-white"
+                        : "bg-slate-200 text-slate-500"
+                    }`}>
+                    {serviceData?.enabled ? "ENABLED" : "DISABLED"}
+                  </button>
+                </div>
 
-            <div
-              className={`space-y-6 transition-all ${
-                !formData.services?.print?.enabled && "opacity-50 pointer-events-none"
-              }`}>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-                    B&W Rate (per page)
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.services?.print?.rates?.bw || 0}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        services: {
-                          ...prev.services,
-                          print: {
-                            ...prev.services.print,
-                            rates: {
-                              ...prev.services.print.rates,
-                              bw: Number(e.target.value),
-                            },
-                          },
-                        },
-                      }))
-                    }
-                    disabled={!isEditing}
-                    className="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-lg text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-100 transition-all"
-                  />
+                <div
+                  className={`space-y-6 transition-all ${
+                    !serviceData?.enabled && "opacity-50 pointer-events-none"
+                  }`}>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {Object.entries(serviceData?.rates || {}).map(([rateKey, rateValue]) => {
+                      // Format labels for dynamic keys while preserving friendly names for specific ones
+                      const formatRateLabel = (key) => {
+                        if (key === 'bw') return 'B&W Rate (per page)';
+                        if (key === 'color') return 'Color Rate (per page)';
+                        const spaced = key.replace(/([A-Z])/g, ' $1').trim();
+                        return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+                      };
+
+                      return (
+                        <div key={rateKey} className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                            {formatRateLabel(rateKey)}
+                          </label>
+                          <input
+                            type="number"
+                            value={rateValue || 0}
+                            onChange={(e) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                services: {
+                                  ...prev.services,
+                                  [serviceKey]: {
+                                    ...prev.services[serviceKey],
+                                    rates: {
+                                      ...prev.services[serviceKey].rates,
+                                      [rateKey]: Number(e.target.value),
+                                    },
+                                  },
+                                },
+                              }))
+                            }
+                            disabled={!isEditing}
+                            className="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-lg text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-100 transition-all"
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-                    Color Rate (per page)
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.services?.print?.rates?.color || 0}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        services: {
-                          ...prev.services,
-                          print: {
-                            ...prev.services.print,
-                            rates: {
-                              ...prev.services.print.rates,
-                              color: Number(e.target.value),
-                            },
-                          },
-                        },
-                      }))
-                    }
-                    disabled={!isEditing}
-                    className="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-lg text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-100 transition-all"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-                    Double-Sided Extra
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.services?.print?.rates?.doubleSidedExtra || 0}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        services: {
-                          ...prev.services,
-                          print: {
-                            ...prev.services.print,
-                            rates: {
-                              ...prev.services.print.rates,
-                              doubleSidedExtra: Number(e.target.value),
-                            },
-                          },
-                        },
-                      }))
-                    }
-                    disabled={!isEditing}
-                    className="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-lg text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-slate-100 transition-all"
-                  />
-                </div>
-              </div>
-            </div>
-          </Card>
+              </Card>
+            );
+          })}
         </div>
 
         {/* Sidebar Card */}

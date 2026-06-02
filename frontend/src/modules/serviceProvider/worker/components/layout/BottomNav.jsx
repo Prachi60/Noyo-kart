@@ -6,6 +6,7 @@ import { FiBell } from 'react-icons/fi';
 import { gsap } from 'gsap';
 import { workerTheme as themeColors } from '../../../theme';
 import api from '../../../services/api';
+import { configService } from '../../../services/configService';
 
 const BottomNav = memo(() => {
   const navigate = useNavigate();
@@ -56,15 +57,45 @@ const BottomNav = memo(() => {
     };
   }, []);
 
+  const [dynamicNavItems, setDynamicNavItems] = useState([
+    { path: '/worker/dashboard', icon: FiHome, activeIcon: HiHome, label: 'Home' },
+    { path: '/worker/jobs', icon: FiBriefcase, activeIcon: HiBriefcase, label: 'Jobs', isJobs: true },
+    { path: '/worker/wallet', icon: FiDollarSign, activeIcon: FiDollarSign, label: 'Wallet' },
+    { path: '/worker/notifications', icon: FiBell, activeIcon: FiBell, label: 'Alerts', isAlerts: true },
+    { path: '/worker/profile', icon: FiUser, activeIcon: HiUser, label: 'Profile' },
+  ]);
+
+  const iconMap = {
+    FiHome, HiHome, FiBriefcase, HiBriefcase, FiUser, HiUser, FiDollarSign, FiBell
+  };
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await configService.getSettings();
+        if (res.success && res.settings && res.settings.workerBottomNavigation) {
+          const mappedItems = res.settings.workerBottomNavigation.map(item => ({
+            ...item,
+            icon: iconMap[item.icon] || FiHome,
+            activeIcon: iconMap[item.activeIcon] || HiHome,
+            isJobs: item.id === 'jobs',
+            isAlerts: item.id === 'notifications'
+          }));
+          setDynamicNavItems(mappedItems);
+        }
+      } catch (error) {
+        console.error('Failed to fetch settings:', error);
+      }
+    };
+    fetchSettings();
+  }, []);
+
   const navItems = useMemo(() => {
-    return [
-      { path: '/worker/dashboard', icon: FiHome, activeIcon: HiHome, label: 'Home' },
-      { path: '/worker/jobs', icon: FiBriefcase, activeIcon: HiBriefcase, label: 'Jobs', badge: pendingJobsCount },
-      { path: '/worker/wallet', icon: FiDollarSign, activeIcon: FiDollarSign, label: 'Wallet' },
-      { path: '/worker/notifications', icon: FiBell, activeIcon: FiBell, label: 'Alerts', badge: unreadNotificationsCount },
-      { path: '/worker/profile', icon: FiUser, activeIcon: HiUser, label: 'Profile' },
-    ];
-  }, [pendingJobsCount, unreadNotificationsCount]);
+    return dynamicNavItems.map(item => ({
+      ...item,
+      badge: item.isJobs ? pendingJobsCount : (item.isAlerts ? unreadNotificationsCount : undefined)
+    }));
+  }, [pendingJobsCount, unreadNotificationsCount, dynamicNavItems]);
 
   const handleNavClick = (path) => {
     if (location.pathname !== path) {

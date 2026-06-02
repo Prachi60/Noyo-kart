@@ -17,6 +17,7 @@ const SupportPage = () => {
     const { showToast } = useToast();
     const { settings } = useSettings();
     const supportEmail = settings?.supportEmail || '';
+    const supportPhone = settings?.supportPhone || '+91 98765...';
     const supportEmailShort = supportEmail ? (supportEmail.length > 12 ? supportEmail.slice(0, 12) + '...' : supportEmail) : 'support@...';
     const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
     const [ticketLoading, setTicketLoading] = useState(false);
@@ -104,7 +105,7 @@ const SupportPage = () => {
                         sub="Formal Request"
                         onClick={() => setIsTicketModalOpen(true)}
                     />
-                    <ContactCard icon={Phone} label="Call Us" sub="+91 98765..." />
+                    <ContactCard icon={Phone} label="Call Us" sub={supportPhone} />
                     <ContactCard icon={Mail} label="Email Us" sub={supportEmailShort} />
                 </div>
 

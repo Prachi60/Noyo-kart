@@ -143,13 +143,12 @@ const sellerSchema = new mongoose.Schema(
       default: true,
     },
     services: {
-      print: {
-        enabled: { type: Boolean, default: false },
-        isConfigured: { type: Boolean, default: false },
-        rates: {
-          bw: { type: Number, default: 0 },
-          color: { type: Number, default: 0 },
-          doubleSidedExtra: { type: Number, default: 0 }
+      type: mongoose.Schema.Types.Mixed,
+      default: {
+        print: {
+          enabled: false,
+          isConfigured: false,
+          rates: { bw: 0, color: 0, doubleSidedExtra: 0 }
         }
       }
     },

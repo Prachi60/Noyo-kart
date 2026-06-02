@@ -534,11 +534,14 @@ const Home = () => {
               )}
 
               {/* Scrap Promotion Section */}
-              <motion.section variants={itemVariants}>
-                <ScrapPromotionCard onClick={() => navigate('/user/scrap')} />
-              </motion.section>
-
-
+              {homeContent?.isScrapPromoVisible !== false && (
+                <motion.section variants={itemVariants}>
+                  <ScrapPromotionCard 
+                    data={homeContent?.scrapPromo}
+                    onClick={() => navigate(homeContent?.scrapPromo?.route || '/user/scrap')} 
+                  />
+                </motion.section>
+              )}
               {/* Curated Services */}
               {homeContent?.isCuratedVisible !== false && (
                 <motion.div variants={itemVariants}>
@@ -675,11 +678,13 @@ const Home = () => {
               )}
 
               {/* Refer & Earn Section */}
-              <motion.div variants={itemVariants}>
-                <Suspense fallback={<div className="h-32 bg-gray-50 animate-pulse rounded-xl mx-4" />}>
-                  <ReferEarnSection onReferClick={handleReferClick} />
-                </Suspense>
-              </motion.div>
+              {homeContent?.isReferEarnVisible !== false && (
+                <motion.div variants={itemVariants}>
+                  <Suspense fallback={<div className="h-32 bg-gray-50 animate-pulse rounded-xl mx-4" />}>
+                    <ReferEarnSection data={homeContent?.referEarn} onReferClick={handleReferClick} />
+                  </Suspense>
+                </motion.div>
+              )}
             </>
           )}
         </main>

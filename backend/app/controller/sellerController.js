@@ -192,28 +192,38 @@ export const updateSellerProfile = async (req, res) => {
       seller.isAcceptingOrders = isAcceptingOrders;
 
     if (services !== undefined) {
-      // Merge specifically for print to avoid overwriting other potential services
-      if (services.print) {
-        const mergedPrint = {
-          ...seller.services.print,
-          ...services.print,
+      // Create a copy of existing services to merge into
+      const updatedServices = { ...(seller.services || {}) };
+
+      // Iterate over any provided services and merge them dynamically
+      for (const [serviceKey, serviceData] of Object.entries(services)) {
+        updatedServices[serviceKey] = {
+          ...updatedServices[serviceKey],
+          ...serviceData,
           rates: {
-            ...seller.services.print?.rates,
-            ...services.print?.rates,
+            ...updatedServices[serviceKey]?.rates,
+            ...serviceData?.rates,
           },
         };
-        const bw = Number(mergedPrint?.rates?.bw || 0);
-        const color = Number(mergedPrint?.rates?.color || 0);
-        mergedPrint.isConfigured = Boolean(
-          mergedPrint.enabled && (bw > 0 || color > 0),
-        );
-        seller.services = {
-          ...seller.services,
-          print: mergedPrint,
-        };
-      } else {
-        seller.services = services;
+
+        // Custom config logic for 'print' service to maintain backwards compatibility
+        if (serviceKey === "print") {
+          const bw = Number(updatedServices.print?.rates?.bw || 0);
+          const color = Number(updatedServices.print?.rates?.color || 0);
+          updatedServices.print.isConfigured = Boolean(
+            updatedServices.print.enabled && (bw > 0 || color > 0)
+          );
+        } else {
+          // Generic configuration check for other dynamic services
+          const hasRates = Object.values(updatedServices[serviceKey]?.rates || {}).some(r => Number(r) > 0);
+          updatedServices[serviceKey].isConfigured = Boolean(
+            updatedServices[serviceKey].enabled && hasRates
+          );
+        }
       }
+
+      seller.services = updatedServices;
+      seller.markModified('services'); // Crucial for Mongoose Mixed types
     }
 
     // Validate and update geo data

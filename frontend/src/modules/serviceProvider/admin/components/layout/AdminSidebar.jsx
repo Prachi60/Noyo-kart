@@ -18,8 +18,8 @@ import {
   FiTrash2,
   FiStar,
 } from "react-icons/fi";
-import adminMenu from "../../config/adminMenu.json";
 import dashboardService from "../../services/dashboardService";
+import { configService } from "../../../services/configService";
 
 // Icon mapping for menu items
 const iconMap = {
@@ -139,11 +139,48 @@ const AdminSidebar = ({ isOpen, onClose }) => {
     }
   }, []);
 
+  const [dynamicMenu, setDynamicMenu] = useState([]);
+
+  // Fallback default menu in case the DB doesn't have it initialized
+  const defaultAdminMenu = [
+    { title: 'Dashboard', route: '/sp/admin/dashboard', allowedRoles: ['super_admin', 'admin'], children: [] },
+    { title: 'Users', route: '/sp/admin/users', allowedRoles: ['super_admin', 'admin'], children: ['All Users', 'User Bookings', 'User Analytics'] },
+    { title: 'Vendors', route: '/sp/admin/vendors', allowedRoles: ['super_admin', 'admin'], children: ['All Vendors', 'Vendor Bookings', 'Vendor Analytics'] },
+    { title: 'Workers', route: '/sp/admin/workers', allowedRoles: ['super_admin', 'admin'], children: ['All Workers', 'Worker Jobs', 'Worker Analytics'] },
+    { title: 'Bookings', route: '/sp/admin/bookings', allowedRoles: ['super_admin', 'admin'], children: ['All Bookings', 'Booking Tracking', 'Booking Notifications'] },
+    { title: 'Scrap Items', route: '/sp/admin/scrap', allowedRoles: ['super_admin', 'admin'], children: [] },
+    { title: 'Payments', route: '/sp/admin/payments', allowedRoles: ['super_admin'], children: ['Payment Overview', 'User Payments', 'Worker Payments', 'Vendor Payments', 'Admin Revenue', 'Payment Reports'] },
+    { title: 'Settlements', route: '/sp/admin/settlements', allowedRoles: ['super_admin'], children: ['Pending', 'Withdrawals', 'Vendors with Due', 'History'] },
+    { title: 'User Catalog', route: '/sp/admin/user-categories', allowedRoles: ['super_admin', 'admin'], children: ['Home', 'Manage Categories', 'Manage Brands', 'Manage Services'] },
+    { title: 'Vendor Services', route: '/sp/admin/user-categories/vendor-services', allowedRoles: ['super_admin', 'admin'], children: [] },
+    { title: 'Vendor Parts', route: '/sp/admin/user-categories/vendor-parts', allowedRoles: ['super_admin', 'admin'], children: [] },
+    { title: 'Reports', route: '/sp/admin/reports', allowedRoles: ['super_admin'], children: ['Revenue Report', 'Booking Report', 'Payment Report'] },
+    { title: 'Reviews', route: '/sp/admin/reviews', allowedRoles: ['super_admin'], children: [] },
+    { title: 'Plans', route: '/sp/admin/plans', allowedRoles: ['super_admin'], children: [] },
+    { title: 'Settings', route: '/sp/admin/settings', allowedRoles: ['super_admin', 'admin'], children: [] }
+  ];
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await configService.getSettings();
+        if (res.success && res.settings && res.settings.adminSidebarMenus && res.settings.adminSidebarMenus.length > 0) {
+          setDynamicMenu(res.settings.adminSidebarMenus);
+        } else {
+          setDynamicMenu(defaultAdminMenu);
+        }
+      } catch (error) {
+        console.error('Failed to fetch settings:', error);
+      }
+    };
+    fetchSettings();
+  }, []);
+
   // Filter menu items by role
-  const filteredMenu = useMemo(() => adminMenu.filter(item => {
-    if (!item.allowedRoles) return true;
+  const filteredMenu = useMemo(() => dynamicMenu.filter(item => {
+    if (!item.allowedRoles || item.allowedRoles.length === 0) return true;
     return item.allowedRoles.includes(adminUser.role);
-  }), [adminUser.role]);
+  }), [adminUser.role, dynamicMenu]);
 
   // Fetch pending counts for badges
   useEffect(() => {

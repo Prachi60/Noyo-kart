@@ -4,6 +4,7 @@ import { FiHome, FiBriefcase, FiUsers, FiUser } from 'react-icons/fi';
 import { HiHome, HiBriefcase, HiUsers, HiUser } from 'react-icons/hi';
 import { FaWallet } from 'react-icons/fa';
 import { vendorTheme as themeColors } from '../../../theme';
+import { configService } from '../../../services/configService';
 
 const BottomNav = memo(() => {
   const navigate = useNavigate();
@@ -34,18 +35,48 @@ const BottomNav = memo(() => {
   }, []);
 
   // Use useMemo to update navItems when pendingJobsCount changes
+  const [dynamicNavItems, setDynamicNavItems] = useState([
+    { path: '/vendor/dashboard', icon: FiHome, activeIcon: HiHome, label: 'Home' },
+    { path: '/vendor/jobs', icon: FiBriefcase, activeIcon: HiBriefcase, label: 'Jobs', isJobs: true },
+    { path: '/vendor/workers', icon: FiUsers, activeIcon: HiUsers, label: 'Workers' },
+    { path: '/vendor/wallet', icon: FaWallet, activeIcon: FaWallet, label: 'Wallet' },
+    { path: '/vendor/profile', icon: FiUser, activeIcon: HiUser, label: 'Profile' },
+  ]);
+
+  const iconMap = {
+    FiHome, HiHome, FiBriefcase, HiBriefcase, FiUsers, HiUsers, FaWallet, FiUser, HiUser
+  };
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await configService.getSettings();
+        if (res.success && res.settings && res.settings.vendorBottomNavigation) {
+          const mappedItems = res.settings.vendorBottomNavigation.map(item => ({
+            ...item,
+            icon: iconMap[item.icon] || FiHome,
+            activeIcon: iconMap[item.activeIcon] || HiHome,
+            isJobs: item.id === 'jobs'
+          }));
+          setDynamicNavItems(mappedItems);
+        }
+      } catch (error) {
+        console.error('Failed to fetch settings:', error);
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  // Use useMemo to update navItems when pendingJobsCount or dynamicNavItems changes
   const navItems = useMemo(() => {
     // Count jobs that require attention (Pending, Accepted, In Progress)
     const badgeCount = pendingJobsCount;
 
-    return [
-      { path: '/vendor/dashboard', icon: FiHome, activeIcon: HiHome, label: 'Home' },
-      { path: '/vendor/jobs', icon: FiBriefcase, activeIcon: HiBriefcase, label: 'Jobs', badge: badgeCount },
-      { path: '/vendor/workers', icon: FiUsers, activeIcon: HiUsers, label: 'Workers' },
-      { path: '/vendor/wallet', icon: FaWallet, activeIcon: FaWallet, label: 'Wallet' },
-      { path: '/vendor/profile', icon: FiUser, activeIcon: HiUser, label: 'Profile' },
-    ];
-  }, [pendingJobsCount]);
+    return dynamicNavItems.map(item => ({
+      ...item,
+      badge: item.isJobs ? badgeCount : undefined
+    }));
+  }, [pendingJobsCount, dynamicNavItems]);
 
   const handleNavClick = (path) => {
     if (location.pathname !== path) {

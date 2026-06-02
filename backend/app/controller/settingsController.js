@@ -44,6 +44,14 @@ const ALLOWED_KEYS = [
   "handlingFeeStrategy",
   "codEnabled",
   "onlineEnabled",
+  "customerBottomNav",
+  "customerHeaderNav",
+  "deliveryBottomNav",
+  "sellerSidebar",
+  "adminSidebar",
+  "aboutUsData",
+  "privacyPolicyText",
+  "termsText",
 ];
 
 /** Joi schema for validating settings update payload */
@@ -91,6 +99,23 @@ const updateSettingsSchema = Joi.object({
   ),
   codEnabled: Joi.boolean(),
   onlineEnabled: Joi.boolean(),
+  customerBottomNav: Joi.array(),
+  customerHeaderNav: Joi.array(),
+  deliveryBottomNav: Joi.array(),
+  sellerSidebar: Joi.array(),
+  adminSidebar: Joi.array(),
+  aboutUsData: Joi.object({
+    heroDescription: Joi.string().allow(""),
+    missionTitle: Joi.string().allow(""),
+    missionDescription: Joi.string().allow(""),
+    valuesTitle: Joi.string().allow(""),
+    values: Joi.array().items(Joi.object({
+      title: Joi.string().allow(""),
+      description: Joi.string().allow("")
+    }))
+  }),
+  privacyPolicyText: Joi.string().allow(""),
+  termsText: Joi.string().allow(""),
 }).unknown(false);
 
 /**
@@ -111,7 +136,7 @@ export const getPublicSettings = async (req, res) => {
       async () => {
         const existing = await Setting.findOne(filter)
           .select(
-            "appName supportEmail supportPhone currencySymbol currencyCode timezone logoUrl faviconUrl primaryColor secondaryColor returnDeliveryCommission deliveryPricingMode pricingMode customerBaseDeliveryFee riderBasePayout baseDeliveryCharge baseDistanceCapacityKm incrementalKmSurcharge deliveryPartnerRatePerKm fleetCommissionRatePerKm fixedDeliveryFee handlingFeeStrategy codEnabled onlineEnabled createdAt",
+            "appName supportEmail supportPhone currencySymbol currencyCode timezone logoUrl faviconUrl primaryColor secondaryColor returnDeliveryCommission deliveryPricingMode pricingMode customerBaseDeliveryFee riderBasePayout baseDeliveryCharge baseDistanceCapacityKm incrementalKmSurcharge deliveryPartnerRatePerKm fleetCommissionRatePerKm fixedDeliveryFee handlingFeeStrategy codEnabled onlineEnabled customerBottomNav customerHeaderNav deliveryBottomNav sellerSidebar adminSidebar aboutUsData privacyPolicyText termsText createdAt",
           )
           .lean();
         return existing || null;
