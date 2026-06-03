@@ -19,7 +19,8 @@ import {
     ShoppingBag,
     Clock,
     CheckCircle2,
-    XCircle
+    XCircle,
+    ArrowLeft
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@shared/components/ui/Toast';
@@ -226,14 +227,22 @@ const OrdersList = () => {
         <div className="ds-section-spacing animate-in fade-in slide-in-from-bottom-4 duration-700 pb-12">
             {/* Header Section */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 px-1">
-                <div>
-                    <h1 className="ds-h1 flex items-center gap-3">
-                        {pageTitle}
-                        <div className="p-2 bg-fuchsia-100 rounded-xl">
-                            <ShoppingBag className="h-5 w-5 text-fuchsia-600" />
-                        </div>
-                    </h1>
-                    <p className="ds-description mt-1">View and manage all orders.</p>
+                <div className="flex items-center gap-3">
+                    <button 
+                        onClick={() => navigate(-1)}
+                        className="p-1.5 hover:bg-slate-100 rounded-xl transition-colors text-slate-500 hover:text-slate-900"
+                    >
+                        <ArrowLeft className="w-6 h-6" />
+                    </button>
+                    <div>
+                        <h1 className="ds-h1 flex items-center gap-3">
+                            {pageTitle}
+                            <div className="p-2 bg-fuchsia-100 rounded-xl">
+                                <ShoppingBag className="h-5 w-5 text-fuchsia-600" />
+                            </div>
+                        </h1>
+                        <p className="ds-description mt-1">View and manage all orders.</p>
+                    </div>
                 </div>
                 <div className="flex items-center gap-3">
                     <button

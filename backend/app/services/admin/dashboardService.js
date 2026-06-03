@@ -15,7 +15,7 @@ export async function getAdminDashboardStats() {
       Order.countDocuments(),
     ]);
 
-  const totalUsers = totalCustomers + totalSellers + totalRiders;
+  const totalUsers = totalCustomers;
   const activeSellers = await Seller.countDocuments({ isVerified: true });
 
   const revenueData = await Order.aggregate([
@@ -24,27 +24,37 @@ export async function getAdminDashboardStats() {
   ]);
   const totalRevenue = revenueData[0]?.total || 0;
 
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const currentYear = new Date().getFullYear();
+  const startOfYear = new Date(currentYear, 0, 1);
 
   const historyAggregation = await Order.aggregate([
-    { $match: { createdAt: { $gte: sevenDaysAgo }, status: "delivered" } },
+    { $match: { createdAt: { $gte: startOfYear }, status: "delivered" } },
     {
       $group: {
-        _id: {
-          $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
-        },
+        _id: { $month: "$createdAt" },
         revenue: { $sum: "$pricing.total" },
       },
     },
     { $sort: { _id: 1 } },
   ]);
 
-  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const revenueHistory = historyAggregation.map((item) => ({
-    name: days[new Date(item._id).getDay()],
-    revenue: item.revenue,
-  }));
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const monthlyData = {};
+  
+  for (let i = 1; i <= 12; i++) {
+    monthlyData[i] = {
+      name: monthNames[i - 1],
+      revenue: 0,
+    };
+  }
+
+  historyAggregation.forEach((item) => {
+    if (monthlyData[item._id]) {
+      monthlyData[item._id].revenue = item.revenue;
+    }
+  });
+
+  const revenueHistory = Object.values(monthlyData);
 
   const recentOrders = await Order.find()
     .sort({ createdAt: -1 })

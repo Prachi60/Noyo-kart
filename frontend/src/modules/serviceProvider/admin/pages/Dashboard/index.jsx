@@ -137,7 +137,7 @@ const AdminDashboard = () => {
   };
 
   const onViewBooking = (booking) => {
-    if (booking?._id || booking?.id) navigate(`/admin/bookings/${booking._id || booking.id}`);
+    if (booking?._id || booking?.id) navigate(`/sp/admin/bookings/${booking._id || booking.id}`);
   };
 
   const statsCards = [
@@ -150,7 +150,7 @@ const AdminDashboard = () => {
       bgColor: 'bg-gradient-to-br from-green-500 to-emerald-600',
       cardBg: 'bg-gradient-to-br from-green-50 to-emerald-50',
       iconBg: 'bg-white/20',
-      link: '/admin/reports/revenue'
+      link: '/sp/admin/reports/revenue'
     },
     {
       title: 'Pending Bookings',
@@ -161,7 +161,7 @@ const AdminDashboard = () => {
       bgColor: 'bg-gradient-to-br from-blue-500 to-indigo-600',
       cardBg: 'bg-gradient-to-br from-blue-50 to-indigo-50',
       iconBg: 'bg-white/20',
-      link: '/admin/reports/bookings'
+      link: '/sp/admin/reports/bookings'
     },
     {
       title: 'Completed Bookings',
@@ -172,7 +172,7 @@ const AdminDashboard = () => {
       bgColor: 'bg-gradient-to-br from-purple-500 to-violet-600',
       cardBg: 'bg-gradient-to-br from-purple-50 to-violet-50',
       iconBg: 'bg-white/20',
-      link: '/admin/reports/bookings'
+      link: '/sp/admin/reports/bookings'
     },
     {
       title: 'New Users',
@@ -183,7 +183,7 @@ const AdminDashboard = () => {
       bgColor: 'bg-gradient-to-br from-orange-500 to-amber-600',
       cardBg: 'bg-gradient-to-br from-orange-50 to-amber-50',
       iconBg: 'bg-white/20',
-      link: '/admin/users/analytics'
+      link: '/sp/admin/users/analytics'
     },
     {
       title: 'New Vendors',
@@ -194,7 +194,7 @@ const AdminDashboard = () => {
       bgColor: 'bg-gradient-to-br from-teal-500 to-cyan-600',
       cardBg: 'bg-gradient-to-br from-teal-50 to-cyan-50',
       iconBg: 'bg-white/20',
-      link: '/admin/vendors/analytics'
+      link: '/sp/admin/vendors/analytics'
     },
     {
       title: 'New Workers',
@@ -205,7 +205,7 @@ const AdminDashboard = () => {
       bgColor: 'bg-gradient-to-br from-rose-500 to-pink-600',
       cardBg: 'bg-gradient-to-br from-rose-50 to-pink-50',
       iconBg: 'bg-white/20',
-      link: '/admin/workers/analytics'
+      link: '/sp/admin/workers/analytics'
     },
   ];
 

@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Card from '@shared/components/ui/Card';
 import Badge from '@shared/components/ui/Badge';
 import { adminApi } from '../services/adminApi';
@@ -20,7 +21,8 @@ import {
     HiOutlineExclamationCircle,
     HiOutlineFolderOpen,
     HiOutlineSwatch,
-    HiOutlineSquaresPlus
+    HiOutlineSquaresPlus,
+    HiArrowLeft
 } from 'react-icons/hi2';
 import Modal from '@shared/components/ui/Modal';
 import Pagination from '@shared/components/ui/Pagination';
@@ -28,6 +30,7 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const ProductManagement = () => {
+    const navigate = useNavigate();
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]); // All categories for dropdowns
     const [page, setPage] = useState(1);
@@ -289,12 +292,20 @@ const ProductManagement = () => {
         <div className="ds-section-spacing animate-in fade-in slide-in-from-bottom-2 duration-700 pb-16">
             {/* Page Header */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                <div>
-                    <h1 className="ds-h1 flex items-center gap-2">
-                        Product List
-                        <Badge variant="primary" className="text-[9px] px-1.5 py-0 font-bold tracking-wider uppercase">Live</Badge>
-                    </h1>
-                    <p className="ds-description mt-0.5">Track your items, prices, and how many are left in stock.</p>
+                <div className="flex items-center gap-3">
+                    <button 
+                        onClick={() => navigate(-1)}
+                        className="p-1.5 hover:bg-slate-100 rounded-xl transition-colors text-slate-500 hover:text-slate-900 -ml-1.5"
+                    >
+                        <HiArrowLeft className="w-5 h-5" />
+                    </button>
+                    <div>
+                        <h1 className="ds-h1 flex items-center gap-2">
+                            Product List
+                            <Badge variant="primary" className="text-[9px] px-1.5 py-0 font-bold tracking-wider uppercase">Live</Badge>
+                        </h1>
+                        <p className="ds-description mt-0.5">Track your items, prices, and how many are left in stock.</p>
+                    </div>
                 </div>
             </div>
 

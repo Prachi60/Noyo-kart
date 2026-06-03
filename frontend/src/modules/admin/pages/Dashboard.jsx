@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Card from '@shared/components/ui/Card';
 import PageHeader from '@shared/components/ui/PageHeader';
 import StatCard from '@shared/components/ui/StatCard';
@@ -30,8 +31,10 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 const AdminDashboard = () => {
+    const navigate = useNavigate();
     const [statsData, setStatsData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [lastUpdateTime, setLastUpdateTime] = useState('');
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -39,6 +42,9 @@ const AdminDashboard = () => {
                 const res = await adminApi.getStats();
                 if (res.data.success) {
                     setStatsData(res.data.result);
+                    const now = new Date();
+                    const formattedTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    setLastUpdateTime(`Today, ${formattedTime}`);
                 }
             } catch (error) {
                 console.error("Dashboard Stats Error:", error);
@@ -69,7 +75,8 @@ const AdminDashboard = () => {
             color: 'text-blue-600',
             bg: 'bg-blue-50',
             trend: '+12.5%',
-            description: 'Active this month'
+            description: 'Active this month',
+            onClick: () => navigate('/admin/users')
         },
         {
             label: 'Active Sellers',
@@ -78,7 +85,8 @@ const AdminDashboard = () => {
             color: 'text-purple-600',
             bg: 'bg-purple-50',
             trend: '+5.2%',
-            description: 'Verified stores'
+            description: 'Verified stores',
+            onClick: () => navigate('/admin/sellers/active')
         },
         {
             label: 'Total Orders',
@@ -87,7 +95,8 @@ const AdminDashboard = () => {
             color: 'text-orange-600',
             bg: 'bg-orange-50',
             trend: '+18.4%',
-            description: 'Last 30 days'
+            description: 'Last 30 days',
+            onClick: () => navigate('/admin/orders/all')
         },
         {
             label: 'Revenue',
@@ -96,7 +105,8 @@ const AdminDashboard = () => {
             color: 'text-brand-600',
             bg: 'bg-brand-50',
             trend: '+8.2%',
-            description: 'Net earnings'
+            description: 'Net earnings',
+            onClick: () => navigate('/admin/wallet')
         },
     ];
 
@@ -113,7 +123,7 @@ const AdminDashboard = () => {
                 actions={
                     <>
                         <Badge variant="outline" className="ds-badge ds-badge-gray">
-                            Last Update: Today, 12:45 PM
+                            Last Update: {lastUpdateTime || 'Fetching...'}
                         </Badge>
                     </>
                 }
@@ -131,6 +141,7 @@ const AdminDashboard = () => {
                         description={stat.description}
                         color={stat.color}
                         bg={stat.bg}
+                        onClick={stat.onClick}
                         className={cn("ring-1 ring-gray-100", stat.bg + "/30")}
                     />
                 ))}
@@ -280,7 +291,7 @@ const AdminDashboard = () => {
                                 </tbody>
                             </table>
                         </div>
-                        <button className="w-full mt-6 py-3 rounded-xl bg-gray-50 text-xs font-bold text-gray-500 hover:bg-primary hover:text-white transition-all">
+                        <button onClick={() => navigate('/admin/orders/all')} className="w-full mt-6 py-3 rounded-xl bg-gray-50 text-xs font-bold text-gray-500 hover:bg-primary hover:text-white transition-all">
                             VIEW ALL ORDERS
                         </button>
                     </Card>
@@ -318,7 +329,7 @@ const AdminDashboard = () => {
                                 <div className="py-12 text-center text-slate-300 italic text-xs">No sales data yet</div>
                             )}
                         </div>
-                        <button className="w-full mt-6 py-3 border-2 border-dashed border-gray-100 rounded-xl text-xs font-bold text-gray-400 hover:border-primary hover:text-primary transition-all">
+                        <button onClick={() => navigate('/admin/products')} className="w-full mt-6 py-3 border-2 border-dashed border-gray-100 rounded-xl text-xs font-bold text-gray-400 hover:border-primary hover:text-primary transition-all">
                             VIEW ALL PRODUCTS
                         </button>
                     </Card>

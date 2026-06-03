@@ -22,7 +22,8 @@ import {
     BarChart3,
     ArrowDownCircle,
     ArrowUpCircle,
-    RotateCw
+    RotateCw,
+    ArrowLeft
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
@@ -298,9 +299,17 @@ const AdminWallet = () => {
         <div className="ds-section-spacing animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="ds-h1">Admin Wallet & Finance</h1>
-                    <p className="ds-description mt-1">Manage transactions, track earnings, and process withdrawals.</p>
+                <div className="flex items-center gap-3">
+                    <button 
+                        onClick={() => navigate(-1)}
+                        className="p-1.5 hover:bg-slate-100 rounded-xl transition-colors text-slate-500 hover:text-slate-900 -ml-1.5"
+                    >
+                        <ArrowLeft className="w-6 h-6" />
+                    </button>
+                    <div>
+                        <h1 className="ds-h1">Admin Wallet & Finance</h1>
+                        <p className="ds-description mt-1">Manage transactions, track earnings, and process withdrawals.</p>
+                    </div>
                 </div>
                 <div className="flex items-center space-x-3">
                     <button

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from 'react-router-dom';
 import Card from "@shared/components/ui/Card";
 import Badge from "@shared/components/ui/Badge";
 import Pagination from "@shared/components/ui/Pagination";
@@ -16,6 +17,7 @@ import {
   HiOutlineClock,
   HiOutlineArrowPath,
   HiOutlineDocumentText,
+  HiOutlineArrowLeft,
 } from "react-icons/hi2";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -96,6 +98,7 @@ const normalizeSeller = (seller) => {
 };
 
 const ActiveSellers = () => {
+  const navigate = useNavigate();
   const requestSeq = useRef(0);
 
   const [sellers, setSellers] = useState([]);
@@ -219,9 +222,16 @@ const ActiveSellers = () => {
   return (
     <div className="ds-section-spacing animate-in fade-in slide-in-from-bottom-2 duration-700 pb-16">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div>
-          <h1 className="ds-h1 flex items-center gap-2">
-            Active Sellers
+        <div className="flex items-center gap-3">
+          <button 
+              onClick={() => navigate(-1)}
+              className="p-1.5 hover:bg-slate-100 rounded-xl transition-colors text-slate-500 hover:text-slate-900 -ml-1.5"
+          >
+              <HiOutlineArrowLeft className="h-5 w-5" />
+          </button>
+          <div>
+            <h1 className="ds-h1 flex items-center gap-2">
+              Active Sellers
             <Badge
               variant="success"
               className="admin-tiny px-1.5 py-0 font-bold uppercase tracking-wider"
@@ -232,6 +242,7 @@ const ActiveSellers = () => {
           <p className="ds-description mt-0.5">
             Review every verified seller, their performance, and current store health.
           </p>
+        </div>
         </div>
 
         <div className="flex items-center gap-3">

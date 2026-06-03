@@ -21,14 +21,14 @@ const generateToken = (admin) =>
   jwt.sign(
     { id: admin._id, role: "admin" },
     process.env.JWT_SECRET,
-    { expiresIn: "7d" },
+    { expiresIn: "365d" },
   );
 
 function readBootstrapSecret(req) {
   return String(
     req.headers["x-admin-bootstrap-secret"] ||
-      req.body?.adminSecret ||
-      "",
+    req.body?.adminSecret ||
+    "",
   ).trim();
 }
 
