@@ -108,6 +108,23 @@ export async function getAdminDashboardStats() {
     },
   ]);
 
+  // Calculate real growth: last 30 days vs previous 30 days (rolling window)
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+
+  const [last30Orders, prev30Orders] = await Promise.all([
+    Order.countDocuments({ createdAt: { $gte: thirtyDaysAgo } }),
+    Order.countDocuments({ createdAt: { $gte: sixtyDaysAgo, $lt: thirtyDaysAgo } }),
+  ]);
+
+  let categoryGrowth = 0;
+  if (prev30Orders === 0 && last30Orders > 0) {
+    categoryGrowth = 100;
+  } else if (prev30Orders > 0) {
+    categoryGrowth = Math.round(((last30Orders - prev30Orders) / prev30Orders) * 100);
+  }
+
   return {
     overview: {
       totalUsers,
@@ -116,6 +133,7 @@ export async function getAdminDashboardStats() {
       totalRevenue,
     },
     revenueHistory,
+    categoryGrowth,
     recentOrders: recentOrders.map((order) => ({
       id: order.orderId,
       customer: order.customer?.name || "Guest",

@@ -91,12 +91,54 @@ const AdminDashboard = () => {
         });
 
         if (revRes.success) {
-          const mapped = revRes.data.revenueData.map(item => ({
+          let mapped = revRes.data.revenueData.map(item => ({
             date: item._id,
-            revenue: item.revenue,
-            orders: item.bookings
+            revenue: item.revenue || 0,
+            orders: item.bookings || 0
           }));
-          mapped.sort((a, b) => new Date(a.date) - new Date(b.date));
+          
+          // Helper to fill gaps
+          const fillGaps = (data, startD, endD, apPeriod) => {
+            const result = [];
+            const curr = new Date(startD);
+            const end = new Date(endD);
+            
+            if (apPeriod === 'daily') {
+              curr.setHours(0,0,0,0);
+              end.setHours(23,59,59,999);
+              while (curr <= end) {
+                const dateStr = curr.toISOString().split('T')[0];
+                const existing = data.find(d => d.date === dateStr);
+                result.push({
+                  date: dateStr,
+                  revenue: existing ? existing.revenue : 0,
+                  orders: existing ? existing.orders : 0
+                });
+                curr.setDate(curr.getDate() + 1);
+              }
+            } else {
+              // Monthly fallback
+              curr.setDate(1);
+              curr.setHours(0,0,0,0);
+              end.setDate(1);
+              end.setHours(23,59,59,999);
+              while (curr <= end) {
+                const y = curr.getFullYear();
+                const m = String(curr.getMonth() + 1).padStart(2, '0');
+                const dateStr = `${y}-${m}`;
+                const existing = data.find(d => d.date === dateStr);
+                result.push({
+                  date: dateStr,
+                  revenue: existing ? existing.revenue : 0,
+                  orders: existing ? existing.orders : 0
+                });
+                curr.setMonth(curr.getMonth() + 1);
+              }
+            }
+            return result;
+          };
+
+          mapped = fillGaps(mapped, startIso, endDate, apiPeriod);
           setRevenueData(mapped);
         }
       } catch (error) {

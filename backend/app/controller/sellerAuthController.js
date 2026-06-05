@@ -103,8 +103,8 @@ export const signupSeller = async (req, res) => {
         // 1. Handle file uploads if they exist in req.files
         const uploadedDocs = {};
         if (req.files) {
-            const files = Array.isArray(req.files) 
-                ? req.files 
+            const files = Array.isArray(req.files)
+                ? req.files
                 : Object.values(req.files).flat();
 
             for (const file of files) {
@@ -177,11 +177,11 @@ export const signupSeller = async (req, res) => {
             const readableMissing = missingRequiredDocuments
                 .map((field) => SELLER_DOCUMENT_FIELDS[field] || field)
                 .join(", ");
-            
+
             // Debugging: If files were sent but didn't result in URLs, mention it
             const filesReceived = req.files ? (Array.isArray(req.files) ? req.files.length : Object.keys(req.files).length) : 0;
-            const detail = filesReceived > 0 
-                ? ". Documents were received but failed to upload correctly." 
+            const detail = filesReceived > 0
+                ? ". Documents were received but failed to upload correctly."
                 : ". No documents were detected in the request.";
 
             return handleResponse(

@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@shared/components/ui/Toast';
 import Modal from '@shared/components/ui/Modal';
 import { motion } from 'framer-motion';
+import { adminApi } from '../services/adminApi';
 
 const SellerDetail = () => {
     const { id } = useParams();
@@ -37,32 +38,26 @@ const SellerDetail = () => {
     const { showToast } = useToast();
     const [activeTab, setActiveTab] = useState('orders');
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [seller, setSeller] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
 
-    // Mock Data for Seller
-    const [seller, setSeller] = useState({
-        id: id || 'SEL-001',
-        shopName: 'Fresh Mart Superstore',
-        ownerName: 'Rahul Sharma',
-        email: 'rahul@freshmart.com',
-        phone: '+91 98765 43210',
-        category: 'Grocery',
-        rating: 4.8,
-        status: 'active',
-        joinedDate: '12 Jan 2024',
-        location: 'Mumbai, Maharashtra',
-        image: 'https://images.unsplash.com/photo-1534723452862-4c874018d66d?auto=format&fit=crop&q=80&w=200',
-        walletBalance: 24500,
-        totalOrders: 1450,
-        totalRevenue: 540000,
-        commissionRate: '10%',
-        coords: { lat: 19.0760, lng: 72.8777 },
-        serviceRadius: 5,
-        bankInfo: {
-            bankName: 'HDFC Bank',
-            accountNo: 'XXXX XXXX 1234',
-            ifsc: 'HDFC0001234'
-        }
-    });
+    React.useEffect(() => {
+        const fetchSeller = async () => {
+            setIsLoading(true);
+            try {
+                const response = await adminApi.getSellerDetails(id);
+                if (response.data?.success) {
+                    setSeller(response.data.data);
+                }
+            } catch (error) {
+                console.error('Failed to fetch seller details:', error);
+                showToast('Failed to load seller details', 'error');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchSeller();
+    }, [id]);
 
     const handleRefresh = () => {
         setIsRefreshing(true);
@@ -71,6 +66,14 @@ const SellerDetail = () => {
             showToast('Seller data synchronized', 'success');
         }, 800);
     };
+
+    if (isLoading || !seller) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <RotateCw className="h-8 w-8 text-primary animate-spin" />
+            </div>
+        );
+    }
 
     return (
         <div className="ds-section-spacing animate-in fade-in slide-in-from-bottom-4 duration-700 pb-12">
@@ -192,17 +195,11 @@ const SellerDetail = () => {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-50">
-                                            {[
-                                                { id: '#ORD-9912', customer: 'Aarav Patel', status: 'delivered', amount: 850, date: 'Today, 11:30 AM' },
-                                                { id: '#ORD-9884', customer: 'Ishani Roy', status: 'processing', amount: 1240, date: 'Today, 09:15 AM' },
-                                                { id: '#ORD-9821', customer: 'Kabir Singh', status: 'delivered', amount: 450, date: 'Yesterday' },
-                                                { id: '#ORD-9750', customer: 'Priya Verma', status: 'cancelled', amount: 2100, date: 'Yesterday' },
-                                                { id: '#ORD-9690', customer: 'Rohan Mehra', status: 'delivered', amount: 150, date: '14 Feb' },
-                                            ].map((order, i) => (
+                                            {seller.recentOrders?.length > 0 ? seller.recentOrders.map((order, i) => (
                                                 <tr key={i} className="group hover:bg-slate-50/50 transition-colors cursor-pointer">
                                                     <td className="px-4 py-5">
                                                         <span className="text-xs font-black text-slate-900">{order.id}</span>
-                                                        <p className="text-[10px] font-bold text-slate-400">{order.date}</p>
+                                                        <p className="text-[10px] font-bold text-slate-400">{new Date(order.date).toLocaleString()}</p>
                                                     </td>
                                                     <td className="px-4 py-5">
                                                         <span className="text-xs font-bold text-slate-700">{order.customer}</span>
@@ -219,7 +216,11 @@ const SellerDetail = () => {
                                                         ₹{order.amount.toLocaleString()}
                                                     </td>
                                                 </tr>
-                                            ))}
+                                            )) : (
+                                                <tr>
+                                                    <td colSpan="4" className="text-center py-8 text-sm text-slate-500">No recent orders</td>
+                                                </tr>
+                                            )}
                                         </tbody>
                                     </table>
                                 </div>
@@ -233,12 +234,7 @@ const SellerDetail = () => {
                                     <Badge variant="blue" className="text-[9px] font-black">LAST 30 DAYS</Badge>
                                 </div>
                                 <div className="space-y-4">
-                                    {[
-                                        { id: 'TXN-8821', type: 'credit', desc: 'Order #ORD-9912 Settlement', amount: 765, date: 'Today, 14:20' },
-                                        { id: 'TXN-8810', type: 'debit', desc: 'Withdrawal to Bank', amount: 15000, date: 'Yesterday' },
-                                        { id: 'TXN-8792', type: 'credit', desc: 'Order #ORD-9821 Settlement', amount: 405, date: 'Yesterday' },
-                                        { id: 'TXN-8750', type: 'credit', desc: 'Order #ORD-9690 Settlement', amount: 135, date: '14 Feb' },
-                                    ].map((txn, i) => (
+                                    {seller.recentTransactions?.length > 0 ? seller.recentTransactions.map((txn, i) => (
                                         <div key={i} className="flex items-center justify-between p-5 bg-slate-50 rounded-2xl border border-slate-100 group hover:bg-white hover:shadow-md transition-all">
                                             <div className="flex items-center gap-4">
                                                 <div className={cn("p-2 rounded-xl flex items-center justify-center",
@@ -248,7 +244,7 @@ const SellerDetail = () => {
                                                 </div>
                                                 <div>
                                                     <p className="text-xs font-black text-slate-900">{txn.desc}</p>
-                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{txn.id} • {txn.date}</p>
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{txn.id} • {new Date(txn.date).toLocaleDateString()}</p>
                                                 </div>
                                             </div>
                                             <div className="text-right">
@@ -257,7 +253,9 @@ const SellerDetail = () => {
                                                 </p>
                                             </div>
                                         </div>
-                                    ))}
+                                    )) : (
+                                        <div className="text-center py-8 text-sm text-slate-500">No recent transactions</div>
+                                    )}
                                 </div>
                             </div>
                         )}

@@ -229,7 +229,9 @@ const AdminDashboard = () => {
                                 </PieChart>
                             </ResponsiveContainer>
                             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                <span className="text-2xl font-bold text-gray-900">72%</span>
+                                <span className={`text-2xl font-bold ${(statsData?.categoryGrowth ?? 0) >= 0 ? 'text-brand-600' : 'text-red-500'}`}>
+                                    {(statsData?.categoryGrowth ?? 0) >= 0 ? '+' : ''}{statsData?.categoryGrowth ?? 0}%
+                                </span>
                                 <span className="text-[10px] text-gray-400 font-semibold uppercase">Growth</span>
                             </div>
                         </div>

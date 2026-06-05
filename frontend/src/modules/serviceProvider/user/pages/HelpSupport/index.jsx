@@ -109,7 +109,7 @@ const HelpSupport = () => {
             phone: supportPhone || '',
             whatsapp: supportWhatsapp || ''
           });
-          
+
           if (faqCategories && faqCategories.length > 0) {
             // Map the string icon to actual React component
             const mappedCategories = faqCategories.map(cat => ({
@@ -169,7 +169,7 @@ const HelpSupport = () => {
     },
   ];
 
-  const handleContactSubmit = (e) => {
+  const handleContactSubmit = async (e) => {
     e.preventDefault();
 
     if (!formData.name || !formData.email || !formData.subject || !formData.message) {
@@ -177,10 +177,21 @@ const HelpSupport = () => {
       return;
     }
 
-    // TODO: Send to backend
-    toast.success('Your message has been sent! We\'ll get back to you soon.');
-    setShowContactForm(false);
-    setFormData({ name: '', email: '', subject: '', message: '' });
+    try {
+      // Calling the tickets creation endpoint and mapping form data to expected schema
+      await api.post('/tickets/create', {
+        subject: formData.subject,
+        description: formData.message,
+        userType: 'ServiceProvider',
+        priority: 'Medium'
+      });
+      toast.success('Your message has been sent! We\'ll get back to you soon.');
+      setShowContactForm(false);
+      setFormData({ name: '', email: '', subject: '', message: '' });
+    } catch (error) {
+      console.error('Support submission error:', error);
+      toast.error('Failed to submit your request. Please try again.');
+    }
   };
 
   const filteredQuestions = categories.flatMap(cat =>

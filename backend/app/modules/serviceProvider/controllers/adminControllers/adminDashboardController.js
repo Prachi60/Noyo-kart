@@ -89,14 +89,43 @@ const getRevenueAnalytics = async (req, res) => {
 
     const dateFilter = {};
     if (startDate || endDate) {
-      dateFilter.completedAt = {};
-      if (startDate) dateFilter.completedAt.$gte = new Date(startDate);
-      if (endDate) dateFilter.completedAt.$lte = new Date(endDate);
+      dateFilter.createdAt = {};
+      if (startDate) dateFilter.createdAt.$gte = new Date(startDate);
+      if (endDate) dateFilter.createdAt.$lte = new Date(endDate);
     }
 
     const revenueData = await SpBooking.aggregate([
-      { $match: { status: SP_BOOKING_STATUS.COMPLETED, paymentStatus: { $in: [SP_PAYMENT_STATUS.SUCCESS, SP_PAYMENT_STATUS.COLLECTED_BY_VENDOR, 'success', 'collected_by_vendor', 'collected_by_worker', 'paid'] }, ...dateFilter } },
-      { $group: { _id: { $dateToString: { format: groupFormat, date: '$completedAt' } }, revenue: { $sum: '$finalAmount' }, bookings: { $sum: 1 }, platformCommission: { $sum: { $multiply: ['$finalAmount', 0.2] } } } },
+      { $match: { ...dateFilter } },
+      { $group: { 
+          _id: { $dateToString: { format: groupFormat, date: '$createdAt' } }, 
+          bookings: { $sum: 1 }, 
+          revenue: { 
+            $sum: { 
+              $cond: [ 
+                { $and: [
+                    { $eq: ['$status', SP_BOOKING_STATUS.COMPLETED] },
+                    { $in: ['$paymentStatus', [SP_PAYMENT_STATUS.SUCCESS, SP_PAYMENT_STATUS.COLLECTED_BY_VENDOR, 'success', 'collected_by_vendor', 'collected_by_worker', 'paid']] }
+                  ] 
+                }, 
+                '$finalAmount', 
+                0 
+              ] 
+            } 
+          },
+          platformCommission: { 
+            $sum: { 
+              $cond: [ 
+                { $and: [
+                    { $eq: ['$status', SP_BOOKING_STATUS.COMPLETED] },
+                    { $in: ['$paymentStatus', [SP_PAYMENT_STATUS.SUCCESS, SP_PAYMENT_STATUS.COLLECTED_BY_VENDOR, 'success', 'collected_by_vendor', 'collected_by_worker', 'paid']] }
+                  ] 
+                }, 
+                { $multiply: ['$finalAmount', 0.2] }, 
+                0 
+              ] 
+            } 
+          }
+      } },
       { $sort: { _id: 1 } }
     ]);
 

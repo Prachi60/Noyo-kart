@@ -76,17 +76,17 @@ const normalizeSeller = (seller) => {
     serviceRadius: safeNumber(seller.serviceRadius) || 5,
     joinedDate: joinedAt
       ? new Date(joinedAt).toLocaleDateString("en-GB", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        })
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })
       : "N/A",
     lastOrderLabel: seller.lastOrderAt
       ? new Date(seller.lastOrderAt).toLocaleDateString("en-GB", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        })
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })
       : "No orders yet",
     location: seller.location || "Location not set",
     avatar:
@@ -223,26 +223,26 @@ const ActiveSellers = () => {
     <div className="ds-section-spacing animate-in fade-in slide-in-from-bottom-2 duration-700 pb-16">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <button 
-              onClick={() => navigate(-1)}
-              className="p-1.5 hover:bg-slate-100 rounded-xl transition-colors text-slate-500 hover:text-slate-900 -ml-1.5"
+          <button
+            onClick={() => navigate(-1)}
+            className="p-1.5 hover:bg-slate-100 rounded-xl transition-colors text-slate-500 hover:text-slate-900 -ml-1.5"
           >
-              <HiOutlineArrowLeft className="h-5 w-5" />
+            <HiOutlineArrowLeft className="h-5 w-5" />
           </button>
           <div>
             <h1 className="ds-h1 flex items-center gap-2">
               Active Sellers
-            <Badge
-              variant="success"
-              className="admin-tiny px-1.5 py-0 font-bold uppercase tracking-wider"
-            >
-              Live
-            </Badge>
-          </h1>
-          <p className="ds-description mt-0.5">
-            Review every verified seller, their performance, and current store health.
-          </p>
-        </div>
+              <Badge
+                variant="success"
+                className="admin-tiny px-1.5 py-0 font-bold uppercase tracking-wider"
+              >
+                Live
+              </Badge>
+            </h1>
+            <p className="ds-description mt-0.5">
+              Review every verified seller, their performance, and current store health.
+            </p>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">
@@ -251,9 +251,9 @@ const ActiveSellers = () => {
             <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">
               {lastSyncAt
                 ? `Synced ${lastSyncAt.toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}`
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}`
                 : "Sync pending"}
             </span>
           </div>
