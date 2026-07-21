@@ -237,11 +237,13 @@ body {
 
   /* Global typography tweaks – make text less dull */
   .font-normal {
-    font-weight: 500; /* was 400 */
+    font-weight: 500;
+    /* was 400 */
   }
 
   .font-medium {
-    font-weight: 600; /* was 500 */
+    font-weight: 600;
+    /* was 500 */
   }
 
   /* Custom Scrollbar Utilities */

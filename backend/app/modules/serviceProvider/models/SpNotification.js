@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import serviceDb from '../config/db.js';
 
 const spNotificationSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'SpUser', default: null, index: true },
@@ -23,4 +24,4 @@ spNotificationSchema.index({ userId: 1, isRead: 1, createdAt: -1 });
 spNotificationSchema.index({ vendorId: 1, isRead: 1, createdAt: -1 });
 spNotificationSchema.index({ workerId: 1, isRead: 1, createdAt: -1 });
 
-export default mongoose.model('SpNotification', spNotificationSchema);
+export default serviceDb.model('SpNotification', spNotificationSchema, 'notifications');

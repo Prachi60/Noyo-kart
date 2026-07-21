@@ -12,8 +12,6 @@ const lazyLoad = (importFunc) => {
   return lazy(() => {
     return Promise.resolve(importFunc()).catch((error) => {
       console.error('User Module - Lazy Load Error:', error);
-      // Failed to load user page
-      // Return a fallback component wrapped in a Promise
       return Promise.resolve({
         default: () => (
           <div className="flex items-center justify-center min-h-screen bg-gray-50 p-4">
@@ -21,7 +19,7 @@ const lazyLoad = (importFunc) => {
               <div className="text-5xl mb-4">🚫</div>
               <h2 className="text-2xl font-bold text-gray-800 mb-2">Failed to load page</h2>
               <p className="text-gray-600 mb-6">Something went wrong while loading this section.</p>
-              
+
               <div className="bg-red-50 p-4 rounded-xl text-left border border-red-100 mb-6 max-h-40 overflow-auto">
                 <p className="text-xs font-mono text-red-600 underline mb-2">Error Details:</p>
                 <code className="text-xs text-red-700 whitespace-pre-wrap">
@@ -52,7 +50,6 @@ const lazyLoad = (importFunc) => {
   });
 };
 
-// Lazy load all user pages for code splitting with error handling
 const Home = lazyLoad(() => import('../pages/Home'));
 const Rewards = lazyLoad(() => import('../pages/Rewards'));
 const Account = lazyLoad(() => import('../pages/Account'));
@@ -80,7 +77,6 @@ const Notifications = lazyLoad(() => import('../pages/Notifications'));
 const HelpSupport = lazyLoad(() => import('../pages/HelpSupport'));
 const CancellationPolicy = lazyLoad(() => import('../pages/CancellationPolicy'));
 
-// Loading fallback component
 const LoadingFallback = () => (
   <div className="flex items-center justify-center min-h-screen">
     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand"></div>
@@ -89,43 +85,31 @@ const LoadingFallback = () => (
 
 import { CartProvider } from '../../context/CartContext';
 import { CityProvider } from '../../context/CityContext';
-
-// Import Live Booking Card
 import LiveBookingCard from '../components/booking/LiveBookingCard';
 
 const UserRoutes = () => {
   const location = useLocation();
+  const path = location.pathname;
 
-  // Enable global notifications for user
-  // Global notifications are now handled by SocketProvider at App level
-  // useAppNotifications('user');
+  const isPublicPage = path.includes('/login') || path.includes('/signup');
+  // Bottom nav on every user page except auth screens
+  const shouldShowBottomNav = path.startsWith('/sp/user') && !isPublicPage;
 
-  // Pages where BottomNav should be shown
-  const bottomNavPages = ['/user', '/user/', '/user/my-bookings', '/user/scrap', '/user/cart', '/user/account'];
-  const shouldShowBottomNav = bottomNavPages.includes(location.pathname);
-
-  // Check if we hide the live booking card (e.g. if we are on the specific booking details or track page)
-  const isBookingDetailsPage = location.pathname.match(/^\/user\/booking\/[a-zA-Z0-9]+(\/track)?$/);
-  const isBookingConfirmationPage = location.pathname.includes('/booking-confirmation');
-
-
-  // Check if we are on public pages (login/signup) where we shouldn't fetch bookings
-  const isPublicPage = location.pathname.includes('/login') || location.pathname.includes('/signup');
+  const isBookingDetailsPage = /^\/sp\/user\/booking\/[^/]+(\/track)?$/.test(path);
+  const isBookingConfirmationPage = path.includes('/booking-confirmation');
+  const isHomePage = path === '/sp/user' || path === '/sp/user/';
 
   return (
     <CityProvider>
       <CartProvider>
         <ErrorBoundary>
-          {/* Main content area - leaves space for bottom nav when needed */}
-          <div className={shouldShowBottomNav ? "pb-24" : ""}>
+          <div className={shouldShowBottomNav ? 'pb-24' : ''}>
             <Suspense fallback={<LoadingFallback />}>
               <PageTransition>
                 <Routes>
-                  {/* Public routes */}
                   <Route path="/login" element={<PublicRoute userType="user"><Login /></PublicRoute>} />
                   <Route path="/signup" element={<PublicRoute userType="user"><Signup /></PublicRoute>} />
 
-                  {/* Protected routes (auth required) */}
                   <Route path="/" element={<ProtectedRoute userType="user"><Home /></ProtectedRoute>} />
                   <Route path="/native" element={<ProtectedRoute userType="user"><Native /></ProtectedRoute>} />
 
@@ -156,10 +140,11 @@ const UserRoutes = () => {
             </Suspense>
           </div>
 
-          {/* These components are OUTSIDE Suspense so they persist during page loads */}
-          {!isBookingDetailsPage && !isBookingConfirmationPage && !isPublicPage && <LiveBookingCard hasBottomNav={shouldShowBottomNav} />}
+          {!isBookingDetailsPage && !isBookingConfirmationPage && !isPublicPage && (
+            <LiveBookingCard hasBottomNav={shouldShowBottomNav} />
+          )}
           {shouldShowBottomNav && <BottomNav />}
-          {(location.pathname === '/user' || location.pathname === '/user/') && <Footer />}
+          {isHomePage && <Footer />}
         </ErrorBoundary>
       </CartProvider>
     </CityProvider>
@@ -167,4 +152,3 @@ const UserRoutes = () => {
 };
 
 export default UserRoutes;
-

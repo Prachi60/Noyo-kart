@@ -48,11 +48,11 @@ const BottomNav = React.memo(() => {
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
 
   const defaultNavItems = [
-    { id: 'home', label: 'Home', icon: FiHome, filledIcon: HiHome, path: '/user' },
-    { id: 'bookings', label: 'Bookings', icon: FiCalendar, filledIcon: HiCalendar, path: '/user/my-bookings' },
-    { id: 'scrap', label: 'Scrap', icon: FiTrash2, filledIcon: HiTrash, path: '/user/scrap' },
-    { id: 'cart', label: 'Cart', icon: FiShoppingCart, filledIcon: HiShoppingCart, path: '/user/cart', isCart: true },
-    { id: 'account', label: 'Account', icon: FiUser, filledIcon: HiUser, path: '/user/account' },
+    { id: 'home', label: 'Home', icon: FiHome, filledIcon: HiHome, path: '/sp/user' },
+    { id: 'bookings', label: 'Bookings', icon: FiCalendar, filledIcon: HiCalendar, path: '/sp/user/my-bookings' },
+    { id: 'scrap', label: 'Scrap', icon: FiTrash2, filledIcon: HiTrash, path: '/sp/user/scrap' },
+    { id: 'cart', label: 'Cart', icon: FiShoppingCart, filledIcon: HiShoppingCart, path: '/sp/user/cart', isCart: true },
+    { id: 'account', label: 'Account', icon: FiUser, filledIcon: HiUser, path: '/sp/user/account' },
   ];
 
   const [navItems, setNavItems] = useState(defaultNavItems);
@@ -66,11 +66,18 @@ const BottomNav = React.memo(() => {
       try {
         const res = await configService.getSettings();
         if (res.success && res.settings && res.settings.bottomNavigation && res.settings.bottomNavigation.length > 0) {
-          const mappedItems = res.settings.bottomNavigation.map(item => ({
-            ...item,
-            icon: iconMap[item.icon] || FiHome,
-            filledIcon: iconMap[item.filledIcon] || HiHome
-          }));
+          const mappedItems = res.settings.bottomNavigation.map(item => {
+            let path = item.path || '/sp/user';
+            // Normalize legacy /user paths to /sp/user
+            if (path === '/user' || path === '/user/') path = '/sp/user';
+            else if (path.startsWith('/user/')) path = `/sp${path}`;
+            return {
+              ...item,
+              path,
+              icon: iconMap[item.icon] || FiHome,
+              filledIcon: iconMap[item.filledIcon] || HiHome
+            };
+          });
           setNavItems(mappedItems);
         }
       } catch (error) {
@@ -82,15 +89,15 @@ const BottomNav = React.memo(() => {
 
   const getActiveTab = () => {
     const currentPath = location.pathname;
-    
-    // Check dynamic items first
+
+    // Prefer more specific matches over home
     for (const item of navItems) {
-      if (item.path !== '/user' && currentPath.includes(item.path)) {
+      if (item.path === '/sp/user' || item.path === '/user') continue;
+      if (currentPath === item.path || currentPath.startsWith(`${item.path}/`)) {
         return item.id;
       }
     }
-    
-    // Default to home if no other path matches
+
     return 'home';
   };
 

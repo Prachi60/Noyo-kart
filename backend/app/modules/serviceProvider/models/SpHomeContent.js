@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import serviceDb from '../config/db.js';
 
 const spHomeContentSchema = new mongoose.Schema({
   cityId: { type: mongoose.Schema.Types.ObjectId, ref: 'SpCity', default: null, index: true },
@@ -84,10 +85,32 @@ const spHomeContentSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 spHomeContentSchema.statics.getHomeContent = async function (cityId = null) {
-  let query = { cityId: cityId || null };
-  let homeContent = await this.findOne(query);
-  if (!homeContent) homeContent = await this.create(query);
+  let homeContent = null;
+
+  if (cityId) {
+    homeContent = await this.findOne({ cityId, isActive: { $ne: false } });
+  }
+
+  // Global / default content (cityId null or missing)
+  if (!homeContent) {
+    homeContent = await this.findOne({
+      $and: [
+        { isActive: { $ne: false } },
+        { $or: [{ cityId: null }, { cityId: { $exists: false } }] }
+      ]
+    }).sort({ updatedAt: -1 });
+  }
+
+  // Last resort: any active home content in Service DB
+  if (!homeContent) {
+    homeContent = await this.findOne({ isActive: { $ne: false } }).sort({ updatedAt: -1 });
+  }
+
+  if (!homeContent) {
+    homeContent = await this.create({ cityId: cityId || null });
+  }
+
   return homeContent;
 };
 
-export default mongoose.model('SpHomeContent', spHomeContentSchema);
+export default serviceDb.model('SpHomeContent', spHomeContentSchema, 'homecontents');

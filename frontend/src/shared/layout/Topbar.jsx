@@ -118,6 +118,17 @@ const Topbar = ({ onMenuClick }) => {
             </div>
 
             <div className="flex items-center space-x-4">
+                {role === 'admin' && (
+                    <button
+                        onClick={() => navigate('/sp/admin/dashboard')}
+                        className="flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-r from-indigo-500 to-cyan-500 text-white rounded-xl transition-all duration-300 font-bold text-xs shadow-sm hover:shadow-md hover:scale-105"
+                        title="Switch to Services Admin"
+                    >
+                        <span className="hidden lg:block">Services Admin 🛠️</span>
+                        <span className="block lg:hidden">SP 🛠️</span>
+                    </button>
+                )}
+
                 <div className="relative" ref={notificationRef}>
                     <button
                         onClick={() => setShowNotifications(!showNotifications)}

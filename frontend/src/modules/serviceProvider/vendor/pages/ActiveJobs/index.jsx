@@ -62,7 +62,11 @@ const ActiveJobs = memo(() => {
         },
         price: (job.finalAmount ? job.finalAmount * 0.9 : 0).toFixed(2),
         status: job.status,
-        assignedTo: job.workerId ? { name: job.workerId.name } : (job.assignedAt ? { name: 'You (Self)' } : null),
+        assignedTo: job.workerId
+          ? { name: job.workerId.name }
+          : ((job.isSelfJob || job.assignedAt) ? { name: 'You (Self)', id: 'SELF' } : null),
+        assignedToSelf: Boolean(job.isSelfJob) || (!job.workerId && !!job.assignedAt),
+        isSelfJob: Boolean(job.isSelfJob) || (!job.workerId && !!job.assignedAt),
         timeSlot: {
           date: job.scheduledDate ? new Date(job.scheduledDate).toLocaleDateString() : 'Date',
           time: job.scheduledTime || 'Time'
@@ -100,18 +104,18 @@ const ActiveJobs = memo(() => {
     setConfirmDialog({
       isOpen: true,
       title: 'Assign to Self',
-      message: 'Are you sure you want to do this job yourself?',
+      message: 'You will handle this service yourself — no worker will be assigned. Continue?',
       onConfirm: async () => {
         try {
           const response = await assignWorkerApi(jobId, 'SELF');
           if (response && response.success) {
-            toast.success("Assigned to yourself!");
-            // Refresh jobs list instead of full page reload
+            toast.success('Assigned to you — open the job to start');
             loadJobs(filter, searchQuery);
+            navigate(`/sp/vendor/booking/${jobId}`);
           }
         } catch (error) {
-          console.error("Error assigning to self:", error);
-          toast.error("Failed to assign to yourself");
+          console.error('Error assigning to self:', error);
+          toast.error(error.response?.data?.message || 'Failed to assign to yourself');
         }
       }
     });
@@ -318,7 +322,7 @@ const ActiveJobs = memo(() => {
                             <FiUser className="w-4 h-4" style={{ color: statusColor }} />
                           </div>
                           <span className="text-gray-700 font-medium">
-                            Assigned to: <span className="font-semibold">{job.assignedTo === 'SELF' ? 'Yourself' : job.assignedTo.name}</span>
+                            Assigned to: <span className="font-semibold">{job.isSelfJob || job.assignedTo === 'SELF' || job.assignedTo?.id === 'SELF' || job.assignedTo?.name === 'You (Self)' ? 'Yourself' : (job.assignedTo?.name || 'Worker')}</span>
                           </span>
                         </div>
                       )}
@@ -332,7 +336,7 @@ const ActiveJobs = memo(() => {
                     </div>
 
                     {/* Quick Action Button for Unassigned Jobs */}
-                    {['ACCEPTED', 'CONFIRMED'].includes(job.status?.toUpperCase()) && !job.assignedTo && (
+                    {['ACCEPTED', 'CONFIRMED'].includes(job.status?.toUpperCase()) && !job.assignedTo && !job.isSelfJob && (
                       <div className="mt-4 pt-3 border-t border-gray-100 flex gap-2">
                         <button
                           onClick={(e) => {

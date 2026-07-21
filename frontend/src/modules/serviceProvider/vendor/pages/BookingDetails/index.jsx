@@ -125,7 +125,10 @@ export default function BookingDetails() {
         },
         status: apiData.status,
         description: apiData.description || apiData.notes || 'No description provided',
-        assignedTo: apiData.workerId ? { name: apiData.workerId.name } : (apiData.assignedAt ? { name: 'You (Self)' } : null),
+        isSelfJob: Boolean(apiData.isSelfJob) || (!apiData.workerId && !!apiData.assignedAt),
+        assignedTo: apiData.workerId
+          ? { name: apiData.workerId.name || apiData.workerId }
+          : ((apiData.isSelfJob || apiData.assignedAt) ? { name: 'You (Self)' } : null),
         workerResponse: apiData.workerResponse,
         workerResponseAt: apiData.workerResponseAt,
         paymentMethod: apiData.paymentMethod,
@@ -193,7 +196,7 @@ export default function BookingDetails() {
 
           if (isPaymentSuccess) {
             toast.success('Online Payment Received!');
-            setTimeout(() => window.location.reload(), 1500);
+            setTimeout(() => navigate('/sp/vendor/dashboard', { replace: true }), 1500);
           }
         }
       };
@@ -268,7 +271,7 @@ export default function BookingDetails() {
     // Check payment status
     const workerPaymentDone = booking?.workerPaymentStatus === 'PAID';
     const finalSettlementDone = booking?.finalSettlementStatus === 'DONE';
-    const isSelfJob = booking?.assignedTo?.name === 'You (Self)';
+    const isSelfJob = booking?.isSelfJob || booking?.assignedTo?.name === 'You (Self)';
 
     const statusFlow = {
       'confirmed': ['assigned', 'visited', 'journey_started'],
@@ -285,7 +288,7 @@ export default function BookingDetails() {
 
   const canPayWorker = (booking) => {
     // If assigned to self, no worker payment needed
-    if (booking?.assignedTo?.name === 'You (Self)') return false;
+    if (booking?.isSelfJob || booking?.assignedTo?.name === 'You (Self)') return false;
 
     // Allow payment ONLY if booking is completed (Vendor Approved)
     const validStatus = booking?.status === 'completed';
@@ -302,7 +305,7 @@ export default function BookingDetails() {
     const isWorkDone = status === 'work_done' || status === 'completed' || status === 'worker_paid';
 
     // Check worker payment (enforce worker is paid before vendor can finalize unless doing job self)
-    const isSelfJob = booking?.assignedTo?.name === 'You (Self)';
+    const isSelfJob = booking?.isSelfJob || booking?.assignedTo?.name === 'You (Self)';
     const handleWorkerCheck = isSelfJob || booking?.workerPaymentStatus === 'PAID';
 
     return isWorkDone && isPaid && handleWorkerCheck && booking?.finalSettlementStatus !== 'DONE';
@@ -417,7 +420,8 @@ export default function BookingDetails() {
       const res = await vendorWalletService.confirmCashCollection(id, amount, code, extras);
       if (res.success) {
         toast.success('Payment verified successfully!');
-        window.location.reload();
+        window.dispatchEvent(new Event('vendorJobsUpdated'));
+        navigate('/sp/vendor/dashboard', { replace: true });
       }
       return res;
     } catch (error) {
@@ -434,7 +438,7 @@ export default function BookingDetails() {
     }
 
     // Cash can be collected when booking is completed/work_done and payment was cash/at home
-    const isSelfJob = booking?.assignedTo?.name === 'You (Self)';
+    const isSelfJob = booking?.isSelfJob || booking?.assignedTo?.name === 'You (Self)';
     const validStatus = isSelfJob
       ? (booking?.status === 'work_done' || booking?.status === 'completed')
       : booking?.status === 'completed';
@@ -490,22 +494,22 @@ export default function BookingDetails() {
     setConfirmDialog({
       isOpen: true,
       title: 'Assign to Self',
-      message: 'Are you sure you want to do this job yourself?',
+      message: 'You will handle this service yourself — no worker will be assigned. Continue?',
       type: 'info',
       onConfirm: async () => {
         setLoading(true);
         try {
           const response = await assignWorkerApi(id, 'SELF');
           if (response && response.success) {
-            toast.success('Assigned to yourself successfully');
+            toast.success('Assigned to you — start the job when ready');
             window.dispatchEvent(new Event('vendorJobsUpdated'));
-            window.location.reload();
+            await loadBooking();
           } else {
             throw new Error(response?.message || 'Failed to assign');
           }
         } catch (error) {
           console.error('Error assigning to self:', error);
-          toast.error(error.message || 'Failed to assign to yourself');
+          toast.error(error.response?.data?.message || error.message || 'Failed to assign to yourself');
         } finally {
           setLoading(false);
         }
@@ -514,26 +518,31 @@ export default function BookingDetails() {
   };
 
   const handleStartJourney = async () => {
+    const isSelf = booking?.isSelfJob || booking?.assignedTo?.name === 'You (Self)';
     // If self-job, call the start API first
-    if (booking.assignedTo?.name === 'You (Self)') {
+    if (isSelf) {
       try {
         setLoading(true);
         await startSelfJob(id);
         toast.success('Journey Started');
-        // Refresh to update status
         const response = await getBookingById(id);
         const apiData = response.data || response;
-        setBooking(prev => ({ ...prev, status: apiData.status }));
+        setBooking(prev => ({
+          ...prev,
+          status: apiData.status,
+          isSelfJob: true,
+          assignedTo: { name: 'You (Self)' }
+        }));
       } catch (error) {
         console.error('Error starting self journey:', error);
-        toast.error('Failed to start journey');
+        toast.error(error.response?.data?.message || 'Failed to start journey');
         return;
       } finally {
         setLoading(false);
       }
     }
 
-    navigate(`/vendor/booking/${booking.id || id}/map`);
+    navigate(`/sp/vendor/booking/${booking.id || id}/map`);
   };
 
 
@@ -546,7 +555,8 @@ export default function BookingDetails() {
       await completeSelfJob(id, { workPhotos: photos || [] });
       toast.success('Work marked done');
       setIsWorkDoneModalOpen(false);
-      window.location.reload();
+      window.dispatchEvent(new Event('vendorJobsUpdated'));
+      navigate('/sp/vendor/dashboard', { replace: true });
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to complete job');
     } finally {
@@ -566,7 +576,7 @@ export default function BookingDetails() {
           await updateBookingStatus(id, 'completed');
           window.dispatchEvent(new Event('vendorJobsUpdated'));
           toast.success('Work Approved! You can now pay the worker.');
-          window.location.reload();
+          navigate('/sp/vendor/dashboard', { replace: true });
         } catch (error) {
           console.error('Error approving work:', error);
           toast.error('Failed to approve work');
@@ -652,7 +662,7 @@ export default function BookingDetails() {
               >
                 {booking.status}
               </div>
-              {booking.assignedTo?.name === 'You (Self)' && (
+              {(booking.isSelfJob || booking.assignedTo?.name === 'You (Self)') && (
                 <span className="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-md border border-green-100 uppercase tracking-wider">
                   Personal Job
                 </span>
@@ -1050,7 +1060,7 @@ export default function BookingDetails() {
         </div>
 
         {/* Work Photos (after completion) */}
-        {booking.workPhotos && booking.workPhotos.length > 0 && booking.assignedTo?.name !== 'You (Self)' && (
+        {booking.workPhotos && booking.workPhotos.length > 0 && !(booking.isSelfJob || booking.assignedTo?.name === 'You (Self)') && (
           <div className="bg-white rounded-xl p-4 mb-4 shadow-md border-t-4 border-green-500">
             <p className="text-sm font-semibold text-gray-700 mb-3">Work Evidence (Photos)</p>
             <div className="grid grid-cols-2 gap-2">
@@ -1074,7 +1084,7 @@ export default function BookingDetails() {
             </div>
 
             {/* Approval/Reject Buttons */}
-            {booking.status === 'work_done' && booking.workerPaymentStatus !== 'PAID' && booking.assignedTo?.name !== 'You (Self)' && (
+            {booking.status === 'work_done' && booking.workerPaymentStatus !== 'PAID' && !(booking.isSelfJob || booking.assignedTo?.name === 'You (Self)') && (
               <div className="flex gap-3 mt-4 pt-3 border-t border-gray-100">
                 <button
                   onClick={() => {
@@ -1105,7 +1115,7 @@ export default function BookingDetails() {
         )}
 
         {/* Worker & Job Status Card (Enhanced) */}
-        {booking.assignedTo && booking.assignedTo?.name !== 'You (Self)' && (
+        {booking.assignedTo && !(booking.isSelfJob || booking.assignedTo?.name === 'You (Self)') && (
           <div className="bg-white rounded-2xl p-5 mb-5 shadow-lg border border-gray-100">
             <div className="flex justify-between items-center mb-4 pb-4 border-b border-gray-100">
               <div className="flex items-center gap-3">
@@ -1460,7 +1470,9 @@ export default function BookingDetails() {
             <FiArrowRight className="w-5 h-5" />
           </button>
 
-          {(booking.status === 'confirmed' || (booking.assignedTo && booking.workerResponse === 'rejected')) && (
+          {/* Assign choices only when job still needs self/worker pick */}
+          {!(booking.isSelfJob || booking.assignedTo?.name === 'You (Self)') &&
+            (booking.status === 'confirmed' || (booking.assignedTo && booking.workerResponse === 'rejected')) && (
             <div className="flex gap-3">
               <button
                 onClick={handleAssignToSelf}
@@ -1481,13 +1493,13 @@ export default function BookingDetails() {
                   boxShadow: `0 4px 12px ${themeColors.button}40`,
                 }}
               >
-                {booking.workerResponse === 'rejected' ? 'Reassign' : 'Assign'}
+                {booking.workerResponse === 'rejected' ? 'Reassign' : 'Assign Worker'}
               </button>
             </div>
           )}
 
           {/* Self-Job Operational Buttons */}
-          {booking.assignedTo?.name === 'You (Self)' && (
+          {(booking.isSelfJob || booking.assignedTo?.name === 'You (Self)') && (
             <div className="space-y-3 pt-2">
               {(booking.status === 'confirmed' || booking.status === 'assigned') && (
                 <button
@@ -1592,11 +1604,11 @@ export default function BookingDetails() {
         onComplete={async (photos) => {
           try {
             setActionLoading(true);
-            // Use vendor-specific service call (completeSelfJob)
             await completeSelfJob(id, { workPhotos: photos });
             toast.success('Work marked done');
             setIsWorkDoneModalOpen(false);
-            window.location.reload();
+            window.dispatchEvent(new Event('vendorJobsUpdated'));
+            navigate('/sp/vendor/dashboard', { replace: true });
           } catch (err) {
             toast.error(err.response?.data?.message || 'Failed to complete job');
           } finally {

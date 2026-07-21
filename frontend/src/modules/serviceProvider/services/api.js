@@ -1,10 +1,10 @@
 import axios from 'axios';
 import { apiCache } from '../utils/apiCache';
+import { resolveApiBaseUrl } from '../../../core/api/resolveApiBaseUrl';
+import { getStoredAuthToken } from '../../../core/utils/authStorage';
 
 // API Base URL - Using /api/sp prefix for Service Provider module
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL 
-  ? import.meta.env.VITE_API_BASE_URL.replace(/\/api$/, '/api/sp')
-  : 'http://localhost:5000/api/sp';
+const API_BASE_URL = resolveApiBaseUrl().replace(/\/api$/, '/api/sp');
 
 // Create axios instance
 const api = axios.create({
@@ -17,7 +17,21 @@ const api = axios.create({
 
 // Helper to get token keys based on role/path
 const getTokenKeys = (url) => {
-  // 1. Prioritize current page context for role-based tokens
+  // 1. Prioritize API URL first (most reliable for pending requests after navigation)
+  if (url?.includes('/admin/')) {
+    return { access: 'spAdminAccessToken', refresh: 'spAdminRefreshToken', role: 'admin' };
+  }
+  if (url?.includes('/vendors/')) {
+    return { access: 'spVendorAccessToken', refresh: 'spVendorRefreshToken', role: 'vendor' };
+  }
+  if (url?.includes('/workers/')) {
+    return { access: 'spWorkerAccessToken', refresh: 'spWorkerRefreshToken', role: 'worker' };
+  }
+  if (url?.includes('/users/')) {
+    return { access: 'spAccessToken', refresh: 'spRefreshToken', role: 'user' };
+  }
+
+  // 2. Fallback to current page context
   if (window.location.pathname.startsWith('/sp/admin')) {
     return { access: 'spAdminAccessToken', refresh: 'spAdminRefreshToken', role: 'admin' };
   }
@@ -28,14 +42,42 @@ const getTokenKeys = (url) => {
     return { access: 'spWorkerAccessToken', refresh: 'spWorkerRefreshToken', role: 'worker' };
   }
 
-  // 2. Explicitly detect auth routes regardless of current page (for cross-role login/actions)
-  if (url?.includes('/admin/auth')) return { access: 'spAdminAccessToken', refresh: 'spAdminRefreshToken', role: 'admin' };
-  if (url?.includes('/vendors/auth')) return { access: 'spVendorAccessToken', refresh: 'spVendorRefreshToken', role: 'vendor' };
-  if (url?.includes('/workers/auth')) return { access: 'spWorkerAccessToken', refresh: 'spWorkerRefreshToken', role: 'worker' };
-
-  // 3. Fallback to user token (most common case for user app)
+  // 3. Absolute fallback
   return { access: 'spAccessToken', refresh: 'spRefreshToken', role: 'user' };
 };
+
+let ssoRecoverInFlight = null;
+
+async function recoverUserSessionViaSso() {
+  const qcToken = getStoredAuthToken('auth_customer') || getStoredAuthToken('token', { allowExpired: false });
+  if (!qcToken) return null;
+
+  if (!ssoRecoverInFlight) {
+    ssoRecoverInFlight = axios
+      .post(`${API_BASE_URL}/users/auth/sso-login`, { qcToken })
+      .then((res) => {
+        if (!res.data?.success || !res.data.accessToken) return null;
+        localStorage.setItem('spAccessToken', res.data.accessToken);
+        if (res.data.refreshToken) {
+          localStorage.setItem('spRefreshToken', res.data.refreshToken);
+        }
+        if (res.data.user) {
+          localStorage.setItem('spUserData', JSON.stringify(res.data.user));
+        }
+        sessionStorage.removeItem('spAccessToken');
+        sessionStorage.removeItem('spRefreshToken');
+        sessionStorage.removeItem('spUserData');
+        window.dispatchEvent(new CustomEvent('sp-auth-changed', { detail: { userType: 'spUserData' } }));
+        return res.data.accessToken;
+      })
+      .catch(() => null)
+      .finally(() => {
+        ssoRecoverInFlight = null;
+      });
+  }
+
+  return ssoRecoverInFlight;
+}
 
 // Request interceptor - Add auth token
 api.interceptors.request.use(
@@ -95,45 +137,64 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       const { access, refresh, role } = getTokenKeys(originalRequest.url);
+      const requestToken = originalRequest.headers?.Authorization?.replace(/^Bearer\s+/i, '') || null;
+      const currentToken = sessionStorage.getItem(access) || localStorage.getItem(access);
+
+      // Stale in-flight request after a newer SSO/login — don't wipe the fresh session
+      if (currentToken && requestToken && requestToken !== currentToken) {
+        isRefreshing = false;
+        originalRequest.headers.Authorization = `Bearer ${currentToken}`;
+        return api(originalRequest);
+      }
+
       const refreshToken = sessionStorage.getItem(refresh) || localStorage.getItem(refresh);
 
-      if (!refreshToken) {
-        handleLogout(role);
-        return Promise.reject(error);
-      }
+      if (refreshToken) {
+        try {
+          let refreshEndpoint = '/users/auth/refresh-token';
+          if (role === 'vendor') refreshEndpoint = '/vendors/auth/refresh-token';
+          else if (role === 'worker') refreshEndpoint = '/workers/auth/refresh-token';
+          else if (role === 'admin') refreshEndpoint = '/admin/auth/refresh-token';
 
-      try {
-        let refreshEndpoint = '/users/auth/refresh-token';
-        if (role === 'vendor') refreshEndpoint = '/vendors/auth/refresh-token';
-        else if (role === 'worker') refreshEndpoint = '/workers/auth/refresh-token';
-        else if (role === 'admin') refreshEndpoint = '/admin/auth/refresh-token';
+          const response = await axios.post(`${API_BASE_URL}${refreshEndpoint}`, {
+            refreshToken
+          });
 
-        const response = await axios.post(`${API_BASE_URL}${refreshEndpoint}`, {
-          refreshToken
-        });
+          const { accessToken } = response.data;
 
-        const { accessToken } = response.data;
+          if (sessionStorage.getItem(access)) {
+            sessionStorage.setItem(access, accessToken);
+          } else {
+            localStorage.setItem(access, accessToken);
+          }
 
-        if (sessionStorage.getItem(access)) {
-          sessionStorage.setItem(access, accessToken);
-        } else {
-          localStorage.setItem(access, accessToken);
+          api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+
+          processQueue(null, accessToken);
+          isRefreshing = false;
+
+          return api(originalRequest);
+        } catch (refreshError) {
+          console.error('RefreshToken failed:', refreshError);
         }
-
-        api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
-        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-
-        processQueue(null, accessToken);
-        isRefreshing = false;
-
-        return api(originalRequest);
-      } catch (refreshError) {
-        console.error('RefreshToken failed:', refreshError);
-        processQueue(refreshError, null);
-        isRefreshing = false;
-        handleLogout(role);
-        return Promise.reject(refreshError);
       }
+
+      // QC session can rebuild SP user tokens via SSO
+      if (role === 'user') {
+        const ssoToken = await recoverUserSessionViaSso();
+        if (ssoToken) {
+          originalRequest.headers.Authorization = `Bearer ${ssoToken}`;
+          processQueue(null, ssoToken);
+          isRefreshing = false;
+          return api(originalRequest);
+        }
+      }
+
+      processQueue(error, null);
+      isRefreshing = false;
+      handleLogout(role);
+      return Promise.reject(error);
     }
 
     if (error.response?.status === 403) {
@@ -185,6 +246,16 @@ export const handleLogout = (role = null) => {
     sessionStorage.removeItem('spAccessToken');
     sessionStorage.removeItem('spRefreshToken');
     sessionStorage.removeItem('spUserData');
+
+    // QC session can recover via SSO — don't hard-redirect to SP login
+    const hasQcSession = Boolean(
+      getStoredAuthToken('auth_customer') || getStoredAuthToken('token', { allowExpired: true })
+    );
+    if (hasQcSession) {
+      window.dispatchEvent(new CustomEvent('sp-auth-changed'));
+      return;
+    }
+
     if (!window.location.pathname.includes('/login')) {
       window.location.href = '/sp/user/login';
     }

@@ -501,7 +501,7 @@ const Home = () => {
     if (products.length === 0 && !isLoading) {
       import("@/assets/lottie/animation.json")
         .then((m) => setNoServiceData(m.default))
-        .catch(() => {});
+        .catch(() => { });
     }
   }, [products.length === 0 && !isLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -566,7 +566,7 @@ const Home = () => {
             );
             if (match) return match;
           }
-        } catch (e) {}
+        } catch (e) { }
       }
 
       if (!prev || prev._id === "all") {
@@ -617,11 +617,11 @@ const Home = () => {
           .catch(() => null),
         hasValidLocation
           ? customerApi
-              .getOfferSections({
-                lat: currentLocation.latitude,
-                lng: currentLocation.longitude,
-              })
-              .catch(() => ({ data: {} }))
+            .getOfferSections({
+              lat: currentLocation.latitude,
+              lng: currentLocation.longitude,
+            })
+            .catch(() => ({ data: {} }))
           : Promise.resolve({ data: { results: [] } }),
       ]);
 
@@ -663,17 +663,17 @@ const Home = () => {
             // Theme / banner still come from local metadata for now
             const meta = CATEGORY_METADATA[catName] ||
               CATEGORY_METADATA[
-                catName.charAt(0).toUpperCase() + catName.slice(1).toLowerCase()
+              catName.charAt(0).toUpperCase() + catName.slice(1).toLowerCase()
               ] ||
               CATEGORY_METADATA[catName.toUpperCase()] || {
-                icon: Sparkles,
-                theme: DEFAULT_CATEGORY_THEME,
-                banner: {
-                  title: catName.toUpperCase(),
-                  subtitle: "TOP PICKS",
-                  floatingElements: "sparkles",
-                },
-              };
+              icon: Sparkles,
+              theme: DEFAULT_CATEGORY_THEME,
+              banner: {
+                title: catName.toUpperCase(),
+                subtitle: "TOP PICKS",
+                floatingElements: "sparkles",
+              },
+            };
 
             // Icon is fully driven by admin-chosen iconId, mapped to MUI
             const IconComp =
@@ -702,12 +702,12 @@ const Home = () => {
 
         const mergedAllCategory = allHeaderFromAdmin
           ? {
-              ...ALL_CATEGORY,
-              // Preserve special id/_id used in UI logic, but take color and icon from admin
-              headerColor:
-                allHeaderFromAdmin.headerColor || ALL_CATEGORY.headerColor,
-              icon: allHeaderFromAdmin.icon || ALL_CATEGORY.icon,
-            }
+            ...ALL_CATEGORY,
+            // Preserve special id/_id used in UI logic, but take color and icon from admin
+            headerColor:
+              allHeaderFromAdmin.headerColor || ALL_CATEGORY.headerColor,
+            icon: allHeaderFromAdmin.icon || ALL_CATEGORY.icon,
+          }
           : ALL_CATEGORY;
 
         const headersWithoutAll = formattedHeaders.filter(
@@ -718,7 +718,23 @@ const Home = () => {
             ),
         );
 
-        nextHomeData.categories = [mergedAllCategory, ...headersWithoutAll];
+        const serviceProviderCat = {
+          id: "sp-link",
+          _id: "sp-link",
+          name: "Services",
+          slug: "services",
+          iconId: "service_provider",
+          icon: BuildIcon,
+          theme: {
+             gradient: "linear-gradient(to bottom, #475569, #94a3b8)",
+             shadow: "shadow-slate-500/20",
+             accent: "text-slate-900",
+          },
+          isExternal: true,
+          link: "/sp/user"
+        };
+
+        nextHomeData.categories = [mergedAllCategory, serviceProviderCat, ...headersWithoutAll];
         nextHomeData.activeCategory = mergedAllCategory;
 
         // 2. Process Quick Navigation Categories (Horizontal Scroll)
@@ -857,12 +873,12 @@ const Home = () => {
         }
         const resolved =
           payload &&
-          (payload.banners?.items?.length > 0 ||
-            payload.categoryIds?.length > 0)
+            (payload.banners?.items?.length > 0 ||
+              payload.categoryIds?.length > 0)
             ? {
-                banners: payload.banners || { items: [] },
-                categoryIds: payload.categoryIds || [],
-              }
+              banners: payload.banners || { items: [] },
+              categoryIds: payload.categoryIds || [],
+            }
             : { banners: { items: [] }, categoryIds: [] };
         heroConfigCache.current[cacheKey] = resolved;
         if (cacheKey === "__home__") {
@@ -1069,21 +1085,21 @@ const Home = () => {
           animate={
             isVisible
               ? {
-                  x: [0, 50, -50, 0],
-                  y: [0, -100, -50, 0],
-                  rotate: [0, 360],
-                  scale: [depth, depth * 1.2, depth],
-                }
+                x: [0, 50, -50, 0],
+                y: [0, -100, -50, 0],
+                rotate: [0, 360],
+                scale: [depth, depth * 1.2, depth],
+              }
               : { x: 0, y: 0, rotate: 0, scale: depth }
           }
           transition={
             isVisible
               ? {
-                  duration: duration / depth,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: delay,
-                }
+                duration: duration / depth,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: delay,
+              }
               : { duration: 0 }
           }>
           <div className="transform-gpu">{getParticleContent(i)}</div>
@@ -1151,7 +1167,7 @@ const Home = () => {
                     className={cn(
                       "flex",
                       !isInstantBannerJump &&
-                        "transition-transform duration-500 ease-out",
+                      "transition-transform duration-500 ease-out",
                     )}
                     style={{
                       transform: `translateX(-${mobileBannerIndex * 100}%)`,
@@ -1309,40 +1325,40 @@ const Home = () => {
                   </motion.button>
                 </div>
 
-                  <div
-                    ref={quickCatsRef}
-                    className="relative z-10 flex items-start gap-2.5 md:gap-3 lg:gap-4 overflow-x-auto no-scrollbar px-4 pb-3 pt-1 md:px-8 md:pb-4 snap-x scroll-smooth">
-                    
-                    {/* Instant Print Special Card */}
-                    <motion.div
-                      whileHover={{ y: -4 }}
-                      whileTap={{ scale: 0.96 }}
-                      onClick={() => navigate('/print-store')}
-                      className="flex flex-col items-center gap-1 min-w-[84px] md:min-w-[112px] lg:min-w-[128px] cursor-pointer group/item snap-start"
-                    >
-                      <div
-                        className="relative w-[84px] h-[96px] md:w-[112px] md:h-[126px] lg:w-[128px] lg:h-[140px] rounded-[22px] shadow-[0_10px_22px_rgba(255,30,86,0.15)] border-2 border-rose-100 flex items-start justify-center p-2 transition-all duration-300 group-hover/item:-translate-y-1 group-hover/item:shadow-[0_16px_30px_rgba(255,30,86,0.2)] overflow-hidden bg-rose-50"
-                        style={{
-                          backgroundImage: `linear-gradient(135deg, rgba(255,255,255,0.96) 0%, rgba(255,255,255,0.6) 24%, rgba(255,255,255,0.15) 100%), linear-gradient(135deg, #FF1E56, #FF4D6D, #FF8FA3)`,
-                        }}
-                      >
-                        <div className="absolute inset-0 bg-white/10 pointer-events-none" />
-                        <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-white/20 backdrop-blur-md rounded-lg text-[7px] font-black text-white uppercase tracking-widest border border-white/30 z-20">
-                          New
-                        </div>
-                        <Printer
-                          className="absolute left-1/2 top-3 z-10 h-[56px] w-[56px] -translate-x-1/2 text-white drop-shadow-[0_4px_10px_rgba(0,0,0,0.2)] group-hover/item:scale-110 transition-transform duration-500"
-                          strokeWidth={2.5}
-                        />
-                        <div className="absolute inset-x-2 bottom-1.5 z-20 text-center">
-                          <span className="block text-[10px] md:text-[11px] lg:text-[12px] font-black text-white leading-tight whitespace-nowrap overflow-hidden text-ellipsis drop-shadow-[0_1px_4px_rgba(0,0,0,0.2)]">
-                            Instant Print
-                          </span>
-                        </div>
-                      </div>
-                    </motion.div>
+                <div
+                  ref={quickCatsRef}
+                  className="relative z-10 flex items-start gap-2.5 md:gap-3 lg:gap-4 overflow-x-auto no-scrollbar px-4 pb-3 pt-1 md:px-8 md:pb-4 snap-x scroll-smooth">
 
-                    {effectiveQuickCategories.map((cat, idx) => {
+                  {/* Instant Print Special Card */}
+                  <motion.div
+                    whileHover={{ y: -4 }}
+                    whileTap={{ scale: 0.96 }}
+                    onClick={() => navigate('/print-store')}
+                    className="flex flex-col items-center gap-1 min-w-[84px] md:min-w-[112px] lg:min-w-[128px] cursor-pointer group/item snap-start"
+                  >
+                    <div
+                      className="relative w-[84px] h-[96px] md:w-[112px] md:h-[126px] lg:w-[128px] lg:h-[140px] rounded-[22px] shadow-[0_10px_22px_rgba(255,30,86,0.15)] border-2 border-rose-100 flex items-start justify-center p-2 transition-all duration-300 group-hover/item:-translate-y-1 group-hover/item:shadow-[0_16px_30px_rgba(255,30,86,0.2)] overflow-hidden bg-rose-50"
+                      style={{
+                        backgroundImage: `linear-gradient(135deg, rgba(255,255,255,0.96) 0%, rgba(255,255,255,0.6) 24%, rgba(255,255,255,0.15) 100%), linear-gradient(135deg, #FF1E56, #FF4D6D, #FF8FA3)`,
+                      }}
+                    >
+                      <div className="absolute inset-0 bg-white/10 pointer-events-none" />
+                      <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-white/20 backdrop-blur-md rounded-lg text-[7px] font-black text-white uppercase tracking-widest border border-white/30 z-20">
+                        New
+                      </div>
+                      <Printer
+                        className="absolute left-1/2 top-3 z-10 h-[56px] w-[56px] -translate-x-1/2 text-white drop-shadow-[0_4px_10px_rgba(0,0,0,0.2)] group-hover/item:scale-110 transition-transform duration-500"
+                        strokeWidth={2.5}
+                      />
+                      <div className="absolute inset-x-2 bottom-1.5 z-20 text-center">
+                        <span className="block text-[10px] md:text-[11px] lg:text-[12px] font-black text-white leading-tight whitespace-nowrap overflow-hidden text-ellipsis drop-shadow-[0_1px_4px_rgba(0,0,0,0.2)]">
+                          Instant Print
+                        </span>
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  {effectiveQuickCategories.map((cat, idx) => {
                     const palette =
                       quickCategoryPalettes[idx % quickCategoryPalettes.length];
                     return (
@@ -1499,17 +1515,17 @@ const Home = () => {
                             .filter(Boolean)
                             .join(", ") ||
                             section.categoryId?.name) && (
-                            <p className="text-xs md:text-sm font-semibold text-black/75 mt-1">
-                              {(section.categoryIds || [])
-                                .map((c) =>
-                                  typeof c === "object" && c?.name
-                                    ? c.name
-                                    : null,
-                                )
-                                .filter(Boolean)
-                                .join(", ") || section.categoryId?.name}
-                            </p>
-                          )}
+                              <p className="text-xs md:text-sm font-semibold text-black/75 mt-1">
+                                {(section.categoryIds || [])
+                                  .map((c) =>
+                                    typeof c === "object" && c?.name
+                                      ? c.name
+                                      : null,
+                                  )
+                                  .filter(Boolean)
+                                  .join(", ") || section.categoryId?.name}
+                              </p>
+                            )}
                         </div>
                         <motion.div
                           whileHover={{ y: -4, rotate: -4, scale: 1.06 }}

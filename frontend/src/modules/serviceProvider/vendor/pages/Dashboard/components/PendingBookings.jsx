@@ -19,7 +19,8 @@ const PendingBookings = memo(({ bookings, setPendingBookings, setActiveAlertBook
     if (loadingAction.id) return;
     setLoadingAction({ id: bId, type: 'accept' });
     try {
-      const response = await acceptBooking(bId);
+      // Accept = Myself: vendor self-assigns, no worker scene
+      const response = await acceptBooking(bId, { assignToSelf: true });
 
       if (response.success) {
         setPendingBookings(prev => prev.filter(b => String(b.id || b._id) !== String(bId)));
@@ -30,11 +31,13 @@ const PendingBookings = memo(({ bookings, setPendingBookings, setActiveAlertBook
 
         window.dispatchEvent(new CustomEvent('removeVendorBooking', { detail: { id: bId } }));
         window.dispatchEvent(new Event('vendorStatsUpdated'));
-        toast.success('Booking accepted successfully!');
+        window.dispatchEvent(new Event('vendorJobsUpdated'));
+        toast.success('Accepted — you will handle this service yourself.');
+        navigate(`/sp/vendor/booking/${bId}`);
       }
     } catch (error) {
       console.error('Error accepting:', error);
-      toast.error('Failed to accept booking');
+      toast.error(error.response?.data?.message || 'Failed to accept booking');
     } finally {
       setLoadingAction({ id: null, type: null });
     }

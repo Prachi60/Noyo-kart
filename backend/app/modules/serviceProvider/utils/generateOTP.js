@@ -8,7 +8,9 @@
  * @returns {string} - Generated OTP
  */
 export const generateOTP = (length = 6) => {
-  if (process.env.NODE_ENV === 'development' || process.env.USE_DEFAULT_OTP === 'true') {
+  const flag = String(process.env.USE_DEFAULT_OTP || '').trim().toLowerCase();
+  const env = String(process.env.NODE_ENV || 'development').trim().toLowerCase();
+  if (flag === 'true' || flag === '1' || env !== 'production') {
     return '123456';
   }
 

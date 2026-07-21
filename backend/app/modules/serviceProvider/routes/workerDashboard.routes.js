@@ -5,6 +5,7 @@ import { getDashboardStats } from '../controllers/workerControllers/workerDashbo
 
 const router = Router();
 
-router.get('/stats', authenticate, isWorker, getDashboardStats);
+// Mounted at /workers/dashboard and aliased at /workers/stats
+router.get('/', authenticate, isWorker, getDashboardStats);
 
 export default router;

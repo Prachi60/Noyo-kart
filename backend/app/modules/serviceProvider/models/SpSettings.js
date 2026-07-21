@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import serviceDb from '../config/db.js';
 
 const spSettingsSchema = new mongoose.Schema({
   type: { type: String, default: 'global', unique: true },
@@ -361,4 +362,4 @@ const spSettingsSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-export default mongoose.model('SpSettings', spSettingsSchema);
+export default serviceDb.model('SpSettings', spSettingsSchema, 'settings');

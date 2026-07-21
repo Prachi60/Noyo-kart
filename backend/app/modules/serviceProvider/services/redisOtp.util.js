@@ -1,11 +1,22 @@
 import crypto from 'crypto';
 
+const DEFAULT_OTP = '123456';
+
+const isDefaultOtpEnabled = () => {
+  const flag = String(process.env.USE_DEFAULT_OTP || '').trim().toLowerCase();
+  if (flag === 'true' || flag === '1' || flag === 'yes') return true;
+  const env = String(process.env.NODE_ENV || 'development').trim().toLowerCase();
+  return env !== 'production';
+};
+
+const normalizeOtp = (otp) => String(otp ?? '').replace(/\D/g, '');
+
 /**
  * Generate a 6-digit OTP
  */
 const generateOTP = () => {
-  if (process.env.USE_DEFAULT_OTP === 'true') {
-    return '123456';
+  if (isDefaultOtpEnabled()) {
+    return DEFAULT_OTP;
   }
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
@@ -14,7 +25,7 @@ const generateOTP = () => {
  * Hash OTP using SHA-256
  */
 const hashOTP = (otp) => {
-  return crypto.createHash('sha256').update(otp).digest('hex');
+  return crypto.createHash('sha256').update(String(otp)).digest('hex');
 };
 
 // In-memory OTP store (fallback when Redis is not available)
@@ -34,8 +45,11 @@ const storeOTP = async (phone, otpHash) => {
  * Verify OTP
  */
 const verifyOTP = async (phone, otp) => {
+  const normalized = normalizeOtp(otp);
+
   // Default OTP bypass for development
-  if (process.env.USE_DEFAULT_OTP === 'true' && otp === '123456') {
+  if (isDefaultOtpEnabled() && normalized === DEFAULT_OTP) {
+    otpStore.delete(phone);
     return { success: true };
   }
 
@@ -56,10 +70,10 @@ const verifyOTP = async (phone, otp) => {
     return { success: false, message: 'OTP has expired. Please request a new one.' };
   }
 
-  const otpHash = hashOTP(otp);
+  const otpHash = hashOTP(normalized);
   if (otpHash !== stored.hash) {
     stored.attempts += 1;
-    return { success: false, message: 'Invalid OTP. Please try again.' };
+    return { success: false, message: 'Invalid OTP' };
   }
 
   // OTP verified - remove it

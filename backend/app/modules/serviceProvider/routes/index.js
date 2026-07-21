@@ -67,7 +67,10 @@ import adminSettlementsRoutes from './adminSettlements.routes.js';
 import adminManagementRoutes from './adminManagement.routes.js';
 import adminUploadRoutes from './adminUpload.routes.js';
 import adminCitiesRoutes from './adminCities.routes.js';
-import adminVendorCatalogRoutes from './adminVendorCatalog.routes.js';
+import adminVendorCatalogRoutes, {
+  adminVendorServicesRoutes,
+  adminVendorPartsRoutes
+} from './adminVendorCatalog.routes.js';
 
 // ==========================================
 // BOOKING ROUTES
@@ -131,6 +134,7 @@ router.use('/workers/auth', workerAuthRoutes);
 router.use('/workers', workerProfileRoutes);
 router.use('/workers/jobs', workerJobRoutes);
 router.use('/workers/dashboard', workerDashboardRoutes);
+router.use('/workers/stats', workerDashboardRoutes); // alias — frontend expects /workers/stats
 router.use('/workers/wallet', workerWalletRoutes);
 router.use('/workers/fcm-tokens', workerFcmTokenRoutes);
 
@@ -158,6 +162,9 @@ router.use('/admin/admins', adminManagementRoutes);
 router.use('/admin/upload', adminUploadRoutes);
 router.use('/admin/cities', adminCitiesRoutes);
 router.use('/admin/vendor-catalog', adminVendorCatalogRoutes);
+router.use('/admin/vendor-services', adminVendorServicesRoutes); // alias — frontend path
+router.use('/admin/vendor-parts', adminVendorPartsRoutes); // alias — frontend path
+router.use('/cities/public', publicCitiesRoutes); // alias — frontend cityService
 
 // ==========================================
 // BOOKING ROUTES

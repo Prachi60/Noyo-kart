@@ -10,16 +10,20 @@ import {
   deletePartsCatalogItem
 } from '../controllers/adminControllers/vendorCatalogController.js';
 
+const servicesRouter = Router();
+servicesRouter.get('/', authenticate, isAdmin, getServiceCatalog);
+servicesRouter.post('/', authenticate, isAdmin, createServiceCatalogItem);
+servicesRouter.delete('/:id', authenticate, isAdmin, deleteServiceCatalogItem);
+
+const partsRouter = Router();
+partsRouter.get('/', authenticate, isAdmin, getPartsCatalog);
+partsRouter.post('/', authenticate, isAdmin, createPartsCatalogItem);
+partsRouter.delete('/:id', authenticate, isAdmin, deletePartsCatalogItem);
+
+// Legacy combined mount at /admin/vendor-catalog
 const router = Router();
+router.use('/vendor-services', servicesRouter);
+router.use('/vendor-parts', partsRouter);
 
-// Vendor Service Catalog Routes
-router.get('/vendor-services', authenticate, isAdmin, getServiceCatalog);
-router.post('/vendor-services', authenticate, isAdmin, createServiceCatalogItem);
-router.delete('/vendor-services/:id', authenticate, isAdmin, deleteServiceCatalogItem);
-
-// Vendor Parts Catalog Routes
-router.get('/vendor-parts', authenticate, isAdmin, getPartsCatalog);
-router.post('/vendor-parts', authenticate, isAdmin, createPartsCatalogItem);
-router.delete('/vendor-parts/:id', authenticate, isAdmin, deletePartsCatalogItem);
-
+export { servicesRouter as adminVendorServicesRoutes, partsRouter as adminVendorPartsRoutes };
 export default router;

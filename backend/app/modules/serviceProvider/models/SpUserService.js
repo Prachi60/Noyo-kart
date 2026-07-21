@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import serviceDb from '../config/db.js';
 import { SP_SERVICE_STATUS } from '../constants.js';
 
 const spUserServiceSchema = new mongoose.Schema({
@@ -14,4 +15,4 @@ const spUserServiceSchema = new mongoose.Schema({
 
 spUserServiceSchema.index({ brandId: 1, categoryId: 1 });
 
-export default mongoose.model('SpUserService', spUserServiceSchema);
+export default serviceDb.model('SpUserService', spUserServiceSchema, 'userservices');

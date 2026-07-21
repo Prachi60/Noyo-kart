@@ -195,7 +195,10 @@ const Dashboard = memo(() => {
         time: booking.scheduledTime || 'Time not set'
       },
       status: booking.status,
-      assignedTo: booking.workerId ? { name: booking.workerId.name } : null,
+      assignedTo: booking.workerId
+        ? { name: booking.workerId.name }
+        : ((booking.isSelfJob || booking.assignedAt) ? { name: 'You (Self)' } : null),
+      isSelfJob: Boolean(booking.isSelfJob) || (!booking.workerId && !!booking.assignedAt),
     }));
     setRecentJobs(recentJobsData);
 
@@ -303,22 +306,22 @@ const Dashboard = memo(() => {
   // Alert Action Handlers
   const handleAcceptAlert = async (bookingId) => {
     try {
-      const response = await acceptBooking(bookingId);
+      const response = await acceptBooking(bookingId, { assignToSelf: true });
       if (response.success) {
-        toast.success('Booking accepted successfully!');
+        toast.success('Accepted — you will handle this service yourself.');
         setPendingBookings(prev => prev.filter(b => String(b.id || b._id) !== String(bookingId)));
 
-        // Sync localStorage
         const pendingJobs = JSON.parse(localStorage.getItem('vendorPendingJobs') || '[]');
         const updated = pendingJobs.filter(b => String(b.id || b._id) !== String(bookingId));
         localStorage.setItem('vendorPendingJobs', JSON.stringify(updated));
 
         window.dispatchEvent(new CustomEvent('removeVendorBooking', { detail: { id: bookingId } }));
         window.dispatchEvent(new Event('vendorStatsUpdated'));
+        navigate(`/sp/vendor/booking/${bookingId}`);
       }
     } catch (error) {
       console.error('Error accepting:', error);
-      toast.error('Failed to accept booking');
+      toast.error(error.response?.data?.message || 'Failed to accept booking');
     }
   };
 

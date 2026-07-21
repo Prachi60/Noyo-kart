@@ -10,7 +10,7 @@ import SpReview from '../../models/SpReview.js';
 import { validationResult } from 'express-validator';
 import { SP_BOOKING_STATUS, SP_PAYMENT_STATUS } from '../../constants.js';
 import { createNotification } from '../notificationController.js';
-import { sendNotificationToUser, sendNotificationToVendor, sendNotificationToWorker } from '../../services/firebaseAdminService.js';
+import { sendNotificationToUser, sendNotificationToVendor, sendNotificationToWorker } from '../../services/firebaseAdmin.js';
 
 /**
  * Create a new booking
@@ -572,7 +572,10 @@ const cancelBooking = async (req, res) => {
 
     const userId = req.user.id;
     const { id } = req.params;
-    const { cancellationReason } = req.body;
+    const rawReason = req.body?.cancellationReason ?? req.body?.reason;
+    const cancellationReason = typeof rawReason === 'string'
+      ? rawReason
+      : (typeof rawReason?.reason === 'string' ? rawReason.reason : 'Cancelled by user');
 
     const booking = await SpBooking.findOne({ _id: id, userId });
 
@@ -641,33 +644,37 @@ const cancelBooking = async (req, res) => {
       const { default: SpTransaction } = await import('../../models/SpTransaction.js');
       const userDoc = await SpUser.findById(userId);
 
-      if (refundAmount > 0) {
-        userDoc.wallet.balance = (userDoc.wallet.balance || 0) + refundAmount;
-        await SpTransaction.create({
-          userId: userDoc._id,
-          type: 'refund',
-          amount: refundAmount,
-          status: 'completed',
-          paymentMethod: 'wallet',
-          description: `Refund for booking #${booking.bookingNumber}`,
-          bookingId: booking._id,
-          balanceAfter: userDoc.wallet.balance
-        });
-        booking.paymentStatus = SP_PAYMENT_STATUS.REFUNDED;
-      }
+      if (userDoc) {
+        if (!userDoc.wallet) userDoc.wallet = { balance: 0, penalty: 0 };
 
-      if (cancellationFee > 0 && !isPaid) {
-        userDoc.wallet.penalty = (userDoc.wallet.penalty || 0) + cancellationFee;
-      }
+        if (refundAmount > 0) {
+          userDoc.wallet.balance = (userDoc.wallet.balance || 0) + refundAmount;
+          await SpTransaction.create({
+            userId: userDoc._id,
+            type: 'refund',
+            amount: refundAmount,
+            status: 'completed',
+            paymentMethod: 'wallet',
+            description: `Refund for booking #${booking.bookingNumber}`,
+            bookingId: booking._id,
+            balanceAfter: userDoc.wallet.balance
+          });
+          booking.paymentStatus = SP_PAYMENT_STATUS.REFUNDED;
+        }
 
-      await userDoc.save();
+        if (cancellationFee > 0 && !isPaid) {
+          userDoc.wallet.penalty = (userDoc.wallet.penalty || 0) + cancellationFee;
+        }
+
+        await userDoc.save();
+      }
     }
 
     // Update booking status
     booking.status = SP_BOOKING_STATUS.CANCELLED;
     booking.cancelledAt = new Date();
     booking.cancelledBy = 'user';
-    booking.cancellationReason = cancellationReason || 'Cancelled by user';
+    booking.cancellationReason = cancellationReason;
     await booking.save();
 
     // Send notification to user

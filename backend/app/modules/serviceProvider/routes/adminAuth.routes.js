@@ -4,7 +4,8 @@ import {
   login,
   logout,
   updateProfile,
-  getProfile
+  getProfile,
+  ssoAdminLogin
 } from '../controllers/adminAuthController.js';
 import { authenticate } from '../middleware/authMiddleware.js';
 import { isAdmin } from '../middleware/roleMiddleware.js';
@@ -18,6 +19,7 @@ const loginValidation = [
 
 // Routes
 router.post('/login', loginValidation, login);
+router.post('/sso-login', ssoAdminLogin);
 router.post('/logout', authenticate, isAdmin, logout);
 router.put('/profile', authenticate, isAdmin, updateProfile);
 router.get('/profile', authenticate, isAdmin, getProfile);

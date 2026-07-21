@@ -19,11 +19,12 @@ router.get('/brands/slug/:slug', async (req, res) => {
 });
 router.get('/services', async (req, res) => {
   try {
-    const { categoryId, brandId } = req.query;
+    const { categoryId, brandId, search } = req.query;
     const query = { status: 'active' };
     if (categoryId) query.categoryId = categoryId;
     if (brandId) query.brandId = brandId;
-    const services = await SpUserService.find(query);
+    if (search) query.title = { $regex: String(search).trim(), $options: 'i' };
+    const services = await SpUserService.find(query).sort({ title: 1 });
     res.status(200).json({ success: true, data: services });
   } catch (error) { res.status(500).json({ success: false, message: 'Failed to fetch services' }); }
 });

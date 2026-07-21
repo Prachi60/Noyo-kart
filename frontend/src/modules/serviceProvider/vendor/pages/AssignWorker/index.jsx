@@ -85,10 +85,10 @@ const AssignWorker = () => {
       const response = await assignWorkerApi(id, workerId);
 
       if (response && response.success) {
-        toast.success('Worker assigned successfully');
-        // Notify other components
+        const isSelf = workerId === 'SELF' || workerId === 'self' || assignToSelf;
+        toast.success(isSelf ? 'Assigned to you — handle this service yourself' : 'Worker assigned successfully');
         window.dispatchEvent(new Event('vendorJobsUpdated'));
-        navigate(`/vendor/booking/${id}`);
+        navigate(`/sp/vendor/booking/${id}`);
       } else {
         throw new Error(response?.message || 'Failed to assign worker');
       }

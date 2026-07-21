@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import serviceDb from '../config/db.js';
 import { SP_BILL_STATUS } from '../constants.js';
 
 const spVendorBillSchema = new mongoose.Schema({
@@ -46,4 +47,4 @@ const spVendorBillSchema = new mongoose.Schema({
   note: { type: String, default: null }
 }, { timestamps: true });
 
-export default mongoose.model('SpVendorBill', spVendorBillSchema);
+export default serviceDb.model('SpVendorBill', spVendorBillSchema, 'vendorbills');

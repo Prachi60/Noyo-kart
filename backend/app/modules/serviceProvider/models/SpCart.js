@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import serviceDb from '../config/db.js';
 
 const spCartItemSchema = new mongoose.Schema({
   serviceId: { type: mongoose.Schema.Types.ObjectId, ref: 'SpUserService', required: false },
@@ -33,4 +34,4 @@ spCartSchema.pre('save', function (next) {
   next();
 });
 
-export default mongoose.model('SpCart', spCartSchema);
+export default serviceDb.model('SpCart', spCartSchema, 'carts');

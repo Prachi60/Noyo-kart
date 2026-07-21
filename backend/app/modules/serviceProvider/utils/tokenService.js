@@ -6,7 +6,7 @@ import jwt from 'jsonwebtoken';
  * @returns {string} - JWT token
  */
 export const generateAccessToken = (payload) => {
-  return jwt.sign(payload, process.env.JWT_SECRET, {
+  return jwt.sign(payload, process.env.JWT_SECRET || 'fallback_jwt_secret_123', {
     expiresIn: process.env.JWT_EXPIRE || '7d'
   });
 };
@@ -17,7 +17,7 @@ export const generateAccessToken = (payload) => {
  * @returns {string} - JWT refresh token
  */
 export const generateRefreshToken = (payload) => {
-  return jwt.sign(payload, process.env.JWT_REFRESH_SECRET, {
+  return jwt.sign(payload, process.env.JWT_REFRESH_SECRET || 'fallback_refresh_secret_123', {
     expiresIn: process.env.JWT_REFRESH_EXPIRE || '30d'
   });
 };

@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import serviceDb from '../config/db.js';
 
 const spCitySchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true, index: true },
@@ -36,4 +37,4 @@ spCitySchema.statics.getDefaultCity = async function () {
   return defaultCity;
 };
 
-export default mongoose.model('SpCity', spCitySchema);
+export default serviceDb.model('SpCity', spCitySchema, 'cities');

@@ -106,7 +106,9 @@ const addToCart = async (req, res) => {
         title,
         description: description || '',
         icon: icon || '',
-        category,
+        category: category || req.body.categoryTitle || 'Service',
+        categoryTitle: req.body.categoryTitle || category || '',
+        categoryIcon: req.body.categoryIcon || null,
         price: price || unitPrice || 0,
         originalPrice: originalPrice || null,
         unitPrice: unitPrice || price || 0,
@@ -116,6 +118,7 @@ const addToCart = async (req, res) => {
         vendorId: vendorId || null,
         sectionTitle: sectionTitle || '',
         sectionIcon: sectionIcon || null,
+        sectionId: req.body.sectionId || null,
         card: card || null
       };
 
@@ -130,16 +133,21 @@ const addToCart = async (req, res) => {
     await cart.save();
     console.log(`[AddToCart] Cart saved. Total items: ${cart.items.length}`);
 
+    const resultItem = existingItemIndex !== -1
+      ? cart.items[existingItemIndex]
+      : cart.items[cart.items.length - 1];
+
     res.status(200).json({
       success: true,
       message: 'Item added to cart',
-      data: cart.items
+      data: resultItem,
+      items: cart.items
     });
   } catch (error) {
     console.error('Add to cart error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to add item to cart. Please try again.'
+      message: error.message || 'Failed to add item to cart. Please try again.'
     });
   }
 };

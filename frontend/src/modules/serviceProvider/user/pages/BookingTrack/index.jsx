@@ -63,8 +63,14 @@ const BookingTrack = () => {
   const [paying, setPaying] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showCompletedScreen, setShowCompletedScreen] = useState(false);
+  const completedRedirectRef = useRef(false);
 
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
+  const goHome = React.useCallback(() => {
+    navigate('/sp/user', { replace: true });
+  }, [navigate]);
 
   const handleOnlinePayment = async () => {
     if (paying) return;
@@ -88,7 +94,7 @@ const BookingTrack = () => {
           toast.dismiss();
           if (verifyResponse.success) {
             toast.success('Payment successful!');
-            navigate(`/user/booking/${booking._id || booking.id}`);
+            refreshBooking(false);
           } else {
             toast.error('Payment verification failed');
           }
@@ -138,7 +144,7 @@ const BookingTrack = () => {
 
           if (verifyResponse.success) {
             toast.success('Payment successful!');
-            navigate(`/user/booking/${booking._id || booking.id}`);
+            refreshBooking(false);
           } else {
             toast.error('Payment verification failed');
           }
@@ -176,7 +182,7 @@ const BookingTrack = () => {
 
       if (response.success) {
         toast.success('Booking confirmed!');
-        navigate(`/user/booking/${booking._id || booking.id}`);
+        navigate(`/sp/user/booking/${booking._id || booking.id}`);
       } else {
         toast.error(response.message || 'Failed to confirm booking');
       }
@@ -252,6 +258,31 @@ const BookingTrack = () => {
       return () => clearInterval(intervalId);
     }
   }, [isLoaded, refreshBooking]);
+
+  // When service is fully completed → show "work done" screen, then go home
+  useEffect(() => {
+    completedRedirectRef.current = false;
+    setShowCompletedScreen(false);
+  }, [id]);
+
+  useEffect(() => {
+    const status = booking?.status?.toLowerCase();
+    const isFullyDone =
+      status === 'completed' ||
+      (status === 'work_done' && (booking?.cashCollected || booking?.paymentStatus === 'success' || booking?.paymentStatus === 'collected_by_vendor'));
+
+    if (!booking || !isFullyDone || completedRedirectRef.current) return;
+
+    completedRedirectRef.current = true;
+    setShowCompletedScreen(true);
+    setShowPaymentModal(false);
+
+    const timer = setTimeout(() => {
+      goHome();
+    }, 3200);
+
+    return () => clearTimeout(timer);
+  }, [booking, booking?.status, booking?.cashCollected, booking?.paymentStatus, goHome]);
 
   const socket = useSocket();
 
@@ -607,7 +638,7 @@ const BookingTrack = () => {
       {/* Top Floating Header - Always Visible */}
       <div className="absolute top-4 left-4 right-4 z-20 flex justify-between items-start pointer-events-none">
         <button
-          onClick={() => navigate(`/user/booking/${id}`)}
+          onClick={() => navigate(`/sp/user/booking/${id}`)}
           className="pointer-events-auto bg-white/90 backdrop-blur-md p-3 rounded-full shadow-lg text-gray-700 hover:bg-white transition-all active:scale-95"
         >
           <FiArrowLeft className="w-6 h-6" />
@@ -960,11 +991,58 @@ const BookingTrack = () => {
 
 
       <PaymentVerificationModal
-        isOpen={showPaymentModal}
+        isOpen={showPaymentModal && !showCompletedScreen}
         onClose={() => setShowPaymentModal(false)}
         booking={booking}
         onPayOnline={handleOnlinePayment}
       />
+
+      {/* Work completed → success then home */}
+      <AnimatePresence>
+        {showCompletedScreen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[300] flex flex-col items-center justify-center bg-gradient-to-b from-teal-600 via-teal-700 to-emerald-900 px-6 text-center"
+          >
+            <motion.div
+              initial={{ scale: 0.6, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 220, damping: 18 }}
+              className="w-24 h-24 rounded-full bg-white/15 border border-white/30 flex items-center justify-center mb-6 shadow-2xl"
+            >
+              <FiCheckCircle className="w-12 h-12 text-white" />
+            </motion.div>
+            <motion.h1
+              initial={{ y: 16, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.15 }}
+              className="text-3xl font-black text-white mb-3"
+            >
+              Your work is done!
+            </motion.h1>
+            <motion.p
+              initial={{ y: 12, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.25 }}
+              className="text-teal-50 text-sm max-w-xs mb-8 leading-relaxed"
+            >
+              Service completed successfully. Taking you to home…
+            </motion.p>
+            <motion.button
+              initial={{ y: 12, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.35 }}
+              type="button"
+              onClick={goHome}
+              className="px-8 py-3.5 rounded-2xl bg-white text-teal-700 font-bold text-sm shadow-xl active:scale-95 transition-transform"
+            >
+              Go to Home
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import serviceDb from '../config/db.js';
 
 const spSettlementSchema = new mongoose.Schema({
   vendorId: { type: mongoose.Schema.Types.ObjectId, ref: 'SpVendor', required: true },
@@ -19,4 +20,4 @@ const spSettlementSchema = new mongoose.Schema({
 spSettlementSchema.index({ vendorId: 1, createdAt: -1 });
 spSettlementSchema.index({ status: 1, createdAt: -1 });
 
-export default mongoose.model('SpSettlement', spSettlementSchema);
+export default serviceDb.model('SpSettlement', spSettlementSchema, 'settlements');

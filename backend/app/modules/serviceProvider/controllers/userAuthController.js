@@ -1,5 +1,6 @@
 import SpUser from '../models/SpUser.js';
 import Customer from '../../../models/customer.js';
+import jwt from 'jsonwebtoken';
 import { generateTokenPair, verifyRefreshToken, generateVerificationToken, verifyVerificationToken } from '../utils/tokenService.js';
 import { generateOTP, hashOTP, storeOTP, verifyOTP, checkRateLimit } from '../utils/redisOtp.util.js';
 import { sendOTP as sendSMSOTP } from '../services/smsService.js';
@@ -443,5 +444,112 @@ export const refreshToken = async (req, res) => {
       success: false,
       message: 'Failed to refresh token'
     });
+  }
+};
+
+/**
+ * SSO Login: Auto-login / clone user using Quick Commerce token
+ */
+export const ssoLogin = async (req, res) => {
+  try {
+    const { qcToken } = req.body;
+    if (!qcToken) {
+      return res.status(400).json({ success: false, message: 'Quick Commerce token is required for SSO' });
+    }
+
+    // Verify QC Token
+    let decoded;
+    try {
+      decoded = jwt.verify(qcToken, process.env.JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({ success: false, message: 'Invalid or expired Quick Commerce token' });
+    }
+
+    // decoded should have 'id' (QC Customer ID)
+    if (!decoded || (!decoded.id && !decoded._id)) {
+      return res.status(401).json({ success: false, message: 'Invalid token payload' });
+    }
+    const customerId = decoded.id || decoded._id;
+
+    // Fetch QC Customer
+    const customer = await Customer.findById(customerId);
+    if (!customer) {
+      return res.status(404).json({ success: false, message: 'Quick Commerce user not found' });
+    }
+
+    if (!customer.phone) {
+      return res.status(400).json({ success: false, message: 'Quick Commerce user must have a phone number for SSO' });
+    }
+
+    // Find or Create SpUser
+    let user = await SpUser.findOne({ phone: customer.phone });
+
+    if (!user) {
+      try {
+        user = await SpUser.create({
+          name: customer.name || 'Noyo Customer',
+          email: customer.email || null,
+          phone: customer.phone,
+          isPhoneVerified: true,
+          isEmailVerified: customer.email ? true : false,
+          isActive: true,
+          addresses: customer.addresses ? customer.addresses.map(addr => ({
+            type: addr.label || 'home',
+            addressLine1: addr.fullAddress || addr.formattedAddress || '',
+            city: addr.city || '',
+            state: addr.state || '',
+            pincode: addr.pincode || '',
+            landmark: addr.landmark || ''
+          })) : []
+        });
+        console.log(`[SP AUTH SSO] Cloned E-commerce Customer (${customer.phone}) to SpUser`);
+      } catch (createErr) {
+        // Race: another request may have created the same phone
+        user = await SpUser.findOne({ phone: customer.phone });
+        if (!user) {
+          console.error('[SP AUTH SSO] Create SpUser failed:', createErr.message);
+          return res.status(500).json({
+            success: false,
+            message: 'Failed to create service provider profile',
+            error: createErr.message
+          });
+        }
+      }
+    }
+
+    // Treat missing isActive as active (legacy docs)
+    if (user.isActive === false) {
+      return res.status(403).json({ success: false, message: 'Your account has been deactivated.' });
+    }
+
+    // Login SP User — reuse session id when already set to avoid invalidating parallel requests
+    let loginSessionId = user.loginSessionId;
+    if (!loginSessionId) {
+      loginSessionId = Date.now().toString();
+      await SpUser.findByIdAndUpdate(user._id, { loginSessionId });
+    }
+
+    const tokens = generateTokenPair({
+      userId: user._id,
+      role: SP_USER_ROLES.USER,
+      loginSessionId
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'SSO Login successful',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        isPhoneVerified: user.isPhoneVerified,
+        isEmailVerified: user.isEmailVerified
+      },
+      ...tokens
+    });
+  } catch (error) {
+    console.error('SSO Login error:', error);
+    res.status(500).json({ success: false, message: 'SSO Login failed' });
   }
 };

@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { gsap } from 'gsap';
 import { FiArrowLeft, FiCreditCard, FiChevronRight, FiX } from 'react-icons/fi';
-import BottomNav from '../../components/layout/BottomNav';
 
 const ManagePaymentMethods = () => {
   const navigate = useNavigate();

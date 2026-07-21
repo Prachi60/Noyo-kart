@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import serviceDb from '../config/db.js';
 import bcrypt from 'bcrypt';
 import { SP_WORKER_STATUS } from '../constants.js';
 
@@ -46,4 +47,4 @@ spWorkerSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
-export default mongoose.model('SpWorker', spWorkerSchema);
+export default serviceDb.model('SpWorker', spWorkerSchema, 'workers');

@@ -29,7 +29,11 @@ export const bookingService = {
   },
 
   cancel: async (id, cancellationReason) => {
-    const response = await api.post(`/users/bookings/${id}/cancel`, { cancellationReason });
+    const reason =
+      typeof cancellationReason === 'string'
+        ? cancellationReason
+        : (cancellationReason?.reason || cancellationReason?.cancellationReason || 'Cancelled by user');
+    const response = await api.post(`/users/bookings/${id}/cancel`, { cancellationReason: reason });
     return response.data;
   },
 

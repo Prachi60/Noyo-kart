@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import serviceDb from '../config/db.js';
 
 const spBookingRequestSchema = new mongoose.Schema({
   bookingId: { type: mongoose.Schema.Types.ObjectId, ref: 'SpBooking', required: true, index: true },
@@ -20,4 +21,4 @@ spBookingRequestSchema.index({ vendorId: 1, status: 1 });
 spBookingRequestSchema.index({ bookingId: 1, status: 1 });
 spBookingRequestSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-export default mongoose.model('SpBookingRequest', spBookingRequestSchema);
+export default serviceDb.model('SpBookingRequest', spBookingRequestSchema, 'bookingrequests');

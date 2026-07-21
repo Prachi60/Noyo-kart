@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { BookingAlertModal } from '../bookings';
-import { acceptBooking, rejectBooking, assignWorker } from '../../services/bookingService';
+import { acceptBooking, rejectBooking } from '../../services/bookingService';
 import { playAlertRing, stopAlertRing } from '../../../utils/notificationSound';
 
 export default function GlobalBookingAlert() {
@@ -154,8 +154,8 @@ export default function GlobalBookingAlert() {
       maxSearchTimeMins={maxSearchTime}
       onAccept={async (id) => {
         try {
-          await acceptBooking(id);
-          await assignWorker(id, 'SELF');
+          // Accept (Myself): vendor self-assigns — no worker assign screen
+          await acceptBooking(id, { assignToSelf: true });
 
           // Remove from local storage
           const pendingJobs = JSON.parse(localStorage.getItem('vendorPendingJobs') || '[]');
@@ -168,13 +168,15 @@ export default function GlobalBookingAlert() {
 
           window.dispatchEvent(new Event('vendorJobsUpdated'));
           window.dispatchEvent(new Event('vendorStatsUpdated'));
-          toast.success('Job claimed successfully! Assigned to you.');
+          toast.success('Job claimed — you will handle this service yourself.');
+          navigate(`/sp/vendor/booking/${id}`);
         } catch (e) {
-          toast.error('Failed to claim job');
+          toast.error(e.response?.data?.message || 'Failed to claim job');
         }
       }}
       onAssign={async (id) => {
         try {
+          // Forward to worker: accept only, then open worker picker
           await acceptBooking(id);
 
           // Remove from local storage
@@ -188,10 +190,10 @@ export default function GlobalBookingAlert() {
 
           window.dispatchEvent(new Event('vendorJobsUpdated'));
           window.dispatchEvent(new Event('vendorStatsUpdated'));
-          toast.success('Job claimed! Redirecting to assign...');
+          toast.success('Job claimed! Pick a worker...');
           navigate(`/sp/vendor/booking/${id}/assign-worker`);
         } catch (e) {
-          toast.error('Failed to claim job');
+          toast.error(e.response?.data?.message || 'Failed to claim job');
         }
       }}
       onReject={async (id) => {

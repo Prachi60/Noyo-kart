@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import serviceDb from '../config/db.js';
 
 const spVendorServiceSchema = new mongoose.Schema({
   vendorId: { type: mongoose.Schema.Types.ObjectId, ref: 'SpVendor', required: true, index: true },
@@ -12,4 +13,4 @@ const spVendorServiceSchema = new mongoose.Schema({
 
 spVendorServiceSchema.index({ vendorId: 1, serviceId: 1 }, { unique: true });
 
-export default mongoose.model('SpVendorService', spVendorServiceSchema);
+export default serviceDb.model('SpVendorService', spVendorServiceSchema);

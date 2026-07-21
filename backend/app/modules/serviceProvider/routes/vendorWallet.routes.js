@@ -32,34 +32,23 @@ const settlementValidation = [
   body('paymentMethod').optional().isIn(['upi', 'bank_transfer', 'cash', 'other'])
 ];
 
-// Get wallet with ledger balance
-router.get('/wallet', authenticate, isVendor, getWallet);
-
-// Get wallet summary for dashboard
-router.get('/wallet/summary', authenticate, isVendor, getWalletSummary);
-
-// Get transaction history/ledger
-router.get('/wallet/transactions', authenticate, isVendor, getTransactions);
-
-// Record cash collection
-router.post('/wallet/cash-collection', authenticate, isVendor, cashCollectionValidation, recordCashCollection);
-
-// Request settlement
-router.post('/wallet/settlement', authenticate, isVendor, settlementValidation, requestSettlement);
-
-// Pay worker for a booking
-router.post('/wallet/pay-worker', authenticate, isVendor, payWorkerValidation, payWorker);
-
-// Get settlement history
-router.get('/wallet/settlements', authenticate, isVendor, getSettlements);
-
-// Request withdrawal
-router.post('/withdraw', authenticate, isVendor, [
+const withdrawalValidation = [
   body('amount').isFloat({ min: 1 }).withMessage('Valid amount is required'),
   body('bankDetails').optional().isObject()
-], requestWithdrawal);
+];
 
-// Get withdrawal history
-router.get('/wallet/withdrawals', authenticate, isVendor, getWithdrawals);
+// Mounted at /vendors/wallet — paths below are relative to that mount
+router.get('/', authenticate, isVendor, getWallet);
+router.get('/summary', authenticate, isVendor, getWalletSummary);
+router.get('/transactions', authenticate, isVendor, getTransactions);
+router.post('/cash-collection', authenticate, isVendor, cashCollectionValidation, recordCashCollection);
+router.post('/settlement', authenticate, isVendor, settlementValidation, requestSettlement);
+router.post('/pay-worker', authenticate, isVendor, payWorkerValidation, payWorker);
+router.get('/settlements', authenticate, isVendor, getSettlements);
+router.get('/withdrawals', authenticate, isVendor, getWithdrawals);
+
+// Frontend uses both /withdraw and /withdrawal
+router.post('/withdraw', authenticate, isVendor, withdrawalValidation, requestWithdrawal);
+router.post('/withdrawal', authenticate, isVendor, withdrawalValidation, requestWithdrawal);
 
 export default router;

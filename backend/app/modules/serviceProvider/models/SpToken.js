@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import serviceDb from '../config/db.js';
 import { SP_TOKEN_TYPES } from '../constants.js';
 
 const spTokenSchema = new mongoose.Schema({
@@ -17,4 +18,4 @@ spTokenSchema.index({ userId: 1, type: 1, isUsed: 1 });
 spTokenSchema.index({ email: 1, type: 1, isUsed: 1 });
 spTokenSchema.index({ phone: 1, type: 1, isUsed: 1 });
 
-export default mongoose.model('SpToken', spTokenSchema);
+export default serviceDb.model('SpToken', spTokenSchema, 'tokens');

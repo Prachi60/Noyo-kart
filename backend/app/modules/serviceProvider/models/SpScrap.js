@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import serviceDb from '../config/db.js';
 
 const spScrapSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'SpUser', required: true, index: true },
@@ -12,4 +13,4 @@ const spScrapSchema = new mongoose.Schema({
   finalPrice: { type: Number }
 }, { timestamps: true });
 
-export default mongoose.model('SpScrap', spScrapSchema);
+export default serviceDb.model('SpScrap', spScrapSchema, 'scraps');

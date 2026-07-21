@@ -4,7 +4,6 @@ import { FiPlus, FiMapPin, FiClock, FiCheckCircle, FiBell, FiArrowLeft, FiTrash2
 import { toast } from 'react-hot-toast';
 import api from '../../../services/api';
 import { AnimatePresence, motion } from 'framer-motion';
-import BottomNav from '../../components/layout/BottomNav';
 import AddressSelectionModal from '../Checkout/components/AddressSelectionModal';
 import { themeColors } from '../../../theme';
 import NotificationBell from '../../components/common/NotificationBell';

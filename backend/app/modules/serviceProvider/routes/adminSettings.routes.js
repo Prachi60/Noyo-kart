@@ -7,7 +7,8 @@ const router = Router();
 
 router.use(authenticate, isAdmin);
 
-router.route('/settings')
+// Mounted at /admin/settings
+router.route('/')
   .get(getSettings)
   .put(updateSettings);
 

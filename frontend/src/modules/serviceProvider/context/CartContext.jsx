@@ -16,7 +16,7 @@ export const CartProvider = ({ children }) => {
         return;
       }
 
-      const token = localStorage.getItem('spAccessToken');
+      const token = localStorage.getItem('spAccessToken') || sessionStorage.getItem('spAccessToken');
       if (!token) {
         setCartItems([]);
         setCartCount(0);
@@ -43,10 +43,25 @@ export const CartProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
+    // Don't wipe SP session here — ProtectedRoute SSO manages tokens.
+    // Just load cart when a token exists (or after SSO event).
     fetchCart();
+
+    const onSpAuthChanged = () => {
+      fetchCart();
+    };
+    window.addEventListener('sp-auth-changed', onSpAuthChanged);
+    return () => window.removeEventListener('sp-auth-changed', onSpAuthChanged);
   }, [fetchCart]);
 
   const addToCart = useCallback(async (itemData) => {
+    const token = localStorage.getItem('spAccessToken') || sessionStorage.getItem('spAccessToken');
+    if (!token) {
+      const err = new Error('Please login again to add items to cart');
+      err.code = 'NO_AUTH';
+      throw err;
+    }
+
     const tempId = `temp-${Date.now()}`;
     const tempItem = { ...itemData, _id: tempId, id: tempId };
 
@@ -55,10 +70,18 @@ export const CartProvider = ({ children }) => {
 
     try {
       const response = await cartService.addToCart(itemData);
-      if (response.success && response.data) {
-        setCartItems(prev => prev.map(item =>
-          item._id === tempId ? { ...item, ...response.data } : item
-        ));
+      if (response.success) {
+        if (Array.isArray(response.items)) {
+          setCartItems(response.items);
+          setCartCount(response.items.length);
+        } else if (Array.isArray(response.data)) {
+          setCartItems(response.data);
+          setCartCount(response.data.length);
+        } else if (response.data) {
+          setCartItems(prev => prev.map(item =>
+            item._id === tempId ? { ...item, ...response.data, _id: response.data._id || item._id } : item
+          ));
+        }
       } else {
         setCartItems(prev => prev.filter(item => item._id !== tempId));
         setCartCount(prev => Math.max(0, prev - 1));

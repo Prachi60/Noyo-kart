@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import serviceDb from '../config/db.js';
 import { SP_BOOKING_STATUS, SP_PAYMENT_STATUS } from '../constants.js';
 
 const spBookingSchema = new mongoose.Schema({
@@ -64,6 +65,8 @@ const spBookingSchema = new mongoose.Schema({
   bookingType: { type: String, enum: ['instant', 'scheduled'], default: 'scheduled', index: true },
   status: { type: String, enum: Object.values(SP_BOOKING_STATUS), default: SP_BOOKING_STATUS.PENDING, index: true },
   workerResponse: { type: String, enum: ['PENDING', 'ACCEPTED', 'REJECTED'], default: 'PENDING' },
+  /** Vendor is performing the job themselves (no worker) */
+  isSelfJob: { type: Boolean, default: false, index: true },
   acceptedAt: { type: Date, default: null },
   assignedAt: { type: Date, default: null },
   startedAt: { type: Date, default: null },
@@ -109,4 +112,4 @@ spBookingSchema.index({ status: 1, waveStartedAt: 1 });
 spBookingSchema.index({ notifiedVendors: 1, status: 1 });
 spBookingSchema.index({ 'potentialVendors.vendorId': 1 });
 
-export default mongoose.model('SpBooking', spBookingSchema);
+export default serviceDb.model('SpBooking', spBookingSchema, 'bookings');

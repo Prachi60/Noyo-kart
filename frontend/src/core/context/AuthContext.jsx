@@ -41,6 +41,7 @@ export const AuthProvider = ({ children }) => {
 
     useEffect(() => {
         const syncStoredTokens = () => {
+            if (window.location.pathname.startsWith('/sp')) return; // Ignore SP module
             setAuthData({
                 customer: getSafeToken('customer'),
                 seller: getSafeToken('seller'),

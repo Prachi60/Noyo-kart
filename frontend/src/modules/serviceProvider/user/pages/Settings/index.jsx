@@ -6,7 +6,6 @@ import { toast } from 'react-hot-toast';
 import { themeColors } from '../../../theme';
 import { userAuthService } from '../../../services/authService';
 import { registerFCMToken, removeFCMToken } from '../../../services/pushNotificationService';
-import BottomNav from '../../components/layout/BottomNav';
 
 const Settings = () => {
   const navigate = useNavigate();

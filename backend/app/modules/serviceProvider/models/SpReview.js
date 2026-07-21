@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import serviceDb from '../config/db.js';
 
 const spReviewSchema = new mongoose.Schema({
   bookingId: { type: mongoose.Schema.Types.ObjectId, ref: 'SpBooking', required: true, unique: true },
@@ -17,4 +18,4 @@ const spReviewSchema = new mongoose.Schema({
 spReviewSchema.index({ vendorId: 1, rating: -1 });
 spReviewSchema.index({ serviceId: 1, rating: -1 });
 
-export default mongoose.model('SpReview', spReviewSchema);
+export default serviceDb.model('SpReview', spReviewSchema, 'reviews');

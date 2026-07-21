@@ -19,8 +19,9 @@ const setPricingValidation = [
   body('discountPrice').optional().isFloat({ min: 0 }).withMessage('Discount price must be a positive number')
 ];
 
-router.get('/services', authenticate, isVendor, getVendorServices);
-router.put('/services/:serviceId/availability', authenticate, isVendor, updateAvailabilityValidation, updateServiceAvailability);
-router.put('/services/:serviceId/pricing', authenticate, isVendor, setPricingValidation, setServicePricing);
+// Mounted at /vendors/services
+router.get('/', authenticate, isVendor, getVendorServices);
+router.put('/:serviceId/availability', authenticate, isVendor, updateAvailabilityValidation, updateServiceAvailability);
+router.put('/:serviceId/pricing', authenticate, isVendor, setPricingValidation, setServicePricing);
 
 export default router;

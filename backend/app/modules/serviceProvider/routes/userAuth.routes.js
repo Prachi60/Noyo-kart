@@ -6,7 +6,8 @@ import {
   login,
   logout,
   verifyLogin,
-  refreshToken
+  refreshToken,
+  ssoLogin
 } from '../controllers/userAuthController.js';
 import { authenticate } from '../middleware/authMiddleware.js';
 import { isUser } from '../middleware/roleMiddleware.js';
@@ -39,6 +40,7 @@ router.post('/send-otp', sendOTPValidation, sendOTP);
 router.post('/verify-login', verifyLoginValidation, verifyLogin);
 router.post('/register', registerValidation, register);
 router.post('/login', loginValidation, login);
+router.post('/sso-login', ssoLogin);
 router.post('/refresh-token', refreshToken);
 router.post('/logout', authenticate, isUser, logout);
 

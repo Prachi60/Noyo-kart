@@ -2,7 +2,6 @@ import React, { useState, useEffect, useLayoutEffect, lazy, Suspense } from 'rea
 import { useNavigate, useLocation } from 'react-router-dom';
 import { themeColors } from '../../../theme';
 import Header from '../../components/layout/Header';
-import BottomNav from '../../components/layout/BottomNav';
 import SearchBar from './components/SearchBar';
 import ServiceCategories from './components/ServiceCategories';
 import { publicCatalogService } from '../../../services/catalogService';
@@ -256,20 +255,26 @@ const Home = () => {
         const response = await publicCatalogService.getHomeData(cityId);
 
         if (response.success) {
-          if (response.categories) {
-            const mappedCategories = response.categories.map(cat => ({
-              id: cat.id,
+          const payload = response.data || response;
+          const rawCategories = payload.categories || [];
+          const rawHomeContent = payload.homeContent || null;
+
+          if (rawCategories.length) {
+            const mappedCategories = rawCategories.map(cat => ({
+              id: cat._id || cat.id,
+              _id: cat._id || cat.id,
               title: cat.title,
               slug: cat.slug,
-              icon: toAssetUrl(cat.icon),
+              icon: toAssetUrl(cat.homeIconUrl || cat.iconUrl || cat.icon || ''),
+              homeIconUrl: cat.homeIconUrl || cat.iconUrl || cat.icon || '',
               hasSaleBadge: cat.hasSaleBadge,
-              badge: cat.badge
+              badge: cat.homeBadge || cat.badge
             }));
             setCategories(mappedCategories);
           }
 
-          if (response.homeContent) {
-            setHomeContent(response.homeContent);
+          if (rawHomeContent) {
+            setHomeContent(rawHomeContent);
           }
         }
 
@@ -689,9 +694,6 @@ const Home = () => {
           )}
         </main>
       </motion.div>
-
-      {/* Bottom Navigation */}
-      {!isAddressModalOpen && <BottomNav />}
 
       {/* Category Modal */}
       <CategoryModal

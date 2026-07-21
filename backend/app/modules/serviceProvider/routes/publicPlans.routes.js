@@ -3,8 +3,8 @@ import { getAllPlans } from '../controllers/planController.js';
 
 const router = Router();
 
-// GET /plans - Get all active plans (public)
-router.get('/plans', (req, res, next) => {
+// Mounted at /public/plans
+router.get('/', (req, res, next) => {
   req.query.activeOnly = 'true';
   next();
 }, getAllPlans);

@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import serviceDb from '../config/db.js';
 
 const spPlatformEarningSchema = new mongoose.Schema({
   date: { type: String, required: true, unique: true, index: true },
@@ -14,4 +15,4 @@ const spPlatformEarningSchema = new mongoose.Schema({
   totalPendingAmountToVendors: { type: Number, default: 0 }
 }, { timestamps: true });
 
-export default mongoose.model('SpPlatformEarning', spPlatformEarningSchema);
+export default serviceDb.model('SpPlatformEarning', spPlatformEarningSchema, 'platformearnings');

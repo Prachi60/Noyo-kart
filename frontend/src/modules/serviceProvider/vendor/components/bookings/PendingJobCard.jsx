@@ -160,7 +160,7 @@ const PendingJobCard = ({ booking, onAccept, onReject, onClick, loadingAction, s
             onClick={(e) => onAccept(e, booking)}
             className="flex-1 bg-green-500 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-green-600 transition-colors disabled:opacity-50"
           >
-            {loadingAction === 'accept' ? 'Accepting...' : 'Accept'}
+            {loadingAction === 'accept' ? 'Accepting...' : 'Accept (Myself)'}
           </button>
           <button
             disabled={!!loadingAction}

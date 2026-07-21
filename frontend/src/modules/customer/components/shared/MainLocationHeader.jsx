@@ -84,7 +84,7 @@ function CategoryNavColumn({
       className="relative z-[2] flex min-w-[48px] shrink-0 cursor-pointer flex-col items-center gap-0.5 border-b-2 px-2 pb-0.5 pt-0.5 snap-start md:min-w-[58px]">
       <div className="relative z-10 flex h-9 w-9 items-center justify-center md:h-11 md:w-11">
         {typeof cat.icon === "function" ||
-        (typeof cat.icon === "object" && cat.icon.$$typeof) ? (
+          (typeof cat.icon === "object" && cat.icon.$$typeof) ? (
           <cat.icon
             sx={{
               fontSize: { xs: 20, md: 24 },
@@ -155,7 +155,7 @@ const MainLocationHeader = ({
   useEffect(() => {
     import("../../../../assets/lottie/shopping-cart.json")
       .then((m) => setCartAnimData(m.default))
-      .catch(() => {});
+      .catch(() => { });
   }, []);
   const { currentLocation, refreshLocation, isFetchingLocation } =
     useLocation();
@@ -532,7 +532,13 @@ const MainLocationHeader = ({
                     cat={cat}
                     isActive={isActive}
                     categoryAccent={categoryAccent}
-                    onCategorySelect={onCategorySelect}
+                    onCategorySelect={(c) => {
+                      if (c.name && c.name.toLowerCase() === 'services') {
+                        navigate('/sp/user');
+                      } else if (onCategorySelect) {
+                        onCategorySelect(c);
+                      }
+                    }}
                   />
                 );
               })}

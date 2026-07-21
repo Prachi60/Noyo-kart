@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import serviceDb from '../config/db.js';
 import { SP_SERVICE_STATUS } from '../constants.js';
 
 const spCategorySchema = new mongoose.Schema({
@@ -30,4 +31,4 @@ spCategorySchema.index({ status: 1, homeOrder: 1 });
 spCategorySchema.index({ isPopular: 1, status: 1 });
 spCategorySchema.index({ showOnHome: 1, homeOrder: 1 });
 
-export default mongoose.model('SpCategory', spCategorySchema);
+export default serviceDb.model('SpCategory', spCategorySchema, 'categories');

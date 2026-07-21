@@ -122,6 +122,27 @@ const BookingDetails = () => {
     }
   }, [id, navigate]);
 
+  // Auto-redirect to home when booking is fully completed
+  useEffect(() => {
+    if (!booking) return;
+    const status = booking.status?.toLowerCase();
+    const paymentStatus = booking.paymentStatus?.toLowerCase();
+    const isFullyDone =
+      status === 'completed' ||
+      (status === 'work_done' && (
+        booking.cashCollected ||
+        ['success', 'paid', 'collected_by_vendor'].includes(paymentStatus)
+      ));
+
+    if (!isFullyDone) return;
+
+    const timer = setTimeout(() => {
+      navigate('/sp/user', { replace: true });
+    }, 2500);
+
+    return () => clearTimeout(timer);
+  }, [booking, navigate]);
+
   // Auto-show rating modal ONLY when booking is fully completed AND paid
   useEffect(() => {
     if (booking) {

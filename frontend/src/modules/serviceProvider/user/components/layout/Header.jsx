@@ -30,36 +30,48 @@ const Header = ({ location, onLocationClick }) => {
         <div className="w-full">
           {/* Top Row: Logo (Left) and Location (Right) */}
           <div className="px-4 py-3 flex items-center justify-between">
-            {/* Left: Logo */}
-            <Link
-              to="/sp/user"
-              className="cursor-pointer shrink-0"
-              onMouseEnter={() => {
-                if (logoRef.current) {
-                  gsap.to(logoRef.current, {
-                    scale: 1.1,
-                    filter: `drop-shadow(0 0 16px ${themeColors.brand.teal}40)`,
-                    duration: 0.3,
-                    ease: 'power2.out',
-                  });
-                }
-              }}
-              onMouseLeave={() => {
-                if (logoRef.current) {
-                  gsap.to(logoRef.current, {
-                    scale: 1,
-                    filter: '',
-                    duration: 0.3,
-                    ease: 'power2.out',
-                  });
-                }
-              }}
-            >
-              <Logo
-                ref={logoRef}
-                className="h-9 sm:h-12 w-auto"
-              />
-            </Link>
+            {/* Left: Logo and Back Button */}
+            <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+              <a 
+                href="/" 
+                title="Back to Noyo Store" 
+                className="px-3 py-1.5 bg-gray-100 text-gray-700 font-bold rounded-lg border border-gray-200 shadow-sm hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200 transition-all flex items-center justify-center gap-1.5 text-xs sm:text-sm"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                <span className="whitespace-nowrap">Go to Store</span>
+              </a>
+              <Link
+                to="/sp/user"
+                className="cursor-pointer shrink-0"
+                onMouseEnter={() => {
+                  if (logoRef.current) {
+                    gsap.to(logoRef.current, {
+                      scale: 1.1,
+                      filter: `drop-shadow(0 0 16px ${themeColors.brand.teal}40)`,
+                      duration: 0.3,
+                      ease: 'power2.out',
+                    });
+                  }
+                }}
+                onMouseLeave={() => {
+                  if (logoRef.current) {
+                    gsap.to(logoRef.current, {
+                      scale: 1,
+                      filter: '',
+                      duration: 0.3,
+                      ease: 'power2.out',
+                    });
+                  }
+                }}
+              >
+                <Logo
+                  ref={logoRef}
+                  className="h-8 sm:h-12 w-auto"
+                />
+              </Link>
+            </div>
 
             {/* Desktop Navigation - Hidden on Mobile */}
             <nav className="hidden lg:flex items-center gap-8 ml-10">

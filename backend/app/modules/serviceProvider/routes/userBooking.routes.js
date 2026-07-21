@@ -1,12 +1,26 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/authMiddleware.js';
 import { isUser } from '../middleware/roleMiddleware.js';
+import {
+  createBooking,
+  getUserBookings,
+  getBookingById,
+  cancelBooking,
+  rescheduleBooking,
+  addReview,
+  getUserRatings
+} from '../controllers/bookingControllers/userBookingController.js';
 
 const router = Router();
 
-// Placeholder routes - booking controllers to be fully converted
-router.get('/', authenticate, isUser, (req, res) => {
-  res.json({ success: true, message: 'SP User booking route - pending full implementation' });
-});
+// Mounted at /users/bookings
+router.post('/', authenticate, isUser, createBooking);
+router.get('/', authenticate, isUser, getUserBookings);
+router.get('/ratings', authenticate, isUser, getUserRatings);
+router.get('/:id', authenticate, isUser, getBookingById);
+router.post('/:id/cancel', authenticate, isUser, cancelBooking);
+router.put('/:id/cancel', authenticate, isUser, cancelBooking);
+router.put('/:id/reschedule', authenticate, isUser, rescheduleBooking);
+router.post('/:id/review', authenticate, isUser, addReview);
 
 export default router;

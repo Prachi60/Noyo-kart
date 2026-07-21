@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
+import serviceDb from '../config/db.js';
 
 const spUserSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
@@ -54,4 +55,4 @@ spUserSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
-export default mongoose.model('SpUser', spUserSchema);
+export default serviceDb.model('SpUser', spUserSchema, 'users');

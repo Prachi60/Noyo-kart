@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import serviceDb from '../config/db.js';
 
 const spWithdrawalSchema = new mongoose.Schema({
   vendorId: { type: mongoose.Schema.Types.ObjectId, ref: 'SpVendor', required: true },
@@ -18,4 +19,4 @@ const spWithdrawalSchema = new mongoose.Schema({
   netAmount: { type: Number, default: 0 }
 }, { timestamps: true });
 
-export default mongoose.model('SpWithdrawal', spWithdrawalSchema);
+export default serviceDb.model('SpWithdrawal', spWithdrawalSchema, 'withdrawals');

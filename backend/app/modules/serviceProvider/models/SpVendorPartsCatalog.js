@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import serviceDb from '../config/db.js';
 import { SP_SERVICE_STATUS } from '../constants.js';
 
 const spVendorPartsCatalogSchema = new mongoose.Schema({
@@ -12,4 +13,4 @@ const spVendorPartsCatalogSchema = new mongoose.Schema({
   description: { type: String, trim: true }
 }, { timestamps: true });
 
-export default mongoose.model('SpVendorPartsCatalog', spVendorPartsCatalogSchema);
+export default serviceDb.model('SpVendorPartsCatalog', spVendorPartsCatalogSchema, 'vendorpartscatalogs');

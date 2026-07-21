@@ -63,14 +63,18 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
     try {
       setLoading(true);
       const response = await publicCatalogService.getBrands({
-        categoryId: category.id,
+        categoryId: category.id || category._id,
         cityId: cityId
       });
       if (response.success) {
-        setBrands(response.brands || []);
+        const list = Array.isArray(response.data)
+          ? response.data
+          : (response.brands || []);
+        setBrands(list);
       }
     } catch (error) {
       console.error("Failed to load brands:", error);
+      setBrands([]);
     } finally {
       setLoading(false);
     }
@@ -82,13 +86,17 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
       const response = await publicCatalogService.getServices({
         brandId: brandId,
         cityId: cityId,
-        categoryId: category?.id
+        categoryId: category?.id || category?._id
       });
       if (response.success) {
-        setServices(response.services || []);
+        const list = Array.isArray(response.data)
+          ? response.data
+          : (response.services || []);
+        setServices(list);
       }
     } catch (error) {
       console.error("Failed to load services:", error);
+      setServices([]);
     } finally {
       setLoading(false);
     }
@@ -107,51 +115,56 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
   };
 
   const handleServiceClick = async (service) => {
-    // Add to cart logic
     try {
+      const categoryTitle = category?.title || 'Service';
       const cartItemData = {
         serviceId: service.id || service._id,
-        categoryId: category?.id,
+        categoryId: category?.id || category?._id,
         title: service.title,
         description: service.description || '',
-        icon: toAssetUrl(service.icon || ''),
-        category: category?.title,
-        categoryTitle: category?.title || '', // Explicit field
-        categoryIcon: toAssetUrl(category?.homeIconUrl || category?.iconUrl || ''), // Explicit field
-        // Brand info — stored as sectionTitle/sectionIcon for booking flow
-        sectionId: selectedBrand?.id || selectedBrand?._id || null, // VITAL: Added for plan benefits
+        icon: toAssetUrl(service.iconUrl || service.icon || ''),
+        category: categoryTitle,
+        categoryTitle,
+        categoryIcon: toAssetUrl(category?.homeIconUrl || category?.iconUrl || category?.icon || ''),
+        sectionId: selectedBrand?.id || selectedBrand?._id || null,
         sectionTitle: selectedBrand?.title || '',
-        sectionIcon: toAssetUrl(selectedBrand?.iconUrl || selectedBrand?.icon || ''),
-        price: service.discountPrice || service.basePrice,
-        originalPrice: service.discountPrice ? service.basePrice : null,
-        unitPrice: service.discountPrice || service.basePrice,
+        sectionIcon: toAssetUrl(selectedBrand?.iconUrl || selectedBrand?.icon || selectedBrand?.logo || ''),
+        price: Number(service.discountPrice || service.basePrice || 0),
+        originalPrice: service.discountPrice ? Number(service.basePrice) : null,
+        unitPrice: Number(service.discountPrice || service.basePrice || 0),
         serviceCount: 1,
-        rating: "4.8",
-        reviews: "1k+",
+        rating: '4.8',
+        reviews: '1k+',
         vendorId: service.vendorId || selectedBrand?.vendorId || null,
         card: {
           title: service.title,
           subtitle: service.description || '',
-          price: service.discountPrice || service.basePrice,
-          originalPrice: service.discountPrice ? service.basePrice : null,
+          price: Number(service.discountPrice || service.basePrice || 0),
+          originalPrice: service.discountPrice ? Number(service.basePrice) : null,
           duration: service.duration || '',
           description: service.description || '',
-          imageUrl: toAssetUrl(service.icon || ''),
+          imageUrl: toAssetUrl(service.iconUrl || service.icon || ''),
           features: service.features || []
         }
       };
 
       const response = await addToCart(cartItemData);
-      if (response.success) {
+      if (response?.success) {
+        toast.success('Added to cart');
         setIsRedirecting(true);
         setTimeout(() => {
-          navigate('/user/cart');
-        }, 1200);
+          navigate('/sp/user/cart');
+        }, 800);
       } else {
-        toast.error(response.message || 'Failed to add to cart');
+        toast.error(response?.message || 'Failed to add to cart');
       }
     } catch (error) {
-      toast.error('Failed to add to cart');
+      console.error('Add to cart failed:', error);
+      const msg =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Failed to add to cart';
+      toast.error(msg);
     }
   };
 
@@ -261,9 +274,9 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
                                 className="flex flex-col items-center cursor-pointer group active:scale-95 transition-all"
                               >
                                 <div className="w-20 h-20 bg-gray-50 rounded-2xl flex items-center justify-center mb-2 group-hover:bg-gray-100 transition-colors shadow-sm overflow-hidden border border-gray-100 relative">
-                                  {brand.icon ? (
+                                  {(brand.iconUrl || brand.icon || brand.logo) ? (
                                     <img
-                                      src={toAssetUrl(brand.icon)}
+                                      src={toAssetUrl(brand.iconUrl || brand.icon || brand.logo)}
                                       alt={brand.title}
                                       className="w-14 h-14 object-contain group-hover:scale-110 transition-transform"
                                       loading="lazy"
@@ -271,9 +284,9 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
                                   ) : (
                                     <FiLayers className="w-8 h-8 text-gray-300" />
                                   )}
-                                  {brand.badge && (
+                                  {(brand.badge || brand.homeBadge) && (
                                     <span className="absolute top-0 right-0 bg-purple-100 text-purple-700 text-[9px] font-bold px-1.5 py-0.5 rounded-bl-lg">
-                                      {brand.badge}
+                                      {brand.badge || brand.homeBadge}
                                     </span>
                                   )}
                                 </div>

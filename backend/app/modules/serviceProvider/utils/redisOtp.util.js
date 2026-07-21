@@ -1,20 +1,33 @@
 import crypto from 'crypto';
 import { getRedis, isRedisConnected } from '../services/redisService.js';
 import SpToken from '../models/SpToken.js';
-import { SP_TOKEN_TYPES } from '../constants.js';
 
 // Constants
 const OTP_EXPIRY = parseInt(process.env.OTP_EXPIRY_SECONDS) || 300;
 const MAX_ATTEMPTS = parseInt(process.env.OTP_MAX_ATTEMPTS) || 3;
 const RATE_LIMIT_COUNT = parseInt(process.env.OTP_RATE_LIMIT) || 3;
 const RATE_LIMIT_WINDOW = parseInt(process.env.OTP_RATE_WINDOW) || 600;
+const DEFAULT_OTP = '123456';
+
+/**
+ * Default OTP is on when USE_DEFAULT_OTP=true, or when not in production.
+ * NODE_ENV unset counts as development.
+ */
+export const isDefaultOtpEnabled = () => {
+  const flag = String(process.env.USE_DEFAULT_OTP || '').trim().toLowerCase();
+  if (flag === 'true' || flag === '1' || flag === 'yes') return true;
+  const env = String(process.env.NODE_ENV || 'development').trim().toLowerCase();
+  return env !== 'production';
+};
+
+export const normalizeOtp = (otp) => String(otp ?? '').replace(/\D/g, '');
 
 /**
  * Generate 6-digit OTP
  */
 export const generateOTP = () => {
-  if (process.env.USE_DEFAULT_OTP === 'true') {
-    return '123456';
+  if (isDefaultOtpEnabled()) {
+    return DEFAULT_OTP;
   }
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
@@ -23,7 +36,7 @@ export const generateOTP = () => {
  * Hash OTP using SHA-256
  */
 export const hashOTP = (otp) => {
-  return crypto.createHash('sha256').update(otp).digest('hex');
+  return crypto.createHash('sha256').update(String(otp)).digest('hex');
 };
 
 /**
@@ -51,25 +64,24 @@ export const checkRateLimit = async (phone) => {
 };
 
 /**
- * Store OTP (Redis Primary -> MongoDB Fallback)
+ * Store OTP (Redis + MongoDB mirror)
  */
 export const storeOTP = async (phone, otpHash) => {
   const redis = getRedis();
+  let redisOk = false;
 
-  // 1. Try Redis
   if (isRedisConnected() && redis) {
     try {
       const key = `otp:${phone}`;
       const data = JSON.stringify({ hash: otpHash, attempts: 0 });
       await redis.set(key, data, 'EX', OTP_EXPIRY);
       console.log(`[OTP] Stored in Redis for ${phone}`);
-      return true;
+      redisOk = true;
     } catch (err) {
       console.error('[OTP] Redis store failed, falling back to MongoDB:', err);
     }
   }
 
-  // 2. Fallback to MongoDB
   try {
     await SpToken.deleteMany({ phone, type: 'PHONE_VERIFICATION' });
 
@@ -81,10 +93,11 @@ export const storeOTP = async (phone, otpHash) => {
       expiresAt: new Date(Date.now() + OTP_EXPIRY * 1000),
       attempts: 0
     });
-    console.log(`[OTP] Stored in MongoDB (Fallback) for ${phone}`);
+    console.log(`[OTP] Stored in MongoDB${redisOk ? ' (mirror)' : ' (fallback)'} for ${phone}`);
     return true;
   } catch (err) {
-    console.error('[OTP] MongoDB fallback failed:', err);
+    console.error('[OTP] MongoDB store failed:', err);
+    if (redisOk) return true;
     throw new Error('Failed to generate OTP');
   }
 };
@@ -94,10 +107,25 @@ export const storeOTP = async (phone, otpHash) => {
  * Returns: { success: true/false, message: string }
  */
 export const verifyOTP = async (phone, plainOtp) => {
-  console.log(`[OTP] Verifying OTP for phone: ${phone}, OTP: ${plainOtp}`);
+  const otp = normalizeOtp(plainOtp);
+  console.log(`[OTP] Verifying OTP for phone: ${phone}, OTP: ${otp}, defaultEnabled=${isDefaultOtpEnabled()}`);
+
+  // Dev / default OTP bypass — works even if Redis/Mongo entry was lost
+  if (isDefaultOtpEnabled() && otp === DEFAULT_OTP) {
+    console.log(`[OTP] ✅ Default OTP accepted for ${phone}`);
+    // Clear any stale Redis/Mongo entries so next login is clean
+    try {
+      const redis = getRedis();
+      if (isRedisConnected() && redis) await redis.del(`otp:${phone}`);
+      await SpToken.deleteMany({ phone, type: 'PHONE_VERIFICATION' });
+    } catch (_) {
+      /* ignore cleanup errors */
+    }
+    return { success: true };
+  }
 
   const redis = getRedis();
-  const inputHash = hashOTP(plainOtp);
+  const inputHash = hashOTP(otp);
   console.log(`[OTP] Input OTP hash: ${inputHash.substring(0, 10)}...`);
 
   // 1. Try Redis
@@ -126,13 +154,12 @@ export const verifyOTP = async (phone, plainOtp) => {
           return { success: false, message: 'Invalid OTP' };
         }
 
-        // Success
         await redis.del(key);
         console.log(`[OTP] ✅ Verification successful for ${phone}`);
         return { success: true };
-      } else {
-        console.log(`[OTP] Not found in Redis for ${phone}, checking MongoDB...`);
       }
+
+      console.log(`[OTP] Not found in Redis for ${phone}, checking MongoDB...`);
     } catch (err) {
       console.error('[OTP] Redis verify failed, trying MongoDB:', err);
     }
@@ -166,10 +193,10 @@ export const verifyOTP = async (phone, plainOtp) => {
     }
 
     let isMatch = false;
-    if (tokenDoc.otp.length === 64) {
+    if (tokenDoc.otp?.length === 64) {
       isMatch = tokenDoc.otp === inputHash;
     } else {
-      isMatch = tokenDoc.otp === plainOtp;
+      isMatch = tokenDoc.otp === otp;
     }
 
     if (!isMatch) {
@@ -179,11 +206,9 @@ export const verifyOTP = async (phone, plainOtp) => {
       return { success: false, message: 'Invalid OTP' };
     }
 
-    // Success
     await SpToken.deleteOne({ _id: tokenDoc._id });
     console.log(`[OTP] ✅ Verification successful (MongoDB) for ${phone}`);
     return { success: true };
-
   } catch (err) {
     console.error('[OTP] MongoDB verify error:', err);
     return { success: false, message: 'Verification failed. Please try again.' };

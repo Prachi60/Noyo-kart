@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import serviceDb from '../config/db.js';
 import { SP_SERVICE_STATUS } from '../constants.js';
 
 const spBrandSchema = new mongoose.Schema({
@@ -37,4 +38,4 @@ spBrandSchema.pre('save', async function (next) {
 spBrandSchema.index({ categoryIds: 1, status: 1 });
 spBrandSchema.index({ status: 1, isPopular: 1, isFeatured: 1 });
 
-export default mongoose.model('SpBrand', spBrandSchema);
+export default serviceDb.model('SpBrand', spBrandSchema, 'brands');

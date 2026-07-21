@@ -18,10 +18,13 @@ const AdminHeader = ({ onMenuClick }) => {
       navigate('/sp/admin/login');
     } catch (error) {
       console.error('Logout error:', error);
-      // Even if API call fails, clear local storage and redirect
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('adminData');
+      // Even if API call fails, clear SP admin session and redirect
+      localStorage.removeItem('spAdminAccessToken');
+      localStorage.removeItem('spAdminRefreshToken');
+      localStorage.removeItem('spAdminData');
+      sessionStorage.removeItem('spAdminAccessToken');
+      sessionStorage.removeItem('spAdminRefreshToken');
+      sessionStorage.removeItem('spAdminData');
       toast.success('Logged out successfully');
       navigate('/sp/admin/login');
     }
@@ -169,6 +172,15 @@ const AdminHeader = ({ onMenuClick }) => {
 
         {/* Right: Notifications & Logout */}
         <div className="flex items-center gap-4">
+          <Button
+            onClick={() => navigate('/admin')}
+            variant="ghost"
+            size="sm"
+            className="hidden lg:flex items-center bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:opacity-90 transition-all font-bold shadow-sm px-3 py-1.5"
+          >
+            Quick Commerce 🛒
+          </Button>
+
           {/* Notifications */}
           <div className="relative">
             <Button

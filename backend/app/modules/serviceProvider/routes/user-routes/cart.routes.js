@@ -5,11 +5,11 @@ import { getUserCart, addToCart, updateCartItem, removeFromCart, clearCart, remo
 
 const router = Router();
 
-router.get('/cart', authenticate, isUser, getUserCart);
-router.post('/cart', authenticate, isUser, addToCart);
-router.put('/cart/:itemId', authenticate, isUser, updateCartItem);
-router.delete('/cart/:itemId', authenticate, isUser, removeFromCart);
-router.delete('/cart', authenticate, isUser, clearCart);
-router.delete('/cart/category/:category', authenticate, isUser, removeCategoryItems);
+router.get('/', authenticate, isUser, getUserCart);
+router.post('/', authenticate, isUser, addToCart);
+router.put('/:itemId', authenticate, isUser, updateCartItem);
+router.delete('/category/:category', authenticate, isUser, removeCategoryItems);
+router.delete('/:itemId', authenticate, isUser, removeFromCart);
+router.delete('/', authenticate, isUser, clearCart);
 
 export default router;

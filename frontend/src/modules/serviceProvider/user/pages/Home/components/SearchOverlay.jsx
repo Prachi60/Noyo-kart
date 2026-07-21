@@ -99,7 +99,9 @@ const SearchOverlay = ({ isOpen, onClose, categories = [], onCategoryClick }) =>
           let serviceMatches = [];
 
           if (response.success) {
-            serviceMatches = response.services;
+            serviceMatches = Array.isArray(response.data)
+              ? response.data
+              : (response.services || []);
           }
 
           // Combine: Categories first, then Services

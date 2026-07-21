@@ -46,7 +46,17 @@ const LiveBookingCard = ({ hasBottomNav }) => {
   };
 
   useEffect(() => {
-    fetchActiveBooking();
+    const token = localStorage.getItem('spAccessToken') || sessionStorage.getItem('spAccessToken');
+    if (token) {
+      fetchActiveBooking();
+    } else {
+      setLoading(false);
+    }
+
+    const onSpAuthChanged = () => {
+      fetchActiveBooking();
+    };
+    window.addEventListener('sp-auth-changed', onSpAuthChanged);
 
     if (socket) {
       socket.on('booking_updated', fetchActiveBooking);
@@ -54,9 +64,13 @@ const LiveBookingCard = ({ hasBottomNav }) => {
     }
 
     // Poll every 30 seconds for updates
-    const interval = setInterval(fetchActiveBooking, 30000);
+    const interval = setInterval(() => {
+      const spToken = localStorage.getItem('spAccessToken') || sessionStorage.getItem('spAccessToken');
+      if (spToken) fetchActiveBooking();
+    }, 30000);
     return () => {
       clearInterval(interval);
+      window.removeEventListener('sp-auth-changed', onSpAuthChanged);
       if (socket) {
         socket.off('booking_updated', fetchActiveBooking);
         socket.off('notification', fetchActiveBooking);
@@ -66,6 +80,13 @@ const LiveBookingCard = ({ hasBottomNav }) => {
 
   const fetchActiveBooking = async () => {
     try {
+      const token = localStorage.getItem('spAccessToken') || sessionStorage.getItem('spAccessToken');
+      if (!token) {
+        setActiveBooking(null);
+        setLoading(false);
+        return;
+      }
+
       // Fetch bookings with active statuses
       // We manually fetch latest and check status on client or assume API supports status filter array
       // For now, getting all 'active' look-alikes by assuming 'current' sort order or specific API behaviour

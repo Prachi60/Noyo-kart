@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import serviceDb from '../config/db.js';
 
 const spPlanSchema = new mongoose.Schema({
   name: { type: String, required: true, unique: true },
@@ -12,4 +13,4 @@ const spPlanSchema = new mongoose.Schema({
   isActive: { type: Boolean, default: true }
 }, { timestamps: true });
 
-export default mongoose.model('SpPlan', spPlanSchema);
+export default serviceDb.model('SpPlan', spPlanSchema, 'plans');

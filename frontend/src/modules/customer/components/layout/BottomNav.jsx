@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, LayoutGrid, Printer, ShoppingBag, User } from 'lucide-react';
+import { Home, LayoutGrid, Printer, ShoppingBag, User, Briefcase } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSettings } from '@core/context/SettingsContext';
 
@@ -9,7 +9,8 @@ const iconMap = {
     LayoutGrid,
     Printer,
     ShoppingBag,
-    User
+    User,
+    Briefcase
 };
 
 const BottomNav = () => {
@@ -21,7 +22,7 @@ const BottomNav = () => {
     })) || [
         { label: 'Home', icon: Home, path: '/' },
         { label: 'Category', icon: LayoutGrid, path: '/categories' },
-        { label: 'Print', icon: Printer, path: '/print-store' },
+        { label: 'Services', icon: Briefcase, path: '/sp/user' },
         { label: 'Orders', icon: ShoppingBag, path: '/orders' },
         { label: 'Profile', icon: User, path: '/profile' },
     ];

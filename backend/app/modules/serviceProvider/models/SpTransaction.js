@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import serviceDb from '../config/db.js';
 
 const spTransactionSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'SpUser', default: null },
@@ -22,4 +23,4 @@ spTransactionSchema.index({ workerId: 1, createdAt: -1 });
 spTransactionSchema.index({ bookingId: 1 });
 spTransactionSchema.index({ type: 1, status: 1 });
 
-export default mongoose.model('SpTransaction', spTransactionSchema);
+export default serviceDb.model('SpTransaction', spTransactionSchema, 'transactions');

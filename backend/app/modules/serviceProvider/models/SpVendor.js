@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import serviceDb from '../config/db.js';
 import bcrypt from 'bcrypt';
 import { SP_VENDOR_STATUS } from '../constants.js';
 
@@ -95,4 +96,4 @@ spVendorSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
-export default mongoose.model('SpVendor', spVendorSchema);
+export default serviceDb.model('SpVendor', spVendorSchema, 'vendors');

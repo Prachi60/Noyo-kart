@@ -3,7 +3,6 @@ import { useNavigate, Link } from 'react-router-dom';
 import { FiArrowLeft, FiShoppingCart, FiTrash2, FiPlus, FiMinus, FiLoader, FiBell, FiZap, FiStar, FiHeart, FiCheckSquare, FiWind } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import { themeColors } from '../../../theme';
-import BottomNav from '../../components/layout/BottomNav';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { useCart } from '../../../context/CartContext';
 import NotificationBell from '../../components/common/NotificationBell';

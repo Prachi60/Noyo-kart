@@ -41,11 +41,14 @@ export const getBookingById = async (bookingId) => {
 /**
  * Accept a booking
  * @param {string} bookingId - Booking ID
+ * @param {Object} options - { assignToSelf: true } to self-assign (skip worker)
  * @returns {Promise<Object>} Updated booking
  */
-export const acceptBooking = async (bookingId) => {
+export const acceptBooking = async (bookingId, options = {}) => {
   try {
-    const response = await api.post(`/vendors/bookings/${bookingId}/accept`);
+    const response = await api.post(`/vendors/bookings/${bookingId}/accept`, {
+      assignToSelf: Boolean(options.assignToSelf)
+    });
     return response.data;
   } catch (error) {
     console.error('Error accepting booking:', error);

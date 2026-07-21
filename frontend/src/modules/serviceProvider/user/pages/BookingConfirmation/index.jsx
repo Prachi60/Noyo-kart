@@ -225,7 +225,7 @@ const BookingConfirmation = () => {
   const handleCancelBooking = async () => {
     try {
       setLoading(true);
-      await bookingService.cancel(booking._id || booking.id, { reason: 'Cancelled during uncertain vendor search' });
+      await bookingService.cancel(booking._id || booking.id, 'Cancelled during uncertain vendor search');
       toast.success('Booking cancelled successfully');
       navigate('/user');
     } catch (error) {

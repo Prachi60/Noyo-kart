@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { acceptBooking, rejectBooking, assignWorker } from '../../services/bookingService';
+import { acceptBooking, rejectBooking } from '../../services/bookingService';
 import BookingAlertModal from '../../components/bookings/BookingAlertModal';
 import { toast } from 'react-hot-toast';
 import { useSocket } from '../../../context/SocketContext'; // Import socket context
@@ -65,21 +65,20 @@ const BookingAlert = () => {
 
   const handleAccept = async () => {
     try {
-      await acceptBooking(id);
-      await assignWorker(id, 'SELF');
+      // Accept (Myself): self-assign in one step — vendor does the service
+      await acceptBooking(id, { assignToSelf: true });
 
-      // Update local storage states
       const pendingJobs = JSON.parse(localStorage.getItem('vendorPendingJobs') || '[]');
       const updatedPending = pendingJobs.filter(job => job.id !== id);
       localStorage.setItem('vendorPendingJobs', JSON.stringify(updatedPending));
 
       window.dispatchEvent(new Event('vendorJobsUpdated'));
-      toast.success('Booking accepted & assigned to you!');
-      navigate('/vendor/dashboard', { replace: true });
+      toast.success('Accepted — you will handle this service yourself.');
+      navigate(`/sp/vendor/booking/${id}`, { replace: true });
     } catch (error) {
       console.error('Error accepting:', error);
-      toast.error('Failed to accept booking. It may have expired.');
-      navigate('/vendor/dashboard', { replace: true });
+      toast.error(error.response?.data?.message || 'Failed to accept booking. It may have expired.');
+      navigate('/sp/vendor/dashboard', { replace: true });
     }
   };
 
@@ -92,10 +91,10 @@ const BookingAlert = () => {
       localStorage.setItem('vendorPendingJobs', JSON.stringify(updated));
 
       window.dispatchEvent(new Event('vendorJobsUpdated'));
-      navigate('/vendor/dashboard', { replace: true });
+      navigate('/sp/vendor/dashboard', { replace: true });
     } catch (error) {
       console.error('Error rejecting:', error);
-      navigate('/vendor/dashboard', { replace: true });
+      navigate('/sp/vendor/dashboard', { replace: true });
     }
   };
 
@@ -103,18 +102,17 @@ const BookingAlert = () => {
     try {
       await acceptBooking(id);
 
-      // Update local storage states
       const pendingJobs = JSON.parse(localStorage.getItem('vendorPendingJobs') || '[]');
       const updatedPending = pendingJobs.filter(job => job.id !== id);
       localStorage.setItem('vendorPendingJobs', JSON.stringify(updatedPending));
 
       window.dispatchEvent(new Event('vendorJobsUpdated'));
-      toast.success('Booking accepted! Redirecting to assign...');
-      navigate(`/vendor/booking/${id}/assign-worker`, { replace: true });
+      toast.success('Accepted! Pick a worker...');
+      navigate(`/sp/vendor/booking/${id}/assign-worker`, { replace: true });
     } catch (error) {
       console.error('Error accepting:', error);
       toast.error('Failed to accept booking.');
-      navigate('/vendor/dashboard', { replace: true });
+      navigate('/sp/vendor/dashboard', { replace: true });
     }
   };
 

@@ -172,22 +172,20 @@ const BookingAlerts = () => {
     if (loadingAction.id) return;
     setLoadingAction({ id: bookingId, type: 'accept' });
     try {
-      await acceptBooking(bookingId);
-      toast.success('Booking accepted!');
-      // Remove from list
+      await acceptBooking(bookingId, { assignToSelf: true });
+      toast.success('Accepted — you will handle this service yourself.');
       setAlerts(prev => prev.filter(a => (a._id || a.id) !== bookingId));
 
-      // Remove from localStorage
       const pendingJobs = JSON.parse(localStorage.getItem('vendorPendingJobs') || '[]');
       const updatedPending = pendingJobs.filter(job => (job.id || job._id) !== bookingId);
       localStorage.setItem('vendorPendingJobs', JSON.stringify(updatedPending));
 
-      // Trigger global update
       window.dispatchEvent(new Event('vendorStatsUpdated'));
       window.dispatchEvent(new Event('vendorJobsUpdated'));
+      navigate(`/sp/vendor/booking/${bookingId}`);
     } catch (error) {
       console.error('Accept error:', error);
-      toast.error('Failed to accept booking');
+      toast.error(error.response?.data?.message || 'Failed to accept booking');
     } finally {
       setLoadingAction({ id: null, type: null });
     }

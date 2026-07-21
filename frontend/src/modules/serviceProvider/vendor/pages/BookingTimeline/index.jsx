@@ -52,12 +52,12 @@ const BookingTimeline = () => {
         const response = await getBookingById(id);
         const apiData = response.data || response;
 
-        const isSelfJob = apiData.assignedAt && !apiData.workerId;
+        const isSelfJob = Boolean(apiData.isSelfJob) || (!!apiData.assignedAt && !apiData.workerId);
         const mappedBooking = {
           ...apiData,
           id: apiData._id || apiData.id,
           isSelfJob,
-          assignedTo: apiData.workerId ? { name: apiData.workerId.name } : (apiData.assignedAt ? { name: 'You (Self)' } : null),
+          assignedTo: apiData.workerId ? { name: apiData.workerId.name } : (isSelfJob ? { name: 'You (Self)' } : null),
           location: {
             address: apiData.address?.addressLine1 || apiData.location?.address || 'Address not available',
             lat: apiData.address?.lat || apiData.location?.lat,
@@ -238,7 +238,8 @@ const BookingTimeline = () => {
       await completeSelfJob(id, { workPhotos: photos });
       toast.success('Work marked done');
       setIsWorkDoneModalOpen(false);
-      window.location.reload();
+      window.dispatchEvent(new Event('vendorJobsUpdated'));
+      navigate('/sp/vendor/dashboard', { replace: true });
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed');
     } finally {

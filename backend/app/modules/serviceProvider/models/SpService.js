@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import serviceDb from '../config/db.js';
 import { SP_SERVICE_STATUS } from '../constants.js';
 
 const spServiceSchema = new mongoose.Schema({
@@ -19,4 +20,4 @@ spServiceSchema.pre('validate', async function (next) {
   next();
 });
 
-export default mongoose.model('SpService', spServiceSchema);
+export default serviceDb.model('SpService', spServiceSchema, 'services');

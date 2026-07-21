@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Search, ShoppingCart, Heart, User, Menu, MapPin } from 'lucide-react';
+import { Search, ShoppingCart, Heart, User, Menu, MapPin, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useWishlist } from '../../context/WishlistContext';
 import { useCart } from '../../context/CartContext';
@@ -158,6 +158,11 @@ const Header = () => {
 
                     {/* Desktop Right Icons */}
                     <div className="hidden md:flex items-center gap-4">
+                        <Link to="/sp/user" className="relative flex items-center justify-center p-2 hover:bg-slate-50 rounded-full transition-colors group" title="Our Services">
+                            <Briefcase className="h-6 w-6 text-slate-600 group-hover:text-indigo-600 transition-colors" />
+                            <span className="absolute -bottom-4 opacity-0 group-hover:opacity-100 text-[10px] font-bold text-indigo-600 transition-opacity whitespace-nowrap">Services</span>
+                        </Link>
+
                         <Link to="/wishlist" className="relative flex items-center justify-center p-2 hover:bg-slate-50 rounded-full transition-colors group">
                             <Heart className="h-6 w-6 text-slate-600 group-hover:text-[var(--primary)] transition-colors" />
                             {wishlistCount > 0 && (

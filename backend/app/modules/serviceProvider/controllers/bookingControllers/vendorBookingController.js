@@ -4,7 +4,7 @@ import SpWorker from '../../models/SpWorker.js';
 import { validationResult } from 'express-validator';
 import { SP_BOOKING_STATUS, SP_PAYMENT_STATUS } from '../../constants.js';
 import { createNotification } from '../notificationController.js';
-import { sendNotificationToUser, sendNotificationToVendor, sendNotificationToWorker } from '../../services/firebaseAdminService.js';
+import { sendNotificationToUser, sendNotificationToVendor, sendNotificationToWorker } from '../../services/firebaseAdmin.js';
 
 /**
  * Get vendor bookings with filters
@@ -155,6 +155,24 @@ const acceptBooking = async (req, res) => {
   try {
     const vendorId = req.user.id;
     const { id } = req.params;
+    const assignToSelf = Boolean(req.body?.assignToSelf || req.body?.selfAssign || req.query?.assignToSelf === 'true');
+
+    const setFields = {
+      vendorId: vendorId,
+      acceptedAt: new Date(),
+      status: SP_BOOKING_STATUS.CONFIRMED
+    };
+
+    // Accept (Myself): vendor claims job and self-assigns in one step — no worker scene
+    if (assignToSelf) {
+      setFields.status = SP_BOOKING_STATUS.ASSIGNED;
+      setFields.assignedAt = new Date();
+      setFields.isSelfJob = true;
+      setFields.workerId = null;
+      setFields.workerResponse = 'ACCEPTED';
+      setFields.workerPaymentStatus = 'PAID';
+      setFields.isWorkerPaid = true;
+    }
 
     const updatedBooking = await SpBooking.findOneAndUpdate(
       {
@@ -162,13 +180,7 @@ const acceptBooking = async (req, res) => {
         status: { $in: [SP_BOOKING_STATUS.REQUESTED, SP_BOOKING_STATUS.SEARCHING] },
         vendorId: null
       },
-      {
-        $set: {
-          vendorId: vendorId,
-          acceptedAt: new Date(),
-          status: SP_BOOKING_STATUS.CONFIRMED
-        }
-      },
+      { $set: setFields },
       { new: true }
     );
 
@@ -213,33 +225,50 @@ const acceptBooking = async (req, res) => {
 
     // Emit real-time updates to USER
     if (io) {
-      const message = 'Vendor has accepted your request. Your booking is confirmed!';
+      const message = assignToSelf
+        ? 'Vendor has accepted and will handle your booking personally.'
+        : 'Vendor has accepted your request. Your booking is confirmed!';
       io.to(`user_${booking.userId}`).emit('booking_accepted', {
         bookingId: booking._id,
         bookingNumber: booking.bookingNumber,
         vendor: { id: vendorId, name: req.user.name, businessName: req.user.businessName },
+        isSelfJob: assignToSelf,
         message
       });
       io.to(`user_${booking.userId}`).emit('booking_updated', {
         bookingId: booking._id,
         status: booking.status,
-        message: 'Vendor has accepted your request'
+        isSelfJob: assignToSelf,
+        message: assignToSelf ? 'Professional assigned to your booking' : 'Vendor has accepted your request'
       });
     }
 
     // Send notification to user
-    const notificationMessage = `Your booking ${booking.bookingNumber} is confirmed! ${req.user.businessName || req.user.name} will arrive at scheduled time.`;
+    const notificationMessage = assignToSelf
+      ? `Your booking ${booking.bookingNumber} is confirmed! ${req.user.businessName || req.user.name} will handle it personally.`
+      : `Your booking ${booking.bookingNumber} is confirmed! ${req.user.businessName || req.user.name} will arrive at scheduled time.`;
     await createNotification({
       userId: booking.userId,
-      type: 'booking_accepted',
+      type: assignToSelf ? 'worker_assigned' : 'booking_accepted',
       title: 'Booking Confirmed!',
       message: notificationMessage,
       relatedId: booking._id,
       relatedType: 'booking',
-      pushData: { type: 'booking_accepted', bookingId: booking._id.toString(), link: `/user/booking/${booking._id}` }
+      pushData: {
+        type: assignToSelf ? 'worker_assigned' : 'booking_accepted',
+        bookingId: booking._id.toString(),
+        link: `/user/booking/${booking._id}`
+      }
     });
 
-    res.status(200).json({ success: true, message: 'Booking accepted successfully', data: booking });
+    res.status(200).json({
+      success: true,
+      message: assignToSelf
+        ? 'Booking accepted and assigned to you'
+        : 'Booking accepted successfully',
+      data: booking,
+      isSelfJob: assignToSelf
+    });
   } catch (error) {
     console.error('Accept booking error:', error);
     res.status(500).json({ success: false, message: 'Failed to accept booking. Please try again.' });
@@ -341,11 +370,20 @@ const assignWorker = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Booking not found' });
     }
 
-    // Handle "Assign to Self"
-    if (workerId === 'SELF') {
+    // Handle "Assign to Self" — vendor does the job; skip worker flow entirely
+    if (workerId === 'SELF' || workerId === 'self') {
       booking.workerId = null;
+      booking.isSelfJob = true;
       booking.assignedAt = new Date();
-      if (booking.status === SP_BOOKING_STATUS.CONFIRMED || booking.status === SP_BOOKING_STATUS.ACCEPTED) {
+      booking.workerResponse = 'ACCEPTED';
+      booking.workerPaymentStatus = 'PAID';
+      booking.isWorkerPaid = true;
+      if ([
+        SP_BOOKING_STATUS.CONFIRMED,
+        SP_BOOKING_STATUS.ACCEPTED,
+        SP_BOOKING_STATUS.PENDING,
+        SP_BOOKING_STATUS.ASSIGNED
+      ].includes(booking.status)) {
         booking.status = SP_BOOKING_STATUS.ASSIGNED;
       }
       await booking.save();
@@ -363,11 +401,19 @@ const assignWorker = async (req, res) => {
       const io = req.app.get('io');
       if (io) {
         io.to(`user_${booking.userId}`).emit('booking_updated', {
-          bookingId: booking._id, status: booking.status, message: 'Professional assigned to your booking'
+          bookingId: booking._id,
+          status: booking.status,
+          isSelfJob: true,
+          message: 'Professional assigned to your booking'
         });
       }
 
-      return res.status(200).json({ success: true, message: 'Assigned to yourself successfully', data: booking });
+      return res.status(200).json({
+        success: true,
+        message: 'Assigned to yourself successfully',
+        data: booking,
+        isSelfJob: true
+      });
     }
 
     // Verify worker belongs to vendor
@@ -382,10 +428,13 @@ const assignWorker = async (req, res) => {
     }
 
     booking.workerId = workerId;
+    booking.isSelfJob = false;
     booking.assignedAt = new Date();
     booking.status = SP_BOOKING_STATUS.ASSIGNED;
     booking.workerResponse = 'PENDING';
     booking.workerAcceptedAt = undefined;
+    booking.workerPaymentStatus = 'PENDING';
+    booking.isWorkerPaid = false;
     await booking.save();
 
     // Send notification to user
@@ -564,17 +613,19 @@ const startSelfJob = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Booking not found' });
     }
 
-    if (booking.workerId) {
+    if (booking.workerId && !booking.isSelfJob) {
       return res.status(400).json({ success: false, message: 'Worker is assigned to this booking. You cannot start it yourself unless you unassign worker.' });
     }
 
     // Generate Visit OTP
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
 
+    booking.isSelfJob = true;
+    booking.workerId = null;
     booking.status = SP_BOOKING_STATUS.JOURNEY_STARTED;
     booking.journeyStartedAt = new Date();
     booking.visitOtp = otp;
-    booking.assignedAt = new Date();
+    if (!booking.assignedAt) booking.assignedAt = new Date();
     await booking.save();
 
     // Notify user
@@ -964,7 +1015,7 @@ const payWorker = async (req, res) => {
     if (worker) {
       const fcmTokens = [...(worker.fcmTokens || []), ...(worker.fcmTokenMobile || [])];
       if (fcmTokens.length > 0) {
-        const { sendPushNotification } = await import('../../services/firebaseAdminService.js');
+        const { sendPushNotification } = await import('../../services/firebaseAdmin.js');
         await sendPushNotification(fcmTokens, {
           title: 'Payment Received! 💰',
           body: `Vendor has released your payment for booking #${booking.bookingNumber}. check wallet for details.`,
