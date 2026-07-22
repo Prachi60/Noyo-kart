@@ -63,21 +63,25 @@ const ServiceProviderModule = lazy(() => import('../../modules/serviceProvider/r
 import CustomerLayout from '../../modules/customer/components/layout/CustomerLayout';
 
 const CustomerLayoutWrapper = () => (
+    <WishlistProvider>
+        <CartProvider>
+            <CartAnimationProvider>
+                <ScrollToTop />
+                <CustomerLayout>
+                    <Suspense fallback={<div className="flex h-screen items-center justify-center font-outfit">Loading...</div>}>
+                        <Outlet />
+                    </Suspense>
+                </CustomerLayout>
+            </CartAnimationProvider>
+        </CartProvider>
+    </WishlistProvider>
+);
+
+const GlobalProvidersWrapper = () => (
     <LocationProvider>
-        <WishlistProvider>
-            <CartProvider>
-                <CartAnimationProvider>
-                    <ProductDetailProvider>
-                        <ScrollToTop />
-                        <CustomerLayout>
-                            <Suspense fallback={<div className="flex h-screen items-center justify-center font-outfit">Loading...</div>}>
-                                <Outlet />
-                            </Suspense>
-                        </CustomerLayout>
-                    </ProductDetailProvider>
-                </CartAnimationProvider>
-            </CartProvider>
-        </WishlistProvider>
+        <ProductDetailProvider>
+            <Outlet />
+        </ProductDetailProvider>
     </LocationProvider>
 );
 
@@ -85,7 +89,7 @@ const AppRouter = () => {
     const router = useMemo(() => createBrowserRouter([
         {
             path: '/',
-            element: <Outlet />,
+            element: <GlobalProvidersWrapper />,
             errorElement: <RootErrorBoundary />,
             children: [
                 {

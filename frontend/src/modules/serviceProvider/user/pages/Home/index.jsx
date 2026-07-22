@@ -1,8 +1,13 @@
 import React, { useState, useEffect, useLayoutEffect, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { themeColors } from '../../../theme';
-import Header from '../../components/layout/Header';
-import SearchBar from './components/SearchBar';
+import MainLocationHeader from '../../../../customer/components/shared/MainLocationHeader';
+import HomeIcon from "@mui/icons-material/Home";
+import BuildIcon from "@mui/icons-material/Build";
+import LocalCafeIcon from "@mui/icons-material/LocalCafe";
+import DevicesIcon from "@mui/icons-material/Devices";
+import LocalGroceryStoreIcon from "@mui/icons-material/LocalGroceryStore";
+import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
 import ServiceCategories from './components/ServiceCategories';
 import { publicCatalogService } from '../../../services/catalogService';
 import { useCart } from '../../../context/CartContext';
@@ -10,6 +15,8 @@ import { useCity } from '../../../context/CityContext';
 import { toast } from 'react-hot-toast';
 import { registerFCMToken } from '../../../services/pushNotificationService';
 import { motion } from 'framer-motion';
+import { customerApi } from '../../../../customer/services/customerApi';
+import { getIconSvg } from '@/shared/constants/categoryIcons';
 
 // Lazy load heavy components for better initial load performance
 import PromoCarousel from './components/PromoCarousel';
@@ -36,6 +43,51 @@ const toAssetUrl = (url) => {
   const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000').replace(/\/api$/, '');
   return `${base}${clean.startsWith('/') ? '' : '/'}${clean}`;
 };
+
+const GLOBAL_CATEGORIES = [
+  {
+    id: "all",
+    name: "All",
+    icon: HomeIcon,
+    theme: { gradient: "linear-gradient(to bottom, #0284c7, #38bdf8)", shadow: "shadow-cyan-500/20", accent: "text-[#1A1A1A]" },
+    headerColor: "#0e7490",
+  },
+  {
+    id: "sp-link",
+    name: "Services",
+    icon: BuildIcon,
+    theme: { gradient: "linear-gradient(to bottom, #475569, #94a3b8)", shadow: "shadow-slate-500/20", accent: "text-slate-900" },
+    headerColor: "#475569",
+  },
+  {
+    id: "daily-essentials",
+    name: "Daily Essentials",
+    icon: LocalCafeIcon,
+    theme: { gradient: "linear-gradient(to bottom, #FF9F1C, #FFBF69)", shadow: "shadow-orange-500/20", accent: "text-orange-900" },
+    headerColor: "#ea580c",
+  },
+  {
+    id: "electronics",
+    name: "Electronics",
+    icon: DevicesIcon,
+    theme: { gradient: "linear-gradient(to bottom, #7209B7, #B5179E)", shadow: "shadow-purple-500/20", accent: "text-purple-900" },
+    headerColor: "#6b21a8",
+  },
+  {
+    id: "grocery",
+    name: "Grocery",
+    icon: LocalGroceryStoreIcon,
+    theme: { gradient: "linear-gradient(to bottom, #FF9F1C, #FFBF69)", shadow: "shadow-orange-500/20", accent: "text-orange-900" },
+    headerColor: "#ea580c",
+  },
+  {
+    id: "healthcare",
+    name: "Healthcare",
+    icon: LocalHospitalIcon,
+    theme: { gradient: "linear-gradient(to bottom, #4361EE, #4895EF)", shadow: "shadow-indigo-500/20", accent: "text-indigo-900" },
+    headerColor: "#3730a3",
+  },
+];
 
 const Home = () => {
   const navigate = useNavigate();
@@ -207,7 +259,7 @@ const Home = () => {
                     }
                   }
                 }
-              } catch (error) {
+              } catch {
                 // Silent fail
               }
             },
@@ -227,12 +279,36 @@ const Home = () => {
     autoDetectLocation();
 
     // Register FCM token for user to receive push notifications
-    registerFCMToken('user', true).catch(err => {/* Silent fail */ });
+    registerFCMToken('user', true).catch(() => {/* Silent fail */ });
   }, []);
 
   const [categories, setCategories] = useState([]);
+  const [globalCategories, setGlobalCategories] = useState([]);
   const [homeContent, setHomeContent] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Fetch global categories on mount
+  useEffect(() => {
+    const fetchGlobalCategories = async () => {
+      try {
+        const { data } = await customerApi.getCategories();
+        if (data?.success && data?.data) {
+          const formattedCategories = data.data.map(cat => ({
+            id: cat._id,
+            _id: cat._id,
+            name: cat.name,
+            title: cat.name,
+            icon: cat.icon,
+            iconSvg: getIconSvg(cat.name)
+          }));
+          setGlobalCategories(formattedCategories);
+        }
+      } catch (error) {
+        console.error('Failed to load global categories:', error);
+      }
+    };
+    fetchGlobalCategories();
+  }, []);
 
   // Handle scroll separately (only when needed)
   useEffect(() => {
@@ -279,13 +355,18 @@ const Home = () => {
         }
 
         setLoading(false);
-      } catch (error) {
+      } catch {
         setLoading(false);
       }
     };
 
     fetchData();
   }, [currentCity]);
+  const handleCategoryClick = (category) => {
+    setSelectedCategory(category);
+    setIsCategoryModalOpen(true);
+  };
+
   // Open category modal from navigation state (e.g. from Cart 'Add Services')
   useEffect(() => {
     if (!loading && categories.length > 0 && (location.state?.openCategoryId || location.state?.openCategoryName)) {
@@ -303,16 +384,7 @@ const Home = () => {
         window.history.replaceState({}, '', location.pathname);
       }
     }
-  }, [loading, categories, location.state]);
-
-  const handleSearch = (query) => {
-    // Navigate to search results page
-  };
-
-  const handleCategoryClick = (category) => {
-    setSelectedCategory(category);
-    setIsCategoryModalOpen(true);
-  };
+  }, [loading, categories, location.state, location.pathname]);
 
   const handlePromoClick = (promo) => {
     if (promo.targetCategoryId) {
@@ -392,17 +464,13 @@ const Home = () => {
           toast.error('Unable to add this service to cart.');
         }
       }
-    } catch (error) {
+    } catch {
       toast.error('Failed to add to cart. Please try again.');
     }
   };
 
   const handleReferClick = () => {
     navigate('/user/rewards');
-  };
-
-  const handleLocationClick = () => {
-    setIsAddressModalOpen(true);
   };
 
   // Animation Variants
@@ -465,21 +533,28 @@ const Home = () => {
         animate="visible"
         variants={containerVariants}
       >
-        <motion.div
-          variants={itemVariants}
-          className="backdrop-blur-xl sticky top-0 z-50 border-b border-black/[0.03] rounded-b-[24px] shadow-[0_4px_30px_rgba(0,0,0,0.03)] transition-all duration-300"
-          style={{ backgroundColor: 'rgba(255, 255, 255, 0.4)' }}
-        >
-          <Header
-            location={address}
-            onLocationClick={handleLocationClick}
-          />
-          <div className="px-5 pb-5 pt-1 max-w-lg lg:max-w-2xl mx-auto w-full">
-            <SearchBar onInputClick={() => setIsSearchOpen(true)} />
-          </div>
-        </motion.div>
+        <MainLocationHeader
+          categories={globalCategories.length > 0 ? globalCategories : GLOBAL_CATEGORIES}
+          activeCategory={
+            (globalCategories.length > 0 ? globalCategories : GLOBAL_CATEGORIES).find(c => c.name === 'Services' || c.title === 'Services') || 
+            (globalCategories.length > 0 ? globalCategories[0] : GLOBAL_CATEGORIES[1])
+          } // Services
+          onCategorySelect={(c) => {
+            if (c.id === 'sp-link' || c.name === 'Services' || c.title === 'Services') return; // Already on services
+            // Navigate back to main app with category state
+            navigate('/', { state: { openCategoryName: c.name || c.title } });
+          }}
+          onSearchClick={() => setIsSearchOpen(true)}
+          searchPlaceholderText="Search Services..."
+          typingPhrases={['"plumbers"', '"electricians"', '"cleaning"', '"repairs"']}
+          cartCount={cartCount}
+          onCartClick={() => navigate('/sp/user/cart')}
+          onProfileClick={() => navigate('/sp/user/account')}
+          onLogoClick={() => navigate('/')}
+          onWishlistClick={() => navigate('/sp/user/my-bookings')}
+        />
 
-        <main className="pt-6 space-y-8 pb-24 max-w-screen-xl mx-auto w-full">
+        <main className="pt-[216px] md:pt-[250px] space-y-8 pb-24 max-w-screen-xl mx-auto w-full">
           {!isLocationSupported ? (
             <div className="flex flex-col items-center justify-center pt-20 pb-10 px-6 text-center min-h-[60vh]">
               <div className="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mb-6">
@@ -506,10 +581,10 @@ const Home = () => {
           ) : (
             <>
               {/* Hero Section - Promo Carousel */}
-              {homeContent?.isPromosVisible !== false && (
+              {homeContent?.isPromosVisible !== false && homeContent?.promos?.length > 0 && (
                 <motion.section variants={itemVariants} className="relative z-0">
                   <PromoCarousel
-                    promos={(homeContent?.promos || []).sort((a, b) => (a.order || 0) - (b.order || 0)).map(promo => ({
+                    promos={(homeContent.promos).sort((a, b) => (a.order || 0) - (b.order || 0)).map(promo => ({
                       id: promo.id || promo._id,
                       title: promo.title || '',
                       subtitle: promo.subtitle || promo.description || '',
@@ -527,7 +602,7 @@ const Home = () => {
               )}
 
               {/* Categories Section */}
-              {homeContent?.isCategoriesVisible !== false && (
+              {homeContent?.isCategoriesVisible !== false && categories.length > 0 && (
                 <motion.section variants={itemVariants} className="relative overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-b from-blue-50/30 to-transparent pointer-events-none -z-10" />
                   <ServiceCategories
@@ -539,7 +614,7 @@ const Home = () => {
               )}
 
               {/* Scrap Promotion Section */}
-              {homeContent?.isScrapPromoVisible !== false && (
+              {homeContent?.isScrapPromoVisible !== false && homeContent?.scrapPromo && (
                 <motion.section variants={itemVariants}>
                   <ScrapPromotionCard 
                     data={homeContent?.scrapPromo}
@@ -548,11 +623,11 @@ const Home = () => {
                 </motion.section>
               )}
               {/* Curated Services */}
-              {homeContent?.isCuratedVisible !== false && (
+              {homeContent?.isCuratedVisible !== false && homeContent?.curated?.length > 0 && (
                 <motion.div variants={itemVariants}>
                   <Suspense fallback={<div className="h-40 bg-gray-50 animate-pulse rounded-xl mx-4" />}>
                     <CuratedServices
-                      services={(homeContent?.curated || []).sort((a, b) => (a.order || 0) - (b.order || 0)).map(item => ({
+                      services={(homeContent.curated).sort((a, b) => (a.order || 0) - (b.order || 0)).map(item => ({
                         id: item.id || item._id,
                         title: item.title,
                         gif: toAssetUrl(item.gifUrl),
@@ -566,11 +641,11 @@ const Home = () => {
               )}
 
               {/* New & Noteworthy */}
-              {homeContent?.isNoteworthyVisible !== false && (
+              {homeContent?.isNoteworthyVisible !== false && homeContent?.noteworthy?.length > 0 && (
                 <motion.div variants={itemVariants}>
                   <Suspense fallback={<div className="h-40 bg-gray-50 animate-pulse rounded-xl mx-4" />}>
                     <NewAndNoteworthy
-                      services={(homeContent?.noteworthy || []).sort((a, b) => (a.order || 0) - (b.order || 0)).map(item => ({
+                      services={(homeContent.noteworthy).sort((a, b) => (a.order || 0) - (b.order || 0)).map(item => ({
                         id: item.id || item._id,
                         title: item.title,
                         image: toAssetUrl(item.imageUrl),
@@ -584,11 +659,11 @@ const Home = () => {
               )}
 
               {/* Most Booked */}
-              {homeContent?.isBookedVisible !== false && (
+              {homeContent?.isBookedVisible !== false && homeContent?.booked?.length > 0 && (
                 <motion.div variants={itemVariants}>
                   <Suspense fallback={<div className="h-40 bg-gray-50 animate-pulse rounded-xl mx-4" />}>
                     <MostBookedServices
-                      services={(homeContent?.booked || []).sort((a, b) => (a.order || 0) - (b.order || 0)).map(item => ({
+                      services={(homeContent.booked).sort((a, b) => (a.order || 0) - (b.order || 0)).map(item => ({
                         id: item.id || item._id,
                         title: item.title,
                         rating: item.rating,
@@ -608,13 +683,13 @@ const Home = () => {
               )}
 
               {/* Dynamic Banner 1 */}
-              {homeContent?.isBannersVisible !== false && (
+              {homeContent?.isBannersVisible !== false && homeContent?.banners?.[0] && (
                 <motion.div variants={itemVariants}>
                   <Suspense fallback={<div className="h-32 bg-gray-50 animate-pulse rounded-xl mx-4" />}>
                     <Banner
-                      imageUrl={homeContent?.banners?.[0] ? toAssetUrl(homeContent.banners[0].imageUrl) : null}
+                      imageUrl={toAssetUrl(homeContent.banners[0].imageUrl)}
                       onClick={() => {
-                        const b = homeContent?.banners?.[0];
+                        const b = homeContent.banners[0];
                         if (b?.slug) {
                           navigate(`/user/${b.slug}`);
                           return;
@@ -630,13 +705,16 @@ const Home = () => {
               )}
 
               {/* Dynamic Sections */}
-              {homeContent?.isCategorySectionsVisible !== false && (homeContent?.categorySections || []).sort((a, b) => (a.order || 0) - (b.order || 0)).map((section, sIdx) => (
+              {homeContent?.isCategorySectionsVisible !== false && (homeContent?.categorySections || [])
+                .sort((a, b) => (a.order || 0) - (b.order || 0))
+                .filter(section => section.cards?.length > 0)
+                .map((section, sIdx) => (
                 <motion.div key={section._id || sIdx} variants={itemVariants}>
                   <Suspense fallback={<div className="h-40 bg-gray-50 animate-pulse rounded-xl mx-4" />}>
                     <ServiceSectionWithRating
                       title={section.title}
                       subtitle={section.subtitle}
-                      services={section.cards?.map((card, cIdx) => {
+                      services={section.cards.map((card, cIdx) => {
                         const processedImage = toAssetUrl(card.imageUrl);
                         return {
                           id: card._id || cIdx,
@@ -650,7 +728,7 @@ const Home = () => {
                           targetCategoryId: card.targetCategoryId,
                           slug: card.slug
                         };
-                      }) || []}
+                      })}
                       onSeeAllClick={() => {
                         if (section.seeAllTargetCategoryId) {
                           const cat = categories.find(c => (c.id === section.seeAllTargetCategoryId || c._id === section.seeAllTargetCategoryId));
@@ -665,13 +743,13 @@ const Home = () => {
               ))}
 
               {/* Dynamic Banner 2 */}
-              {homeContent?.isBannersVisible !== false && (
+              {homeContent?.isBannersVisible !== false && homeContent?.banners?.[1] && (
                 <motion.div variants={itemVariants}>
                   <Suspense fallback={<div className="h-32 bg-gray-50 animate-pulse rounded-xl mx-4" />}>
                     <Banner
-                      imageUrl={homeContent?.banners?.[1] ? toAssetUrl(homeContent.banners[1].imageUrl) : null}
+                      imageUrl={toAssetUrl(homeContent.banners[1].imageUrl)}
                       onClick={() => {
-                        const b = homeContent?.banners?.[1];
+                        const b = homeContent.banners[1];
                         if (b?.targetCategoryId) {
                           const cat = categories.find(c => (c.id === b.targetCategoryId || c._id === b.targetCategoryId));
                           if (cat) handleCategoryClick(cat);
@@ -683,10 +761,10 @@ const Home = () => {
               )}
 
               {/* Refer & Earn Section */}
-              {homeContent?.isReferEarnVisible !== false && (
+              {homeContent?.isReferEarnVisible !== false && homeContent?.referEarn && (
                 <motion.div variants={itemVariants}>
                   <Suspense fallback={<div className="h-32 bg-gray-50 animate-pulse rounded-xl mx-4" />}>
-                    <ReferEarnSection data={homeContent?.referEarn} onReferClick={handleReferClick} />
+                    <ReferEarnSection data={homeContent.referEarn} onReferClick={handleReferClick} />
                   </Suspense>
                 </motion.div>
               )}

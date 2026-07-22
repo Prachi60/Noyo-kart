@@ -18,7 +18,7 @@ const Banner = React.memo(({ imageUrl, onClick }) => {
           <img
             src={optimizedUrl}
             alt="Banner"
-            className="w-full h-full object-fill min-h-[150px]"
+            className="w-full h-full object-cover max-h-[120px] md:max-h-[160px] min-h-[100px]"
             loading="lazy"
             decoding="async"
           />

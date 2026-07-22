@@ -146,6 +146,14 @@ const MainLocationHeader = ({
   categories = [],
   activeCategory,
   onCategorySelect,
+  onSearchClick,
+  searchPlaceholderText,
+  typingPhrases = ['"bread"', '"milk"', '"chocolate"', '"eggs"', '"chips"'],
+  cartCount = 0,
+  onCartClick,
+  onProfileClick,
+  onLogoClick,
+  onWishlistClick,
 }) => {
   const { scrollY } = useScroll();
   const [isLocationOpen, setIsLocationOpen] = useState(false);
@@ -167,7 +175,11 @@ const MainLocationHeader = ({
 
   // Search Logic
   const handleSearchClick = () => {
-    navigate("/search");
+    if (onSearchClick) {
+      onSearchClick();
+    } else {
+      navigate("/search");
+    }
   };
 
   const handleSearchKeyDown = (e) => {
@@ -177,7 +189,7 @@ const MainLocationHeader = ({
   };
 
   // Search placeholder animation
-  const [searchPlaceholder, setSearchPlaceholder] = useState("Search ");
+  const [searchPlaceholder, setSearchPlaceholder] = useState(searchPlaceholderText || "Search ");
   const [typingState, setTypingState] = useState({
     textIndex: 0,
     charIndex: 0,
@@ -185,14 +197,7 @@ const MainLocationHeader = ({
     isPaused: false,
   });
 
-  const staticText = "Search ";
-  const typingPhrases = [
-    '"bread"',
-    '"milk"',
-    '"chocolate"',
-    '"eggs"',
-    '"chips"',
-  ];
+  const staticText = searchPlaceholderText || "Search ";
 
   useEffect(() => {
     const { textIndex, charIndex, isDeleting, isPaused } = typingState;
@@ -326,7 +331,7 @@ const MainLocationHeader = ({
             }}
             type="button"
             aria-label="Open cart"
-            onClick={() => navigate("/checkout")}
+            onClick={() => onCartClick ? onCartClick() : navigate("/checkout")}
             className="absolute top-3 right-5 sm:top-4 sm:right-6 md:top-5 md:right-8 z-20 w-12 h-12 sm:w-14 sm:h-14 md:w-20 md:h-20 cursor-pointer">
             {cartAnimData ? (
               <Lottie
@@ -344,7 +349,7 @@ const MainLocationHeader = ({
             {/* Left Section: Logo + Location row */}
             <div className="flex items-center gap-4 lg:gap-8">
               <div
-                onClick={() => navigate("/")}
+                onClick={() => onLogoClick ? onLogoClick() : navigate("/")}
                 className="flex items-center gap-3 cursor-pointer group shrink-0">
                 <div className="group-hover:scale-110 transition-all duration-300 drop-shadow-[0_2px_8px_rgba(255,255,255,0.2)]">
                   <img
@@ -411,7 +416,7 @@ const MainLocationHeader = ({
               <motion.button
                 whileHover={{ scale: 1.15, rotate: 5 }}
                 whileTap={{ scale: 0.9 }}
-                onClick={() => navigate("/wishlist")}
+                onClick={() => onWishlistClick ? onWishlistClick() : navigate("/wishlist")}
                 className="text-slate-900 hover:text-red-500 transition-all">
                 <FavoriteBorderOutlinedIcon sx={{ fontSize: 24 }} />
               </motion.button>
@@ -419,18 +424,20 @@ const MainLocationHeader = ({
               <motion.button
                 whileHover={{ scale: 1.15, rotate: -5 }}
                 whileTap={{ scale: 0.9 }}
-                onClick={() => navigate("/checkout")}
+                onClick={() => onCartClick ? onCartClick() : navigate("/checkout")}
                 className="text-slate-900 hover:text-slate-700 transition-all relative group">
                 <ShoppingCartOutlinedIcon sx={{ fontSize: 24 }} />
-                <span className="absolute -top-1.5 -right-1.5 bg-yellow-400 text-cyan-900 text-[9px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center border-2 border-cyan-800 shadow-sm transition-transform group-hover:-translate-y-0.5">
-                  0
-                </span>
+                {cartCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 bg-yellow-400 text-cyan-900 text-[9px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center border-2 border-cyan-800 shadow-sm transition-transform group-hover:-translate-y-0.5">
+                    {cartCount}
+                  </span>
+                )}
               </motion.button>
 
               <motion.button
                 whileHover={{ scale: 1.15 }}
                 whileTap={{ scale: 0.9 }}
-                onClick={() => navigate("/profile")}
+                onClick={() => onProfileClick ? onProfileClick() : navigate("/profile")}
                 className="text-slate-900 lg:bg-white/30 p-1.5 lg:rounded-full hover:bg-white hover:text-slate-900 transition-all">
                 <AccountCircleOutlinedIcon sx={{ fontSize: 28 }} />
               </motion.button>

@@ -10,81 +10,107 @@ if (typeof window !== 'undefined') {
  * Creates an optimized scroll entrance animation for a single element
  * @param {HTMLElement} element - The target element
  * @param {Object} options - Animation options
+ * @param {Object} scrollOptions - Additional scrollTrigger options
  */
-export const createOptimizedScrollAnimation = (element, options = {}) => {
+export const createOptimizedScrollAnimation = (element, options = {}, scrollOptions = {}) => {
   if (!element) return null;
 
-  const {
-    y = 30,
-    x = 0,
-    opacity = 0,
-    duration = 0.6,
-    delay = 0,
-    ease = 'power2.out',
-    start = 'top 85%',
-    toggleActions = 'play none none none',
-    ...rest
-  } = options;
+  let fromVars = { y: 30, x: 0, opacity: 0 };
+  let toVars = { y: 0, x: 0, opacity: 1, duration: 0.6, ease: 'power2.out', delay: 0 };
+  
+  if (options.from && options.to) {
+    fromVars = options.from;
+    toVars = { ...options.to, duration: options.duration || 0.6, ease: options.ease || 'power2.out', delay: options.delay || 0 };
+  } else {
+    fromVars = { y: options.y ?? 30, x: options.x ?? 0, opacity: options.opacity ?? 0 };
+    toVars = {
+      y: 0, x: 0, opacity: 1,
+      duration: options.duration || 0.6,
+      ease: options.ease || 'power2.out',
+      delay: options.delay || 0
+    };
+  }
 
   return gsap.fromTo(
     element,
-    { y, x, opacity },
+    fromVars,
     {
-      y: 0,
-      x: 0,
-      opacity: 1,
-      duration,
-      delay,
-      ease,
+      ...toVars,
       scrollTrigger: {
         trigger: element,
-        start,
-        toggleActions,
-        ...rest
+        start: 'top 85%',
+        toggleActions: 'play none none none',
+        ...scrollOptions
       }
     }
   );
 };
 
 /**
- * Creates a staggered scroll entrance animation for child elements
- * @param {HTMLElement} container - The container element
- * @param {string} childSelector - Selector for child elements to animate
- * @param {Object} options - Animation options
+ * Creates a staggered scroll entrance animation for elements
+ * @param {HTMLElement[]|HTMLElement} target - Array of elements or container element
+ * @param {Object|string} optionsOrSelector - Animation options or childSelector string
+ * @param {Object} scrollOptionsOrOptions - Scroll options or Animation options
+ * @param {Object} scrollOpts - Additional scrollTrigger options
  */
-export const createOptimizedStaggerAnimation = (container, childSelector, options = {}) => {
-  if (!container) return null;
+export const createOptimizedStaggerAnimation = (target, optionsOrSelector, scrollOptionsOrOptions = {}, scrollOpts = {}) => {
+  if (!target) return null;
 
-  const elements = container.querySelectorAll(childSelector);
+  let elements;
+  let options = {};
+  let scrollOptions = {};
+
+  if (typeof optionsOrSelector === 'string') {
+    elements = target.querySelectorAll(optionsOrSelector);
+    options = scrollOptionsOrOptions;
+    scrollOptions = scrollOpts;
+  } else {
+    elements = target;
+    options = optionsOrSelector || {};
+    scrollOptions = scrollOptionsOrOptions || {};
+  }
+
   if (!elements || elements.length === 0) return null;
 
-  const {
-    y = 30,
-    x = 0,
-    opacity = 0,
-    duration = 0.5,
-    stagger = 0.1,
-    ease = 'power2.out',
-    start = 'top 85%',
-    toggleActions = 'play none none none',
-    ...rest
-  } = options;
+  let fromVars = { y: 30, x: 0, opacity: 0 };
+  let toVars = { y: 0, x: 0, opacity: 1, duration: 0.5, stagger: 0.1, ease: 'power2.out', delay: 0 };
+
+  if (options.from && options.to) {
+    fromVars = options.from;
+    toVars = { 
+      ...options.to, 
+      duration: options.duration || 0.5, 
+      stagger: options.stagger || 0.1, 
+      ease: options.ease || 'power2.out', 
+      delay: options.delay || 0 
+    };
+  } else {
+    fromVars = { y: options.y ?? 30, x: options.x ?? 0, opacity: options.opacity ?? 0 };
+    toVars = {
+      y: 0, x: 0, opacity: 1,
+      duration: options.duration || 0.5,
+      stagger: options.stagger || 0.1,
+      ease: options.ease || 'power2.out',
+      delay: options.delay || 0
+    };
+  }
+
+  // Determine trigger element
+  let triggerElement = target;
+  if (Array.isArray(target) || target instanceof NodeList || target instanceof HTMLCollection) {
+     triggerElement = target[0]?.parentElement || target[0];
+  }
 
   return gsap.fromTo(
     elements,
-    { y, x, opacity },
+    fromVars,
     {
-      y: 0,
-      x: 0,
-      opacity: 1,
-      duration,
-      stagger,
-      ease,
+      ...toVars,
       scrollTrigger: {
-        trigger: container,
-        start,
-        toggleActions,
-        ...rest
+        trigger: triggerElement,
+        start: 'top 85%',
+        toggleActions: 'play none none none',
+        ...scrollOptions
       }
     }
   );
