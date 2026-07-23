@@ -1433,7 +1433,7 @@ const Checkout = () => {
       </main>
 
       {/* Bottom Action Button */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
+      <div className="fixed bottom-[84px] lg:bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
 
         {/* Booking Type Toggle */}
         <div className="px-4 pt-3 pb-0">
