@@ -23,6 +23,7 @@ const AdminDashboard = () => {
   });
   const [revenueData, setRevenueData] = useState([]);
   const [recentBookingsList, setRecentBookingsList] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalVendors: 0,
@@ -35,6 +36,7 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     const fetchData = async () => {
+      setIsLoading(true);
       try {
         // 1. Calculate Period Dates
         let apiPeriod = 'monthly';
@@ -143,6 +145,8 @@ const AdminDashboard = () => {
         }
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -185,7 +189,7 @@ const AdminDashboard = () => {
   const statsCards = [
     {
       title: period === 'month' ? 'Monthly Revenue' : period === 'year' ? 'Yearly Revenue' : period === 'today' ? 'Today\'s Revenue' : period === 'week' ? 'Weekly Revenue' : 'Revenue',
-      value: formatCurrency(stats.totalRevenue || 0),
+      value: isLoading ? '...' : formatCurrency(stats.totalRevenue || 0),
       change: 0,
       icon: FiDollarSign,
       color: 'text-white',
@@ -196,7 +200,7 @@ const AdminDashboard = () => {
     },
     {
       title: 'Pending Bookings',
-      value: (stats.activeBookings || 0).toLocaleString(),
+      value: isLoading ? '...' : (stats.activeBookings || 0).toLocaleString(),
       change: 0,
       icon: FiShoppingBag,
       color: 'text-white',
@@ -207,7 +211,7 @@ const AdminDashboard = () => {
     },
     {
       title: 'Completed Bookings',
-      value: (stats.completedBookings || 0).toLocaleString(),
+      value: isLoading ? '...' : (stats.completedBookings || 0).toLocaleString(),
       change: 0,
       icon: FiActivity,
       color: 'text-white',
@@ -218,7 +222,7 @@ const AdminDashboard = () => {
     },
     {
       title: 'New Users',
-      value: (stats.totalUsers || 0).toLocaleString(),
+      value: isLoading ? '...' : (stats.totalUsers || 0).toLocaleString(),
       change: 0,
       icon: FiUser,
       color: 'text-white',
@@ -229,7 +233,7 @@ const AdminDashboard = () => {
     },
     {
       title: 'New Vendors',
-      value: (stats.totalVendors || 0).toLocaleString(),
+      value: isLoading ? '...' : (stats.totalVendors || 0).toLocaleString(),
       change: 0,
       icon: FiBriefcase,
       color: 'text-white',
@@ -240,7 +244,7 @@ const AdminDashboard = () => {
     },
     {
       title: 'New Workers',
-      value: (stats.totalWorkers || 0).toLocaleString(),
+      value: isLoading ? '...' : (stats.totalWorkers || 0).toLocaleString(),
       change: 0,
       icon: FiUsers,
       color: 'text-white',
@@ -300,9 +304,9 @@ const AdminDashboard = () => {
                 )}
               </div>
 
-              <div className="relative z-10">
-                <h3 className="text-gray-600 text-[10px] sm:text-xs font-medium mb-0.5">{card.title}</h3>
-                <p className="text-gray-800 text-lg sm:text-xl font-bold">{card.value}</p>
+              <div className="relative z-10 w-full overflow-hidden">
+                <h3 className="text-gray-600 text-[10px] sm:text-xs font-medium mb-0.5 truncate" title={card.title}>{card.title}</h3>
+                <p className="text-gray-800 text-lg sm:text-xl font-bold truncate" title={card.value}>{card.value}</p>
               </div>
             </motion.div>
           );
