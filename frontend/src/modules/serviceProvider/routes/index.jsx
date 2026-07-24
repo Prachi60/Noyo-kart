@@ -16,9 +16,10 @@ const LoadingFallback = () => (
 
 const SPRoutes = () => {
   return (
-    <Suspense fallback={<LoadingFallback />}>
-      <Routes>
-        {/* Landing Page */}
+    <div className="font-work-sans">
+      <Suspense fallback={<LoadingFallback />}>
+        <Routes>
+          {/* Landing Page */}
         <Route path="/home" element={<LandingPage />} />
 
         {/* Redirect root to user app */}
@@ -40,6 +41,7 @@ const SPRoutes = () => {
         <Route path="*" element={<Navigate to="/sp/user" replace />} />
       </Routes>
     </Suspense>
+    </div>
   );
 };
 
