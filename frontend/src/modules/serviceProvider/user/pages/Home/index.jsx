@@ -588,6 +588,18 @@ const Home = () => {
             </div>
           ) : (
             <>
+              {/* Categories Section */}
+              {homeContent?.isCategoriesVisible !== false && categories.length > 0 && (
+                <motion.section variants={itemVariants} className="relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-b from-blue-50/30 to-transparent pointer-events-none -z-10" />
+                  <ServiceCategories
+                    categories={categories}
+                    onCategoryClick={handleCategoryClick}
+                    onSeeAllClick={() => { }}
+                  />
+                </motion.section>
+              )}
+
               {/* Hero Section - Promo Carousel */}
               {homeContent?.isPromosVisible !== false && homeContent?.promos?.length > 0 && (
                 <motion.section variants={itemVariants} className="relative z-0">
@@ -605,18 +617,6 @@ const Home = () => {
                       route: '/'
                     }))}
                     onPromoClick={handlePromoClick}
-                  />
-                </motion.section>
-              )}
-
-              {/* Categories Section */}
-              {homeContent?.isCategoriesVisible !== false && categories.length > 0 && (
-                <motion.section variants={itemVariants} className="relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-b from-blue-50/30 to-transparent pointer-events-none -z-10" />
-                  <ServiceCategories
-                    categories={categories}
-                    onCategoryClick={handleCategoryClick}
-                    onSeeAllClick={() => { }}
                   />
                 </motion.section>
               )}
