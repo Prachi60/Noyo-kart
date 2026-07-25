@@ -88,7 +88,7 @@ spHomeContentSchema.statics.getHomeContent = async function (cityId = null) {
   let homeContent = null;
 
   if (cityId) {
-    homeContent = await this.findOne({ cityId, isActive: { $ne: false } });
+    homeContent = await this.findOne({ cityId, isActive: { $ne: false } }).sort({ updatedAt: -1 });
   }
 
   // Global / default content (cityId null or missing)

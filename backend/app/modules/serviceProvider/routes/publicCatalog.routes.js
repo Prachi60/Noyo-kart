@@ -33,16 +33,18 @@ router.get('/categories/:categoryId/services', getServicesByCategory);
 router.get('/home-content', async (req, res) => {
   try {
     const { cityId } = req.query;
-    const homeContent = await SpHomeContent.getHomeContent(cityId || null);
+    const parsedCityId = (cityId === 'undefined' || cityId === 'null' || !cityId) ? null : cityId;
+    const homeContent = await SpHomeContent.getHomeContent(parsedCityId);
     res.status(200).json({ success: true, data: homeContent });
   } catch (error) { res.status(500).json({ success: false, message: 'Failed to fetch home content' }); }
 });
 router.get('/home-data', async (req, res) => {
   try {
     const { cityId } = req.query;
+    const parsedCityId = (cityId === 'undefined' || cityId === 'null' || !cityId) ? null : cityId;
     const [homeContent, categories] = await Promise.all([
-      SpHomeContent.getHomeContent(cityId || null),
-      SpCategory.find({ status: 'active', showOnHome: true }).sort({ homeOrder: 1 })
+      SpHomeContent.getHomeContent(parsedCityId),
+      SpCategory.find({ status: 'active' }).sort({ homeOrder: 1 })
     ]);
     res.status(200).json({ success: true, data: { homeContent, categories } });
   } catch (error) { res.status(500).json({ success: false, message: 'Failed to fetch home data' }); }

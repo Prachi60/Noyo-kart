@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FiArrowLeft, FiSearch, FiShare2, FiBell } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import OptimizedImage from '../../../components/common/OptimizedImage';
 
 const BannerSection = ({ banners = [], onBack, onSearch, onShare, showStickyNav = false, bannerRef = null }) => {
@@ -14,7 +15,7 @@ const BannerSection = ({ banners = [], onBack, onSearch, onShare, showStickyNav 
     // Auto-play carousel
     intervalRef.current = setInterval(() => {
       setCurrentIndex((prevIndex) => (prevIndex + 1) % banners.length);
-    }, 5000); // Change slide every 5 seconds (reduced frequency for better performance)
+    }, 5000); // Change slide every 5 seconds
 
     return () => {
       if (intervalRef.current) {
@@ -82,20 +83,19 @@ const BannerSection = ({ banners = [], onBack, onSearch, onShare, showStickyNav 
         </div>
       </div>
 
-      <div ref={bannerRef} className="relative w-full h-64" style={{ overflow: 'hidden' }}>
-        {/* Carousel Container */}
-        <div
-          className="flex transition-transform duration-500 ease-in-out h-full"
-          style={{
-            transform: `translateX(-${currentIndex * 100}%)`,
-            willChange: 'transform'
-          }}
-        >
-          {banners.map((banner, index) => (
+      <div ref={bannerRef} className="relative w-full aspect-[1500/860]" style={{ overflow: 'hidden' }}>
+        {/* Banner Container with Absolute Stacking */}
+        {banners.map((banner, index) => {
+          const isActive = index === currentIndex;
+          return (
             <div
-              key={banner.id}
-              className="min-w-full h-full relative flex-shrink-0"
-              style={{ width: '100%' }}
+              key={banner.id || index}
+              className="absolute inset-0 transition-opacity duration-700 ease-in-out"
+              style={{
+                opacity: isActive ? 1 : 0,
+                zIndex: isActive ? 10 : 0,
+                pointerEvents: isActive ? 'auto' : 'none'
+              }}
             >
               <OptimizedImage
                 src={banner.image}
@@ -111,33 +111,46 @@ const BannerSection = ({ banners = [], onBack, onSearch, onShare, showStickyNav 
                   </div>
                 </div>
               )}
+              
+              {/* Shimmer / Gloss Sweep Effect */}
+              {isActive && (
+                <motion.div
+                  className="absolute top-0 bottom-0 w-[150%] bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-[-20deg] pointer-events-none"
+                  animate={{ x: ['-200%', '200%'] }}
+                  transition={{
+                    duration: 1.5,
+                    ease: 'easeInOut',
+                    delay: 0.1
+                  }}
+                />
+              )}
             </div>
-          ))}
-        </div>
+          );
+        })}
 
         {/* Progress bar indicator */}
         {banners.length > 1 && (
-          <>
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-white/30 rounded-full">
-              <div
-                className="h-full bg-white rounded-full transition-all duration-300"
-                style={{ width: `${((currentIndex + 1) / banners.length) * 100}%` }}
-              ></div>
-            </div>
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-white/30 rounded-full z-20">
+            <div
+              className="h-full bg-white rounded-full transition-all duration-300"
+              style={{ width: `${((currentIndex + 1) / banners.length) * 100}%` }}
+            ></div>
+          </div>
+        )}
 
-            {/* Indicator dots */}
-            <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 flex gap-1.5">
-              {banners.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => goToSlide(index)}
-                  className={`w-1.5 h-1.5 rounded-full transition-all ${index === currentIndex ? 'bg-white' : 'bg-white/50'
-                    }`}
-                  aria-label={`Go to slide ${index + 1}`}
-                />
-              ))}
-            </div>
-          </>
+        {/* Indicator dots */}
+        {banners.length > 1 && (
+          <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 flex gap-1.5 z-20">
+            {banners.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => goToSlide(index)}
+                className={`w-1.5 h-1.5 rounded-full transition-all ${index === currentIndex ? 'bg-white' : 'bg-white/50'
+                  }`}
+                aria-label={`Go to slide ${index + 1}`}
+              />
+            ))}
+          </div>
         )}
       </div>
     </>

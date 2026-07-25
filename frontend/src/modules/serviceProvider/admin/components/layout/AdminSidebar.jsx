@@ -415,7 +415,7 @@ const AdminSidebar = ({ isOpen, onClose }) => {
 
   // Sidebar content
   const sidebarContent = (
-    <div className="h-full w-full flex flex-col bg-slate-800">
+    <div className="h-full w-full flex flex-col bg-slate-800 overflow-hidden">
       {/* Header Section */}
       <div className="px-4 py-6 border-b border-slate-700 bg-slate-900">
         <div className="flex items-center justify-between gap-3">
@@ -449,7 +449,7 @@ const AdminSidebar = ({ isOpen, onClose }) => {
       </div>
 
       {/* Navigation Menu */}
-      <nav className="flex-1 overflow-y-auto p-3 scrollbar-admin lg:pb-3">
+      <nav className="flex-1 min-h-0 overflow-y-auto p-3 scrollbar-admin lg:pb-3">
         {filteredMenu.map((item) => renderMenuItem(item))}
       </nav>
     </div>

@@ -6,7 +6,7 @@ const Banner = React.memo(({ imageUrl, onClick }) => {
   const optimizedUrl = imageUrl ? optimizeCloudinaryUrl(imageUrl, { quality: 'auto' }) : null;
 
   return (
-    <div className="mb-8 px-4 cursor-pointer group" onClick={onClick}>
+    <div className="px-4 cursor-pointer group" onClick={onClick}>
       <div
         className="relative overflow-hidden transition-all duration-500 group-hover:shadow-2xl group-hover:scale-[1.01]"
         style={{
