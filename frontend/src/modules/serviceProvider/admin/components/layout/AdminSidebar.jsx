@@ -415,7 +415,7 @@ const AdminSidebar = ({ isOpen, onClose }) => {
 
   // Sidebar content
   const sidebarContent = (
-    <div className="h-full w-full flex flex-col bg-slate-800 overflow-hidden">
+    <div className="flex-1 w-full flex flex-col bg-slate-800 overflow-hidden">
       {/* Header Section */}
       <div className="px-4 py-6 border-b border-slate-700 bg-slate-900">
         <div className="flex items-center justify-between gap-3">
@@ -449,7 +449,11 @@ const AdminSidebar = ({ isOpen, onClose }) => {
       </div>
 
       {/* Navigation Menu */}
-      <nav className="flex-1 min-h-0 overflow-y-auto p-3 scrollbar-admin lg:pb-3">
+      <nav 
+        className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 scrollbar-admin lg:pb-3"
+        data-lenis-prevent
+        data-lenis-prevent-touch
+      >
         {filteredMenu.map((item) => renderMenuItem(item))}
       </nav>
     </div>
@@ -478,7 +482,7 @@ const AdminSidebar = ({ isOpen, onClose }) => {
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="fixed left-0 top-0 bottom-0 w-[280px] z-[99999] lg:hidden shadow-2xl"
+            className="fixed left-0 top-0 bottom-0 w-[280px] z-[99999] lg:hidden shadow-2xl flex flex-col h-screen"
           >
             {sidebarContent}
           </motion.div>
@@ -487,7 +491,7 @@ const AdminSidebar = ({ isOpen, onClose }) => {
 
       {/* Sidebar - Desktop Fixed */}
       <div
-        className="hidden lg:flex fixed left-0 top-0 bottom-0 z-30"
+        className="hidden lg:flex fixed left-0 top-0 bottom-0 z-30 flex-col h-screen"
         style={{ width: '278px' }}
       >
         {sidebarContent}

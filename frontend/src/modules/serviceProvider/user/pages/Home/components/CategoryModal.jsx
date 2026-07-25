@@ -71,10 +71,20 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
           ? response.data
           : (response.brands || []);
         setBrands(list);
+
+        // Fallback: If no brands exist and we aren't already targeting a specific brand, try fetching direct services
+        if (list.length === 0 && !category?.initialBrand) {
+          setView('services');
+          fetchServices(null);
+        }
       }
     } catch (error) {
       console.error("Failed to load brands:", error);
       setBrands([]);
+      if (!category?.initialBrand) {
+        setView('services');
+        fetchServices(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -83,11 +93,14 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
   const fetchServices = async (brandId) => {
     try {
       setLoading(true);
-      const response = await publicCatalogService.getServices({
-        brandId: brandId,
+      const params = {
         cityId: cityId,
         categoryId: category?.id || category?._id
-      });
+      };
+      if (brandId) {
+        params.brandId = brandId;
+      }
+      const response = await publicCatalogService.getServices(params);
       if (response.success) {
         const list = Array.isArray(response.data)
           ? response.data
@@ -325,7 +338,6 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
                               </div>
                             ))}
                             
-                            {/* Bottom Disclaimer */}
                             <div className="mt-8 pt-4 border-t border-gray-50 flex items-start gap-3 bg-gray-50/50 p-4 rounded-2xl">
                               <div className="mt-0.5 text-gray-400">
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -339,7 +351,7 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
                           </div>
                         ) : (
                           <div className="text-center py-12 text-gray-500">
-                            <p>No services available for this brand yet.</p>
+                            <p>No services available here yet.</p>
                           </div>
                         )
                       )}

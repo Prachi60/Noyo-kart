@@ -144,7 +144,6 @@ const UserRoutes = () => {
             <LiveBookingCard hasBottomNav={shouldShowBottomNav} />
           )}
           {shouldShowBottomNav && <BottomNav />}
-          {isHomePage && <Footer />}
         </ErrorBoundary>
       </CartProvider>
     </CityProvider>

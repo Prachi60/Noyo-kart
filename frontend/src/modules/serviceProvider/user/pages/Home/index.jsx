@@ -31,7 +31,7 @@ import CategoryModal from './components/CategoryModal';
 import SearchOverlay from './components/SearchOverlay';
 import LogoLoader from '@sp/user/components/common/LogoLoader';
 import AddressSelectionModal from '../Checkout/components/AddressSelectionModal';
-import ScrapPromotionCard from './components/ScrapPromotionCard';
+
 import DebugConsole from '../../components/common/DebugConsole';
 import LenisScroll from '../../../../../shared/components/LenisScroll';
 
@@ -400,20 +400,28 @@ const Home = () => {
         });
       } else {
         navigate(promo.route);
-      }
+}
     }
   };
 
   const handleServiceClick = (service) => {
-    if (!service) return;
     if (service.targetCategoryId) {
-      const cat = categories.find(c => (c.id === service.targetCategoryId || c._id === service.targetCategoryId));
+      const cat = categories.find(c => c.id === service.targetCategoryId || c._id === service.targetCategoryId);
       if (cat) {
-        handleCategoryClick(cat);
-        return;
+        handleCategoryClick({
+          ...cat,
+          initialBrand: service.targetServiceId ? { id: service.targetServiceId } : null
+        });
+      } else {
+        // Fallback if category is not in the main list
+        handleCategoryClick({
+          id: service.targetCategoryId,
+          _id: service.targetCategoryId,
+          title: service.title || 'Category',
+          initialBrand: service.targetServiceId ? { id: service.targetServiceId } : null
+        });
       }
     }
-    // Fallback if no targetCategoryId but has slug/title, we no longer navigate to slug
   };
 
   const handleAddClick = async (service) => {
@@ -554,7 +562,7 @@ const Home = () => {
           onWishlistClick={() => navigate('/sp/user/my-bookings')}
         />
 
-        <main className="pt-[190px] md:pt-[220px] space-y-4 pb-4 max-w-screen-xl mx-auto w-full">
+        <main className="pt-[205px] md:pt-[235px] space-y-4 pb-4 max-w-screen-xl mx-auto w-full">
           {!isLocationSupported ? (
             <div className="flex flex-col items-center justify-center pt-20 pb-10 px-6 text-center min-h-[60vh]">
               <div className="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mb-6">
@@ -613,15 +621,7 @@ const Home = () => {
                 </motion.section>
               )}
 
-              {/* Scrap Promotion Section */}
-              {homeContent?.isScrapPromoVisible !== false && homeContent?.scrapPromo && (
-                <motion.section variants={itemVariants}>
-                  <ScrapPromotionCard 
-                    data={homeContent?.scrapPromo}
-                    onClick={() => navigate(homeContent?.scrapPromo?.route || '/user/scrap')} 
-                  />
-                </motion.section>
-              )}
+
               {/* Curated Services */}
               {homeContent?.isCuratedVisible !== false && homeContent?.curated?.length > 0 && (
                 <motion.div variants={itemVariants}>
@@ -705,7 +705,7 @@ const Home = () => {
               )}
 
               {/* Dynamic Sections */}
-              {homeContent?.isCategorySectionsVisible !== false && (homeContent?.categorySections || [])
+              {homeContent?.isCategorySectionsVisible !== false && [...(homeContent?.categorySections || [])]
                 .sort((a, b) => (a.order || 0) - (b.order || 0))
                 .filter(section => section.cards?.length > 0)
                 .map((section, sIdx) => (
@@ -732,7 +732,17 @@ const Home = () => {
                       onSeeAllClick={() => {
                         if (section.seeAllTargetCategoryId) {
                           const cat = categories.find(c => (c.id === section.seeAllTargetCategoryId || c._id === section.seeAllTargetCategoryId));
-                          if (cat) handleCategoryClick(cat);
+                          if (cat) {
+                            handleCategoryClick(cat);
+                          } else {
+                            // Fallback if category is not in the main list
+                            handleCategoryClick({
+                              id: section.seeAllTargetCategoryId,
+                              _id: section.seeAllTargetCategoryId,
+                              title: section.title,
+                              slug: section.seeAllSlug
+                            });
+                          }
                         }
                       }}
                       onServiceClick={(service) => handleServiceClick(service)}

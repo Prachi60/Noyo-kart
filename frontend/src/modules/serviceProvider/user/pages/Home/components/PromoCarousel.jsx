@@ -76,7 +76,7 @@ const PromoCarousel = memo(({ promos, onPromoClick }) => {
   return (
     <div
       ref={carouselRef}
-      className=""
+      className="px-4 md:px-6"
       style={{ opacity: 1 }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -84,11 +84,11 @@ const PromoCarousel = memo(({ promos, onPromoClick }) => {
       <div
         ref={scrollContainerRef}
         onScroll={handleScroll}
-        className="flex gap-2 overflow-x-auto px-4 pb-2 scrollbar-hide snap-x snap-mandatory"
+        className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory"
         style={{ scrollBehavior: 'smooth' }}
       >
         {promotionalCards.map((promo, index) => (
-          <div key={promo.id || promo._id || index} data-promo-card className="flex-shrink-0 snap-center">
+          <div key={promo.id || promo._id || index} data-promo-card className="flex-shrink-0 snap-center w-full">
             <PromoCard
               title={promo.title}
               subtitle={promo.subtitle}

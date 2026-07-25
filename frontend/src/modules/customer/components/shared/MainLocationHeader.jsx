@@ -283,7 +283,7 @@ const MainLocationHeader = ({
     value > 150 ? "none" : "block",
   );
 
-  const baseHeaderColor = activeCategory?.headerColor || "#0284c7";
+  const baseHeaderColor = "#0284c7"; // Always use Quick commerce blue
   const headerGradient = buildHeaderGradient(baseHeaderColor);
   const searchBarBg = buildSearchBarBackgroundColor(baseHeaderColor);
   const categoryAccent = "#111111";

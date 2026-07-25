@@ -24,45 +24,51 @@ const ServiceCategories = React.memo(({ categories, onCategoryClick, onSeeAllCli
   return (
     <div className="px-5">
       {/* Section Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-3">
         <div className="flex flex-col">
-          <h2 className="text-[20px] font-black text-gray-900 tracking-tight flex items-center gap-2">
+          <h2 className="text-[18px] font-black text-gray-900 tracking-tight flex items-center gap-2" style={{ fontFamily: "'Poppins', sans-serif" }}>
             Service Categories
             <div className="w-2 h-2 bg-primary-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(40,116,240,0.5)]"></div>
           </h2>
-          <p className="text-[11px] text-gray-400 font-bold uppercase tracking-[0.15em] -mt-0.5">Premium Home Services</p>
+          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.15em] -mt-0.5" style={{ fontFamily: "'Poppins', sans-serif" }}>Premium Home Services</p>
         </div>
 
       </div>
 
-      {/* Professional Grid Layout */}
-      <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-y-7 gap-x-3">
-        {serviceCategories.map((category, index) => {
-          const iconSrc = toAssetUrl(category.icon || category.image);
-          return (
-            <div key={category.id || index} className="flex justify-center h-full">
-              <CategoryCard
-                title={category.title}
-                icon={
-                  <img
-                    src={iconSrc}
-                    alt={category.title}
-                    className="w-12 h-12 object-contain group-hover:rotate-12 transition-transform duration-500 will-change-transform"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                }
-                onClick={() => onCategoryClick?.(category)}
-                hasSaleBadge={category.hasSaleBadge}
-                index={index}
-              />
-            </div>
-          );
-        })}
+      {/* White Card Container for Grid as per new design */}
+      <div className="bg-white rounded-[24px] p-3 shadow-[0_2px_15px_-4px_rgba(0,0,0,0.05)] border border-gray-50/50">
+        <div 
+          className="grid grid-rows-2 grid-flow-col gap-y-3 overflow-x-auto overscroll-x-contain pb-1 scrollbar-hide"
+          style={{ 
+            gridAutoColumns: '25%',
+            scrollbarWidth: 'none', 
+            msOverflowStyle: 'none' 
+          }}
+        >
+          {serviceCategories.map((category, index) => {
+            const iconSrc = toAssetUrl(category.icon || category.image);
+            return (
+              <div key={category.id || index} className="flex justify-center h-full">
+                <CategoryCard
+                  title={category.title}
+                  icon={
+                    <img
+                      src={iconSrc}
+                      alt={category.title}
+                      className="w-10 h-10 object-contain group-hover:scale-110 transition-transform duration-300 will-change-transform"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  }
+                  onClick={() => onCategoryClick?.(category)}
+                  hasSaleBadge={category.hasSaleBadge}
+                  index={index}
+                />
+              </div>
+            );
+          })}
+        </div>
       </div>
-
-      {/* Subtle Bottom Separator */}
-      <div className="mt-10 h-[1px] w-full bg-gradient-to-r from-transparent via-gray-100 to-transparent"></div>
     </div>
   );
 });

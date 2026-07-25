@@ -34,12 +34,12 @@ const CategoryCard = memo(({ icon, title, onClick, hasSaleBadge = false, index =
       }}
     >
       <div
-        className="w-[64px] h-[64px] rounded-2xl flex items-center justify-center mb-2 relative border border-gray-100 flex-shrink-0 transition-all duration-500 group-hover:shadow-lg group-hover:shadow-primary-100 group-hover:-translate-y-1 bg-white"
+        className="w-[52px] h-[52px] rounded-full flex items-center justify-center mb-1.5 relative border border-gray-100 flex-shrink-0 transition-all duration-300 group-hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] group-hover:border-primary-100 group-hover:-translate-y-0.5 bg-white"
         style={{
-          boxShadow: '0 8px 20px -6px rgba(0,0,0,0.05)',
+          boxShadow: '0 2px 8px -2px rgba(0,0,0,0.04)',
         }}
       >
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+        <div className="absolute inset-0 rounded-full bg-primary-50/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
         {icon || (
           <svg
             className="w-7 h-7 text-gray-400 transition-colors duration-300"
@@ -71,10 +71,11 @@ const CategoryCard = memo(({ icon, title, onClick, hasSaleBadge = false, index =
         )}
       </div>
       <span
-        className="text-[11px] text-center text-gray-700 font-medium leading-tight tracking-tight mt-1 transition-colors duration-300 w-full line-clamp-2 px-1"
+        className="text-[10px] text-center text-slate-800 font-normal leading-[1.1] tracking-tight mt-1 transition-colors duration-300 w-full line-clamp-2 px-0.5"
         style={{
           wordWrap: 'break-word',
-          color: 'inherit'
+          color: 'inherit',
+          fontFamily: "'DM Sans', sans-serif"
         }}
         onMouseEnter={(e) => e.currentTarget.style.color = themeColors.button}
         onMouseLeave={(e) => e.currentTarget.style.color = 'inherit'}

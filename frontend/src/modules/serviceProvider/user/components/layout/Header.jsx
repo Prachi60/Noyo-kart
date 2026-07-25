@@ -7,6 +7,7 @@ import { animateLogo } from '@sp/utils/gsapAnimations';
 import Logo from '@sp/user/components/common/Logo';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { themeColors } from '@sp/theme';
+import { buildHeaderGradient } from '../../../../customer/utils/headerTheme';
 
 import CitySelectorModal from '../common/CitySelectorModal';
 import { useCity } from '@sp/context/CityContext';
@@ -24,7 +25,9 @@ const Header = ({ location, onLocationClick }) => {
   }, []);
 
   return (
-    <header className="relative overflow-hidden">
+    <header className="relative overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.15)]" style={{ backgroundImage: buildHeaderGradient() }}>
+      {/* Subtle Glow Overlay */}
+      <div className="absolute inset-0 bg-white/10 pointer-events-none" />
       {/* Content wrapper with relative positioning */}
       <div className="relative z-10">
         <div className="w-full">
