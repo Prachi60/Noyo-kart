@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import CategoryCard from '../../../components/common/CategoryCard';
 
 const toAssetUrl = (url) => {
@@ -10,7 +10,7 @@ const toAssetUrl = (url) => {
 };
 
 const ServiceCategories = React.memo(({ categories, onCategoryClick, onSeeAllClick }) => {
-
+  const [showAll, setShowAll] = useState(false);
 
   if (!Array.isArray(categories) || categories.length === 0) {
     return null;
@@ -38,14 +38,14 @@ const ServiceCategories = React.memo(({ categories, onCategoryClick, onSeeAllCli
       {/* White Card Container for Grid as per new design */}
       <div className="bg-white rounded-[24px] p-3 shadow-[0_2px_15px_-4px_rgba(0,0,0,0.05)] border border-gray-50/50">
         <div 
-          className="grid grid-rows-2 grid-flow-col gap-y-3 overflow-x-auto overscroll-x-contain pb-1 scrollbar-hide"
+          className="grid grid-rows-2 grid-flow-col gap-y-4 gap-x-2 pb-1 overflow-x-auto overscroll-x-contain scrollbar-hide"
           style={{ 
-            gridAutoColumns: '25%',
+            gridAutoColumns: '32%',
             scrollbarWidth: 'none', 
             msOverflowStyle: 'none' 
           }}
         >
-          {serviceCategories.map((category, index) => {
+          {serviceCategories.slice(0, showAll ? undefined : 5).map((category, index) => {
             const iconSrc = toAssetUrl(category.icon || category.image);
             return (
               <div key={category.id || index} className="flex justify-center h-full">
@@ -55,7 +55,7 @@ const ServiceCategories = React.memo(({ categories, onCategoryClick, onSeeAllCli
                     <img
                       src={iconSrc}
                       alt={category.title}
-                      className="w-10 h-10 object-contain group-hover:scale-110 transition-transform duration-300 will-change-transform"
+                      className="w-12 h-12 rounded-xl object-cover group-hover:scale-110 transition-transform duration-500 will-change-transform shadow-sm"
                       loading="lazy"
                       decoding="async"
                     />
@@ -67,6 +67,33 @@ const ServiceCategories = React.memo(({ categories, onCategoryClick, onSeeAllCli
               </div>
             );
           })}
+          
+          {/* Explore More / Show Less Card */}
+          {categories.length > 5 && (
+            <div className="flex justify-center h-full">
+              <CategoryCard
+                title={showAll ? "Show Less" : "All Services"}
+                icon={
+                  <div className="w-full h-full flex items-center justify-center text-gray-700 bg-gray-50/50">
+                    {showAll ? (
+                      <svg className="w-8 h-8 group-hover:scale-110 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                      </svg>
+                    ) : (
+                      <svg className="w-8 h-8 group-hover:scale-110 transition-transform duration-500" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M4 4h4v4H4V4zm6 0h4v4h-4V4zm6 0h4v4h-4V4zM4 10h4v4H4v-4zm6 0h4v4h-4v-4zm6 0h4v4h-4v-4zM4 16h4v4H4v-4zm6 0h4v4h-4v-4zm6 0h4v4h-4v-4z" />
+                      </svg>
+                    )}
+                  </div>
+                }
+                onClick={() => {
+                  setShowAll(!showAll);
+                  if (onSeeAllClick && !showAll) onSeeAllClick();
+                }}
+                index={showAll ? categories.length : 5}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>
