@@ -12,6 +12,24 @@ const lazyLoad = (importFunc) => {
   return lazy(() => {
     return Promise.resolve(importFunc()).catch((error) => {
       console.error('User Module - Lazy Load Error:', error);
+
+      // Check if this is a chunk loading error (usually due to a new deployment)
+      const isChunkError = 
+        error?.message?.includes('dynamically imported module') ||
+        error?.message?.includes('Importing a module script failed') ||
+        error?.message?.includes('Failed to fetch') ||
+        error?.name === 'TypeError';
+
+      if (isChunkError) {
+        // Prevent infinite reload loops
+        const reloadCount = parseInt(sessionStorage.getItem('chunkLoadErrorCount') || '0');
+        if (reloadCount < 2) {
+          sessionStorage.setItem('chunkLoadErrorCount', (reloadCount + 1).toString());
+          window.location.reload();
+          return new Promise(() => {}); // Halt execution while page reloads
+        }
+      }
+
       return Promise.resolve({
         default: () => (
           <div className="flex items-center justify-center min-h-screen bg-gray-50 p-4">
