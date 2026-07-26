@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { cartService } from '../services/cartService';
+import { getStoredAuthToken } from '../../../core/utils/authStorage';
 
 const CartContext = createContext(null);
 
@@ -16,8 +17,9 @@ export const CartProvider = ({ children }) => {
         return;
       }
 
-      const token = localStorage.getItem('spAccessToken') || sessionStorage.getItem('spAccessToken');
-      if (!token) {
+      const spToken = localStorage.getItem('spAccessToken') || sessionStorage.getItem('spAccessToken');
+      const qcToken = getStoredAuthToken('auth_customer') || getStoredAuthToken('token', { allowExpired: false });
+      if (!spToken && !qcToken) {
         setCartItems([]);
         setCartCount(0);
         setIsInitialized(true);
@@ -55,8 +57,9 @@ export const CartProvider = ({ children }) => {
   }, [fetchCart]);
 
   const addToCart = useCallback(async (itemData) => {
-    const token = localStorage.getItem('spAccessToken') || sessionStorage.getItem('spAccessToken');
-    if (!token) {
+    const spToken = localStorage.getItem('spAccessToken') || sessionStorage.getItem('spAccessToken');
+    const qcToken = getStoredAuthToken('auth_customer') || getStoredAuthToken('token', { allowExpired: false });
+    if (!spToken && !qcToken) {
       const err = new Error('Please login again to add items to cart');
       err.code = 'NO_AUTH';
       throw err;
