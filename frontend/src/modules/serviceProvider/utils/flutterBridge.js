@@ -78,8 +78,19 @@ const flutterBridge = {
             longitude: position.coords.longitude
           });
         },
-        (error) => reject(error),
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        (error) => {
+          // Fallback to low accuracy if high accuracy fails or times out
+          if (error.code === error.TIMEOUT || error.code === 3) {
+            navigator.geolocation.getCurrentPosition(
+              (pos) => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
+              (err) => reject(err),
+              { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 }
+            );
+          } else {
+            reject(error);
+          }
+        },
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 30000 }
       );
     });
   },
