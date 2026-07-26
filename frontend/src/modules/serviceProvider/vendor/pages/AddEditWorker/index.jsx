@@ -90,8 +90,8 @@ const AddEditWorker = () => {
       try {
         const catRes = await publicCatalogService.getCategories();
         if (catRes.success) {
-          console.log('Loaded Categories:', catRes.categories || []);
-          setCategories(catRes.categories || []);
+          console.log('Loaded Categories:', catRes.data || catRes.categories || []);
+          setCategories(catRes.data || catRes.categories || []);
         }
 
         if (isEdit) {

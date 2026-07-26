@@ -191,7 +191,7 @@ const Services = () => {
                     key={skill.id}
                     onClick={() => handleToggleSkill(skill.name)}
                     className={`px-2 py-1 rounded-lg text-xs font-medium transition-all ${newCategory.skills.includes(skill.name)
-                      ? 'bg-primary-600 text-white'
+                      ? 'bg-primary-600 text-black'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                   >
@@ -214,7 +214,7 @@ const Services = () => {
 
           <button
             onClick={editingCategory ? handleUpdateCategory : handleAddCategory}
-            className="w-full py-2 bg-primary-600 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors flex items-center justify-center gap-2"
+            className="w-full py-2 bg-primary-600 text-black rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors flex items-center justify-center gap-2"
           >
             <FiSave className="w-4 h-4" />
             {editingCategory ? 'Update Category' : 'Add Category'}

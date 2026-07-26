@@ -23,7 +23,9 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
-
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const limit = 20;
   const [form, setForm] = useState({
     title: "",
     slug: "",
@@ -45,7 +47,7 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
       try {
         setFetching(true);
         // Pass city filters
-        const params = { status: 'active' };
+        const params = { status: 'active', page: currentPage, limit };
         if (selectedCity) {
           params.cityId = selectedCity;
         }
@@ -68,6 +70,10 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
           const next = { ...catalog, categories: mappedCategories };
           setCatalog(next);
           saveCatalog(next); // Also save to localStorage for backward compatibility
+          if (response.totalPages) {
+            setTotalPages(response.totalPages);
+          }
+
         }
       } catch (error) {
         console.error('Failed to fetch categories:', error);
@@ -78,7 +84,11 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
     };
 
     fetchCategories();
-  }, [selectedCity]); // Re-fetch when city changes
+  }, [selectedCity, currentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCity]);
 
   useEffect(() => {
     if (!editing) {
@@ -554,6 +564,26 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
             </table>
           </div>
         )}
+        
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between p-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
+            <button 
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1 || fetching}
+              className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <span className="text-sm text-gray-600 font-medium">Page {currentPage} of {totalPages}</span>
+            <button 
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages || fetching}
+              className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
+        )}
       </CardShell>
 
       <Modal
@@ -658,7 +688,7 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
             <button
               onClick={upsert}
               disabled={loading}
-              className="flex-1 py-3.5 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 py-3.5 bg-primary-600 text-black rounded-xl font-semibold hover:bg-primary-700 transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <FiSave className="w-5 h-5" />
               {loading ? "Saving..." : (editing ? "Update Category" : "Add Category")}

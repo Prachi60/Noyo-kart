@@ -96,7 +96,7 @@ const EditProfile = () => {
         }
 
         if (catalogRes.success) {
-          setCategories(catalogRes.categories || []);
+          setCategories(catalogRes.data || catalogRes.categories || []);
         }
       } catch (error) {
         console.error('Init error:', error);

@@ -4,14 +4,40 @@ import { SP_SERVICE_STATUS } from '../../constants.js';
 
 const getAllCategories = async (req, res) => {
   try {
-    const { status, showOnHome, isPopular, cityId } = req.query;
+    const { status, showOnHome, isPopular, cityId, page, limit } = req.query;
     const query = {};
     if (status) query.status = status;
     if (showOnHome !== undefined) query.showOnHome = showOnHome === 'true';
     if (isPopular !== undefined) query.isPopular = isPopular === 'true';
     if (cityId) query.cityIds = cityId;
-    const categories = await SpCategory.find(query).select('-__v').sort({ homeOrder: 1, createdAt: -1 }).lean();
-    res.status(200).json({ success: true, count: categories.length, categories: categories.map(cat => ({ id: cat._id, title: cat.title, slug: cat.slug, homeIconUrl: cat.homeIconUrl, homeBadge: cat.homeBadge, hasSaleBadge: cat.hasSaleBadge, showOnHome: cat.showOnHome, homeOrder: cat.homeOrder, description: cat.description, imageUrl: cat.imageUrl, status: cat.status, isPopular: cat.isPopular, cityIds: cat.cityIds || [], metaTitle: cat.metaTitle, metaDescription: cat.metaDescription, createdAt: cat.createdAt, updatedAt: cat.updatedAt })) });
+
+    let dbQuery = SpCategory.find(query).select('-__v').sort({ homeOrder: 1, createdAt: -1, _id: 1 });
+
+    let totalCount = 0;
+    let totalPages = 1;
+    let currentPage = 1;
+
+    if (page && limit) {
+      currentPage = parseInt(page);
+      const limitNum = parseInt(limit);
+      totalCount = await SpCategory.countDocuments(query);
+      totalPages = Math.ceil(totalCount / limitNum);
+      const skip = (currentPage - 1) * limitNum;
+      dbQuery = dbQuery.skip(skip).limit(limitNum);
+    } else {
+      totalCount = await SpCategory.countDocuments(query);
+    }
+
+    const categories = await dbQuery.lean();
+
+    res.status(200).json({ 
+      success: true, 
+      count: categories.length, 
+      total: totalCount,
+      totalPages: totalPages,
+      currentPage: currentPage,
+      categories: categories.map(cat => ({ id: cat._id, title: cat.title, slug: cat.slug, homeIconUrl: cat.homeIconUrl, homeBadge: cat.homeBadge, hasSaleBadge: cat.hasSaleBadge, showOnHome: cat.showOnHome, homeOrder: cat.homeOrder, description: cat.description, imageUrl: cat.imageUrl, status: cat.status, isPopular: cat.isPopular, cityIds: cat.cityIds || [], metaTitle: cat.metaTitle, metaDescription: cat.metaDescription, createdAt: cat.createdAt, updatedAt: cat.updatedAt })) 
+    });
   } catch (error) { console.error('Get all categories error:', error); res.status(500).json({ success: false, message: 'Failed to fetch categories.' }); }
 };
 

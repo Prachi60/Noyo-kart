@@ -4,22 +4,20 @@ import { validationResult } from 'express-validator';
 
 export const getServiceCatalog = async (req, res) => {
   try {
-    const { vendorId, categoryId } = req.query;
+    const { categoryId } = req.query;
     const query = {};
-    if (vendorId) query.vendorId = vendorId;
     if (categoryId) query.categoryId = categoryId;
-    const catalog = await SpVendorServiceCatalog.find(query).populate('vendorId', 'name businessName').populate('categoryId', 'title').sort({ createdAt: -1 });
+    const catalog = await SpVendorServiceCatalog.find(query).populate('categoryId', 'title').sort({ createdAt: -1 });
     res.status(200).json({ success: true, data: catalog });
   } catch (error) { console.error('Get service catalog error:', error); res.status(500).json({ success: false, message: 'Failed to fetch service catalog' }); }
 };
 
 export const getPartsCatalog = async (req, res) => {
   try {
-    const { vendorId, categoryId } = req.query;
+    const { categoryId } = req.query;
     const query = {};
-    if (vendorId) query.vendorId = vendorId;
     if (categoryId) query.categoryId = categoryId;
-    const catalog = await SpVendorPartsCatalog.find(query).populate('vendorId', 'name businessName').populate('categoryId', 'title').sort({ createdAt: -1 });
+    const catalog = await SpVendorPartsCatalog.find(query).populate('categoryId', 'title').sort({ createdAt: -1 });
     res.status(200).json({ success: true, data: catalog });
   } catch (error) { console.error('Get parts catalog error:', error); res.status(500).json({ success: false, message: 'Failed to fetch parts catalog' }); }
 };

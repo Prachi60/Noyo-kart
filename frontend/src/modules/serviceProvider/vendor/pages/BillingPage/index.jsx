@@ -129,7 +129,7 @@ const BillingPage = () => {
 
       // Extract categories from categories API or catalog items
       if (catRes && catRes.success) {
-        const apiCats = (catRes.categories || []).map(c => c.title);
+        const apiCats = (catRes.data || catRes.categories || []).map(c => c.title);
         const allCats = ['All', ...apiCats];
 
         // Add Uncategorized if any catalog item is missing a category
@@ -446,13 +446,14 @@ const BillingPage = () => {
   }, [walletInfo, calculations]);
 
 
-  const handleSubmit = async () => {
+  const handleSubmitBill = async () => {
     try {
       setSubmitting(true);
+      const validCustomItems = customItems.filter(item => (item.name?.trim() || item.title?.trim()));
       const res = await vendorBillService.createOrUpdateBill(id, {
         services: selectedServices,
         parts: selectedParts,
-        customItems,
+        customItems: validCustomItems,
         transportCharges,
         applyPartsGST
       });
@@ -477,11 +478,12 @@ const BillingPage = () => {
   const handleSendOTP = async () => {
     try {
       setOtpLoading(true);
+      const validCustomItems = customItems.filter(item => (item.name?.trim() || item.title?.trim()));
       // First save the bill to ensure backend has latest amounts
       await vendorBillService.createOrUpdateBill(id, {
         services: selectedServices,
         parts: selectedParts,
-        customItems,
+        customItems: validCustomItems,
         transportCharges,
         applyPartsGST
       });
@@ -489,7 +491,7 @@ const BillingPage = () => {
       const res = await vendorWalletService.initiateCashCollection(
         id,
         calculations.finalBillAmount,
-        [...selectedParts, ...customItems]
+        [...selectedParts, ...validCustomItems]
       );
 
       if (res.success) {
@@ -512,12 +514,13 @@ const BillingPage = () => {
   const handleVerifyOTP = async (code) => {
     try {
       setOtpLoading(true);
+      const validCustomItems = customItems.filter(item => (item.name?.trim() || item.title?.trim()));
 
       const res = await vendorWalletService.confirmCashCollection(
         id,
         calculations.finalBillAmount,
         code,
-        [...selectedParts, ...customItems]
+        [...selectedParts, ...validCustomItems]
       );
 
       if (res.success) {
@@ -542,16 +545,17 @@ const BillingPage = () => {
   const handleOnlinePayment = async () => {
     try {
       setQrLoading(true);
+      const validCustomItems = customItems.filter(item => (item.name?.trim() || item.title?.trim()));
       // First save the bill to ensure backend has latest amounts
       await vendorBillService.createOrUpdateBill(id, {
         services: selectedServices,
         parts: selectedParts,
-        customItems,
+        customItems: validCustomItems,
         transportCharges,
         applyPartsGST
       });
 
-      const res = await vendorWalletService.initiateOnlineCollection(id, calculations.finalBillAmount, [...selectedParts, ...customItems]);
+      const res = await vendorWalletService.initiateOnlineCollection(id, calculations.finalBillAmount, [...selectedParts, ...validCustomItems]);
 
       if (res.success) {
         setOnlinePaymentData(res.data);

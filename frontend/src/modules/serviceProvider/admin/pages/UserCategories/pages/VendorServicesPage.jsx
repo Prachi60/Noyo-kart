@@ -8,7 +8,7 @@ import { z } from "zod";
 
 const schema = z.object({
   name: z.string().min(2, "Name is required"),
-  basePrice: z.number().min(0, "Price must be non-negative"),
+  price: z.number().min(0, "Price must be non-negative"),
   description: z.string().optional(),
   categoryId: z.string().min(1, "Category is required")
 });
@@ -57,7 +57,7 @@ const VendorServicesPage = () => {
   const handleSave = async () => {
     const data = {
       name: form.name,
-      basePrice: Number(form.basePrice),
+      price: Number(form.basePrice),
       description: form.description,
       categoryId: form.categoryId
     };
@@ -173,7 +173,7 @@ const VendorServicesPage = () => {
           </div>
           <button
             onClick={() => { reset(); setIsModalOpen(true); }}
-            className="px-4 py-2 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 flex items-center gap-2 shrink-0"
+            className="px-4 py-2 bg-slate-900 text-black rounded-xl font-semibold hover:bg-slate-800 flex items-center gap-2 shrink-0"
           >
             <FiPlus /> Add Service
           </button>
@@ -270,7 +270,7 @@ const VendorServicesPage = () => {
           <button
             onClick={handleSave}
             disabled={loading}
-            className="w-full py-3 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 disabled:opacity-50"
+            className="w-full py-3 bg-slate-900 text-black rounded-xl font-bold hover:bg-slate-800 disabled:opacity-50"
           >
             {loading ? "Saving..." : "Save Service"}
           </button>

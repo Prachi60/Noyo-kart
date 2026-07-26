@@ -9,7 +9,7 @@ import { getStoredAuthToken } from '../../../../core/utils/authStorage';
 const API_BASE_URL = resolveApiBaseUrl().replace(/\/api$/, '/api/sp');
 
 const DEFAULT_REDIRECTS = {
-  user: '/sp/user/login',
+  user: '/login',
   vendor: '/sp/vendor/login',
   worker: '/sp/worker/login',
   admin: '/sp/admin/login'

@@ -420,7 +420,7 @@ const ServicesPage = ({ catalog, setCatalog, selectedCity }) => {
                       resetForm();
                       setIsModalOpen(true);
                     }}
-                    className="px-4 py-2 bg-primary-600 text-white rounded-lg font-semibold shadow-md hover:bg-primary-700 transition-all flex items-center gap-2"
+                    className="px-4 py-2 bg-primary-600 text-black rounded-lg font-semibold shadow-md hover:bg-primary-700 transition-all flex items-center gap-2"
                   >
                     <FiPlus className="w-4 h-4" />
                     Add Service
@@ -592,7 +592,7 @@ const ServicesPage = ({ catalog, setCatalog, selectedCity }) => {
             <button
               type="submit"
               disabled={saving}
-              className="px-6 py-2 bg-primary-600 text-white font-bold rounded-lg hover:bg-primary-700 transition-colors shadow-sm disabled:opacity-50"
+              className="px-6 py-2 bg-primary-600 text-black font-bold rounded-lg hover:bg-primary-700 transition-colors shadow-sm disabled:opacity-50"
             >
               {saving ? "Saving..." : "Save Service"}
             </button>

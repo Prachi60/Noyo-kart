@@ -257,7 +257,7 @@ export const handleLogout = (role = null) => {
     }
 
     if (!window.location.pathname.includes('/login')) {
-      window.location.href = '/sp/user/login';
+      window.location.href = '/login';
     }
   }
 };

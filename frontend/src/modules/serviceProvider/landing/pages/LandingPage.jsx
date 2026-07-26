@@ -39,8 +39,8 @@ const LandingPage = () => {
     
     const fetchCategories = async () => {
       const data = await publicCatalogService.getCategories();
-      if (data?.success && data?.categories) {
-        setCategories(data.categories);
+      if (data?.success && (data?.data || data?.categories)) {
+        setCategories(data.data || data.categories);
       }
     };
 

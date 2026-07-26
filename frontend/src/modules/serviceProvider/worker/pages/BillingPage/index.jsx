@@ -388,15 +388,16 @@ const BillingPage = () => {
   const handleSendOTP = async () => {
     try {
       setOtpLoading(true);
+      const validCustomItems = customItems.filter(item => (item.name?.trim() || item.title?.trim()));
       await workerBillService.createOrUpdateBill(id, {
         services: selectedServices,
         parts: selectedParts,
-        customItems,
+        customItems: validCustomItems,
         transportCharges,
         applyPartsGST
       });
 
-      const res = await workerService.initiateCashCollection(id, calculations.finalBillAmount, [...selectedParts, ...customItems]);
+      const res = await workerService.initiateCashCollection(id, calculations.finalBillAmount, [...selectedParts, ...validCustomItems]);
       if (res.success) {
         setIsOtpSent(true);
         setShowOtpModal(true);
@@ -417,7 +418,8 @@ const BillingPage = () => {
   const handleVerifyOTP = async (code) => {
     try {
       setOtpLoading(true);
-      const res = await workerService.collectCash(id, code, calculations.finalBillAmount, [...selectedParts, ...customItems]);
+      const validCustomItems = customItems.filter(item => (item.name?.trim() || item.title?.trim()));
+      const res = await workerService.collectCash(id, code, calculations.finalBillAmount, [...selectedParts, ...validCustomItems]);
       if (res.success) {
         setShowOtpModal(false);
         toast.success('Payment verified successfully!');
@@ -440,15 +442,16 @@ const BillingPage = () => {
   const handleOnlinePayment = async () => {
     try {
       setQrLoading(true);
+      const validCustomItems = customItems.filter(item => (item.name?.trim() || item.title?.trim()));
       await workerBillService.createOrUpdateBill(id, {
         services: selectedServices,
         parts: selectedParts,
-        customItems,
+        customItems: validCustomItems,
         transportCharges,
         applyPartsGST
       });
 
-      const res = await workerService.initiateOnlineCollection(id, calculations.finalBillAmount, [...selectedParts, ...customItems]);
+      const res = await workerService.initiateOnlineCollection(id, calculations.finalBillAmount, [...selectedParts, ...validCustomItems]);
       if (res.success) {
         setOnlinePaymentData(res.data);
         setShowQrModal(true);

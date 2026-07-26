@@ -96,7 +96,7 @@ const EditProfile = () => {
       try {
         const catRes = await publicCatalogService.getCategories();
         if (catRes.success) {
-          setCategories(catRes.categories || []);
+          setCategories(catRes.data || catRes.categories || []);
         }
       } catch (error) {
         console.error('Error loading service categories:', error);

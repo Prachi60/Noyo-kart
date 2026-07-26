@@ -69,8 +69,6 @@ const PlanDetails = lazyLoad(() => import('../pages/MyPlan/PlanDetails'));
 const MyRating = lazyLoad(() => import('../pages/MyRating'));
 const AboutHomestr = lazyLoad(() => import('../pages/AboutHomster'));
 const UpdateProfile = lazyLoad(() => import('../pages/UpdateProfile'));
-const Login = lazyLoad(() => import('../pages/login'));
-const Signup = lazyLoad(() => import('../pages/signup'));
 const Scrap = lazyLoad(() => import('../pages/Scrap'));
 const AddScrap = lazyLoad(() => import('../pages/Scrap/AddScrap'));
 const Notifications = lazyLoad(() => import('../pages/Notifications'));
@@ -107,11 +105,9 @@ const UserRoutes = () => {
             <Suspense fallback={<LoadingFallback />}>
               <PageTransition>
                 <Routes>
-                  <Route path="/login" element={<PublicRoute userType="user"><Login /></PublicRoute>} />
-                  <Route path="/signup" element={<PublicRoute userType="user"><Signup /></PublicRoute>} />
 
-                  <Route path="/" element={<ProtectedRoute userType="user"><Home /></ProtectedRoute>} />
-                  <Route path="/native" element={<ProtectedRoute userType="user"><Native /></ProtectedRoute>} />
+                  <Route path="/" element={<Home />} />
+                  <Route path="/native" element={<Native />} />
 
                   <Route path="/rewards" element={<ProtectedRoute userType="user"><Rewards /></ProtectedRoute>} />
                   <Route path="/account" element={<ProtectedRoute userType="user"><Account /></ProtectedRoute>} />
