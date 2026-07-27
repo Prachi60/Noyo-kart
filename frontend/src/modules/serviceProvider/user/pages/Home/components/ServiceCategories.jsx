@@ -58,11 +58,12 @@ const ServiceCategories = React.memo(({ categories, onCategoryClick, onSeeAllCli
                 <CategoryCard
                   title={category.title}
                   icon={
-                    <div className="w-[72px] h-[64px] rounded-[14px] bg-[#F4F4F5] flex items-center justify-center group-hover:scale-105 transition-transform duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.04)] overflow-hidden">
+                  <div className="w-[72px] h-[72px] rounded-full bg-[#F4F4F5] flex items-center justify-center group-hover:scale-105 transition-transform duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.04)] overflow-hidden">
                       <img
                         src={iconSrc}
                         alt={category.title}
-                        className="w-full h-full object-contain p-1.5 mix-blend-multiply"
+                        className="w-full h-full object-contain p-2 mix-blend-multiply"
+                        style={{ filter: 'contrast(1.15) brightness(1.05)' }}
                         loading="lazy"
                         decoding="async"
                       />
@@ -82,7 +83,7 @@ const ServiceCategories = React.memo(({ categories, onCategoryClick, onSeeAllCli
               <CategoryCard
                 title={showAll ? "Less" : "See All"}
                 icon={
-                  <div className="w-[72px] h-[64px] rounded-[14px] flex items-center justify-center text-gray-600 bg-[#F4F4F5] shadow-[0_2px_8px_rgba(0,0,0,0.04)] group-hover:scale-105 transition-transform duration-300">
+                  <div className="w-[72px] h-[72px] rounded-full flex items-center justify-center text-gray-600 bg-[#F4F4F5] shadow-[0_2px_8px_rgba(0,0,0,0.04)] group-hover:scale-105 transition-transform duration-300">
                     {showAll ? (
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />

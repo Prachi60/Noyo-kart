@@ -14,6 +14,18 @@
 </head>
 
 <body>
+  <script>
+    window.addEventListener('error', function(e) {
+      if (e.message && (e.message.includes('Failed to fetch dynamically imported module') || e.message.includes('Importing a module script failed'))) {
+        console.log('Chunk load error detected. Reloading page...');
+        window.location.reload(true);
+      }
+    });
+    window.addEventListener('vite:preloadError', function(e) {
+      console.log('Vite preload error detected. Reloading page...');
+      window.location.reload(true);
+    });
+  </script>
   <div id="root"></div>
   <script type="module" src="/src/main.jsx"></script>
 </body>
