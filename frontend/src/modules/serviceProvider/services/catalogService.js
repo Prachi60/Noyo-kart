@@ -53,6 +53,8 @@ export const brandService = {
     if (params.status) queryParams.append('status', params.status);
     if (params.categoryId) queryParams.append('categoryId', params.categoryId);
     if (params.cityId) queryParams.append('cityId', params.cityId);
+    if (params.page) queryParams.append('page', params.page);
+    if (params.limit) queryParams.append('limit', params.limit);
 
     const response = await api.get(`/admin/brands${queryParams.toString() ? `?${queryParams.toString()}` : ''}`);
     return response.data;

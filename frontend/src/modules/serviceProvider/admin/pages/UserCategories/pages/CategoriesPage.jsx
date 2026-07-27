@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { FiGrid, FiPlus, FiEdit2, FiTrash2, FiSave, FiChevronUp, FiChevronDown, FiMove, FiX } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 import CardShell from "../components/CardShell";
@@ -23,9 +23,14 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
+  
+  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const limit = 20;
+  const [pageCategories, setPageCategories] = useState([]);
+  const fetchIdRef = useRef(0);
+  
   const [form, setForm] = useState({
     title: "",
     slug: "",
@@ -41,51 +46,80 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
   const categories = (catalog.categories || []).sort((a, b) => (a.homeOrder || 0) - (b.homeOrder || 0));
   const editing = useMemo(() => categories.find((c) => c.id === editingId) || null, [categories, editingId]);
 
-  // Fetch categories from API on mount or city change
+  // Fetch categories from API on mount, city change, or page change
   useEffect(() => {
     const fetchCategories = async () => {
+      const fetchId = ++fetchIdRef.current;
       try {
-        setFetching(true);
+        if (!pageCategories || pageCategories.length === 0) {
+          setFetching(true);
+        }
+        
         // Pass city filters
-        const params = { status: 'active', page: currentPage, limit };
+        const params = { status: 'active' };
         if (selectedCity) {
           params.cityId = selectedCity;
         }
 
-        const response = await categoryService.getAll(params);
+        // Fetch both paginated data (for table) and full data (for global catalog)
+        const [paginatedRes, fullRes] = await Promise.all([
+          categoryService.getAll({ ...params, page: currentPage, limit }),
+          categoryService.getAll(params)
+        ]);
+        
+        if (fetchId !== fetchIdRef.current) return;
 
-        if (response.success && response.categories) {
-          // Map backend format to frontend format
-          const mappedCategories = response.categories.map(cat => ({
-            id: cat.id, // Backend returns id (not _id)
+        if (paginatedRes.success && paginatedRes.categories) {
+          const mappedPageCategories = paginatedRes.categories.map(cat => ({
+            id: cat.id,
             title: cat.title,
             slug: cat.slug,
             homeIconUrl: cat.homeIconUrl || "",
             homeBadge: cat.homeBadge || "",
             hasSaleBadge: cat.hasSaleBadge || false,
             showOnHome: cat.showOnHome !== false,
+            homeOrder: cat.homeOrder || 0,
+          }));
+          
+          setPageCategories(mappedPageCategories);
+          
+          if (paginatedRes.totalPages) {
+            setTotalPages(paginatedRes.totalPages);
+          }
+        }
+        
+        if (fullRes.success && fullRes.categories) {
+          const mappedCategories = fullRes.categories.map(cat => ({
+            id: cat.id,
+            title: cat.title,
+            slug: cat.slug,
+            homeIconUrl: cat.homeIconUrl || "",
+            homeBadge: cat.homeBadge || "",
+            hasSaleBadge: cat.hasSaleBadge || false,
+            showOnHome: cat.showOnHome !== false,
+            homeOrder: cat.homeOrder || 0,
           }));
 
-          // Update catalog with fetched categories
+          // Update global catalog with ALL fetched categories
           const next = { ...catalog, categories: mappedCategories };
           setCatalog(next);
-          saveCatalog(next); // Also save to localStorage for backward compatibility
-          if (response.totalPages) {
-            setTotalPages(response.totalPages);
-          }
-
+          saveCatalog(next); 
         }
       } catch (error) {
+        if (fetchId !== fetchIdRef.current) return;
         console.error('Failed to fetch categories:', error);
         toast.error('Failed to load categories. Using cached data.');
       } finally {
-        setFetching(false);
+        if (fetchId === fetchIdRef.current) {
+          setFetching(false);
+        }
       }
     };
 
     fetchCategories();
   }, [selectedCity, currentPage]);
-
+  
+  // Reset page to 1 when city changes
   useEffect(() => {
     setCurrentPage(1);
   }, [selectedCity]);
@@ -312,8 +346,9 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
     }
   };
 
-  const moveCategoryUp = async (categoryId, currentIndex) => {
-    if (currentIndex === 0) return; // Already at top
+  const moveCategoryUp = async (categoryId) => {
+    const currentIndex = categories.findIndex(c => c.id === categoryId);
+    if (currentIndex <= 0) return; // Already at top
 
     try {
       setLoading(true);
@@ -324,13 +359,27 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
       await categoryService.updateOrder(category.id, currentIndex - 1);
       await categoryService.updateOrder(previousCategory.id, currentIndex);
 
-      // Update local state
+      // Update global catalog state
       const updatedCategories = [...categories];
       [updatedCategories[currentIndex], updatedCategories[currentIndex - 1]] =
         [updatedCategories[currentIndex - 1], updatedCategories[currentIndex]];
 
-      setCatalog(prev => ({ ...prev, categories: updatedCategories }));
-      saveCatalog({ ...catalog, categories: updatedCategories });
+      const next = { ...catalog, categories: updatedCategories };
+      setCatalog(next);
+      saveCatalog(next);
+      
+      // Update local pageCategories state if both are in it
+      const pageIndex = pageCategories.findIndex(c => c.id === categoryId);
+      if (pageIndex > 0) {
+        const updatedPageCategories = [...pageCategories];
+        [updatedPageCategories[pageIndex], updatedPageCategories[pageIndex - 1]] =
+          [updatedPageCategories[pageIndex - 1], updatedPageCategories[pageIndex]];
+        setPageCategories(updatedPageCategories);
+      } else {
+        // Just trigger a re-fetch if we moved it off-page
+        // (A bit complex, but simple enough to just let it be or refresh manually)
+        // For now, we'll let the user see it disappear from the page if they move it up to prev page
+      }
 
       toast.success("Category moved up successfully");
     } catch (error) {
@@ -341,8 +390,9 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
     }
   };
 
-  const moveCategoryDown = async (categoryId, currentIndex) => {
-    if (currentIndex === categories.length - 1) return; // Already at bottom
+  const moveCategoryDown = async (categoryId) => {
+    const currentIndex = categories.findIndex(c => c.id === categoryId);
+    if (currentIndex === -1 || currentIndex === categories.length - 1) return; // Already at bottom
 
     try {
       setLoading(true);
@@ -353,13 +403,23 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
       await categoryService.updateOrder(category.id, currentIndex + 1);
       await categoryService.updateOrder(nextCategory.id, currentIndex);
 
-      // Update local state
+      // Update global catalog state
       const updatedCategories = [...categories];
       [updatedCategories[currentIndex], updatedCategories[currentIndex + 1]] =
         [updatedCategories[currentIndex + 1], updatedCategories[currentIndex]];
 
-      setCatalog(prev => ({ ...prev, categories: updatedCategories }));
-      saveCatalog({ ...catalog, categories: updatedCategories });
+      const next = { ...catalog, categories: updatedCategories };
+      setCatalog(next);
+      saveCatalog(next);
+      
+      // Update local pageCategories state if both are in it
+      const pageIndex = pageCategories.findIndex(c => c.id === categoryId);
+      if (pageIndex !== -1 && pageIndex < pageCategories.length - 1) {
+        const updatedPageCategories = [...pageCategories];
+        [updatedPageCategories[pageIndex], updatedPageCategories[pageIndex + 1]] =
+          [updatedPageCategories[pageIndex + 1], updatedPageCategories[pageIndex]];
+        setPageCategories(updatedPageCategories);
+      }
 
       toast.success("Category moved down successfully");
     } catch (error) {
@@ -427,7 +487,7 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
           <div className="text-center py-4 text-gray-500">Loading categories...</div>
         )}
         <div className="flex items-center justify-between mb-4">
-          <div className="text-sm text-gray-600">{categories.length} categories</div>
+          <div className="text-sm text-gray-600">{pageCategories.length} on this page ({categories.length} total)</div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowReorderModal(true)}
@@ -459,8 +519,8 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
             </button>
           </div>
         </div>
-        {categories.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">No categories yet</div>
+        {pageCategories.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">No categories found on this page</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -486,9 +546,9 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
                 </tr>
               </thead>
               <tbody>
-                {categories.map((c, idx) => (
+                {pageCategories.map((c, idx) => (
                   <tr key={c.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                    <td className="py-4 px-4 text-sm font-semibold text-gray-600">{idx + 1}</td>
+                    <td className="py-4 px-4 text-sm font-semibold text-gray-600">{(currentPage - 1) * limit + idx + 1}</td>
                     <td className="py-4 px-4">
                       {c.homeIconUrl ? (
                         <img src={toAssetUrl(c.homeIconUrl)} alt={c.title} className="h-10 w-10 object-contain rounded bg-gray-50 border border-gray-100" />
@@ -514,17 +574,17 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
                     <td className="py-4 px-4 text-center">
                       <div className="flex items-center justify-center gap-1">
                         <button
-                          onClick={() => moveCategoryUp(c.id, idx)}
-                          disabled={idx === 0 || loading}
+                          onClick={() => moveCategoryUp(c.id)}
+                          disabled={loading}
                           className="p-1 rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                           title="Move Up"
                         >
                           <FiChevronUp className="w-4 h-4" />
                         </button>
-                        <span className="text-xs font-semibold text-gray-600 mx-1">{idx + 1}</span>
+                        <span className="text-xs font-semibold text-gray-600 mx-1">{c.homeOrder}</span>
                         <button
-                          onClick={() => moveCategoryDown(c.id, idx)}
-                          disabled={idx === categories.length - 1 || loading}
+                          onClick={() => moveCategoryDown(c.id)}
+                          disabled={loading}
                           className="p-1 rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                           title="Move Down"
                         >
@@ -562,28 +622,34 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
                 ))}
               </tbody>
             </table>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-4 py-4 border-t border-gray-200">
+                <div className="text-sm text-gray-600">
+                  Page <span className="font-semibold text-gray-900">{currentPage}</span> of <span className="font-semibold text-gray-900">{totalPages}</span>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1 || loading || fetching}
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages || loading || fetching}
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
         
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between p-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
-            <button 
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1 || fetching}
-              className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-            <span className="text-sm text-gray-600 font-medium">Page {currentPage} of {totalPages}</span>
-            <button 
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages || fetching}
-              className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
-          </div>
-        )}
       </CardShell>
 
       <Modal

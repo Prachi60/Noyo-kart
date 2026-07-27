@@ -8,7 +8,7 @@ import PublicRoute from '../../components/auth/PublicRoute';
 import Login from '../pages/login';
 
 // Lazy load admin pages for code splitting
-const Dashboard = lazy(() => import('../pages/Dashboard'));
+import Dashboard from '../pages/Dashboard';
 const Settings = lazy(() => import('../pages/Settings'));
 const UserCategories = lazy(() => import('../pages/UserCategories'));
 const Users = lazy(() => import('../pages/Users'));
@@ -28,20 +28,12 @@ const Reviews = lazy(() => import('../pages/Reviews'));
 
 
 
-// Loading fallback component
-const LoadingFallback = () => (
-  <div className="flex items-center justify-center min-h-screen">
-    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand"></div>
-  </div>
-);
-
 const AdminRoutes = () => {
   // Enable global notifications for admin
   // Global notifications are now handled by SocketProvider at App level
   // useAppNotifications('admin');
 
   return (
-    <Suspense fallback={<LoadingFallback />}>
       <Routes>
         {/* Login route - outside of layout (public) */}
         <Route path="/login" element={<PublicRoute userType="admin"><Login /></PublicRoute>} />
@@ -71,7 +63,6 @@ const AdminRoutes = () => {
           <Route path="settings/*" element={<Settings />} />
         </Route>
       </Routes>
-    </Suspense>
   );
 };
 

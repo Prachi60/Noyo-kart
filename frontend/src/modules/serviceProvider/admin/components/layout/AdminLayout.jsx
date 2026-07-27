@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
 import AdminHeader from './AdminHeader';
@@ -37,7 +37,13 @@ const AdminLayout = () => {
           }}
         >
           <div className="w-full max-w-full overflow-x-hidden min-w-0">
-            <Outlet />
+            <React.Suspense fallback={
+              <div className="flex items-center justify-center min-h-[50vh]">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand"></div>
+              </div>
+            }>
+              <Outlet />
+            </React.Suspense>
           </div>
         </main>
       </div>

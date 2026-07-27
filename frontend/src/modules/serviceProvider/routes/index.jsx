@@ -1,12 +1,11 @@
 import React, { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
-// Lazy load module routes
-const UserRoutes = lazy(() => import('../user/routes'));
-const VendorRoutes = lazy(() => import('../vendor/routes'));
-const WorkerRoutes = lazy(() => import('../worker/routes'));
-const AdminRoutes = lazy(() => import('../admin/routes'));
-const LandingPage = lazy(() => import('../landing/pages/LandingPage'));
+import UserRoutes from '../user/routes';
+import VendorRoutes from '../vendor/routes';
+import WorkerRoutes from '../worker/routes';
+import AdminRoutes from '../admin/routes';
+import LandingPage from '../landing/pages/LandingPage';
 
 const LoadingFallback = () => (
   <div className="flex h-screen items-center justify-center font-outfit">

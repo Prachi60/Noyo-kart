@@ -285,7 +285,13 @@ const DashboardLayout = ({ children, navItems, title }) => {
                                     earningsLoading: role === 'seller' ? earningsLoading : false,
                                     refreshEarnings,
                                 }}>
-                                {children}
+                                <React.Suspense fallback={
+                                    <div className="flex justify-center items-center h-[50vh]">
+                                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+                                    </div>
+                                }>
+                                    {children}
+                                </React.Suspense>
                             </SellerEarningsContext.Provider>
                         </SellerOrdersContext.Provider>
                     </div>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { FiGrid, FiPlus, FiEdit2, FiTrash2, FiImage } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 import CardShell from "../components/CardShell";
@@ -19,6 +19,12 @@ const brandSchema = z.object({
 const BrandsPage = ({ catalog, setCatalog, selectedCity }) => {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
+  const fetchIdRef = useRef(0);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const limit = 20;
 
   // Connect to catalog state
   const services = catalog.services || []; // These are actually BRANDS
@@ -45,20 +51,6 @@ const BrandsPage = ({ catalog, setCatalog, selectedCity }) => {
   const [isServicesModalOpen, setIsServicesModalOpen] = useState(false);
   const [selectedBrandForServices, setSelectedBrandForServices] = useState(null);
 
-  // Filter brands based on selected category
-  const filteredBrands = useMemo(() => {
-    if (selectedCategoryFilter === "all") return services;
-
-    return services.filter(s => {
-      const filterId = String(selectedCategoryFilter);
-      // Check both categoryId (legacy) and categoryIds (array)
-      if (s.categoryIds && s.categoryIds.length > 0) {
-        return s.categoryIds.some(id => String(id) === filterId);
-      }
-      return String(s.categoryId) === filterId;
-    });
-  }, [services, selectedCategoryFilter]);
-
   // Helper to extract string ID from various formats
   const getStrId = (item) => {
     if (!item) return null;
@@ -71,20 +63,25 @@ const BrandsPage = ({ catalog, setCatalog, selectedCity }) => {
 
   // Fetch data function
   const refreshData = async () => {
+    const fetchId = ++fetchIdRef.current;
+    
     try {
       // Only show full loading spinner if we don't have data yet
       if (!catalog.services || catalog.services.length === 0) {
         setFetching(true);
       }
 
-      const params = { status: 'active' };
+      const params = { status: 'active', page: currentPage, limit };
       if (selectedCity) params.cityId = selectedCity;
+      if (selectedCategoryFilter !== "all") params.categoryId = selectedCategoryFilter;
 
       // Fetch ALL categories for reliable resolution, but filtered services
       const [servicesRes, categoriesRes] = await Promise.all([
         brandService.getAll(params),
         categoryService.getAll()
       ]);
+      
+      if (fetchId !== fetchIdRef.current) return;
 
       let mappedBrands = [];
       let mappedCategories = [];
@@ -93,9 +90,6 @@ const BrandsPage = ({ catalog, setCatalog, selectedCity }) => {
         mappedBrands = servicesRes.brands.map((svc, sIdx) => {
           const catIds = (svc.categoryIds || []).map(id => getStrId(id)).filter(Boolean);
 
-          // if (sIdx < 3) {
-          //   console.log(`[BrandDebug] ${svc.title}:`, { raw: svc.categoryIds, processed: catIds });
-          // }
           const primaryCatId = getStrId(svc.categoryId);
 
           return {
@@ -113,6 +107,12 @@ const BrandsPage = ({ catalog, setCatalog, selectedCity }) => {
             cityIds: (svc.cityIds || []).map(id => getStrId(id)).filter(Boolean),
           };
         });
+        
+        if (servicesRes.totalPages) {
+          setTotalPages(servicesRes.totalPages);
+        } else if (servicesRes.count < limit) {
+          setTotalPages(1); // fallback if not paginated on backend
+        }
       }
 
       if (categoriesRes.success) {
@@ -133,10 +133,13 @@ const BrandsPage = ({ catalog, setCatalog, selectedCity }) => {
       window.dispatchEvent(new Event("adminUserAppCatalogUpdated"));
 
     } catch (error) {
+      if (fetchId !== fetchIdRef.current) return;
       console.error('Failed to fetch catalog data:', error);
       toast.error(`Failed to load data: ${error.response?.data?.message || error.message}`);
     } finally {
-      setFetching(false);
+      if (fetchId === fetchIdRef.current) {
+        setFetching(false);
+      }
     }
   };
 
@@ -144,6 +147,11 @@ const BrandsPage = ({ catalog, setCatalog, selectedCity }) => {
   useEffect(() => {
     refreshData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCity, selectedCategoryFilter, currentPage]);
+
+  // Reset page to 1 when selectedCity changes (handled differently for filter to avoid race conditions)
+  useEffect(() => {
+    setCurrentPage(1);
   }, [selectedCity]);
 
   // Load form data when editing or changing city
@@ -339,7 +347,10 @@ const BrandsPage = ({ catalog, setCatalog, selectedCity }) => {
             <div className="relative flex-1">
               <select
                 value={selectedCategoryFilter}
-                onChange={(e) => setSelectedCategoryFilter(e.target.value)}
+                onChange={(e) => {
+                  setSelectedCategoryFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm font-medium text-gray-700 shadow-sm cursor-pointer"
               >
                 <option value="all">All Categories</option>
@@ -351,7 +362,7 @@ const BrandsPage = ({ catalog, setCatalog, selectedCity }) => {
               </select>
             </div>
             <div className="text-sm text-gray-500 whitespace-nowrap px-2">
-              <strong>{filteredBrands.length}</strong> brands
+              <strong>{services.length}</strong> brands on this page
             </div>
           </div>
         </div>
@@ -360,12 +371,15 @@ const BrandsPage = ({ catalog, setCatalog, selectedCity }) => {
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
           </div>
-        ) : filteredBrands.length === 0 ? (
+        ) : services.length === 0 ? (
           <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300">
             <p className="text-gray-500">No brands found.</p>
             {selectedCategoryFilter !== "all" && (
               <button
-                onClick={() => setSelectedCategoryFilter("all")}
+                onClick={() => {
+                  setSelectedCategoryFilter("all");
+                  setCurrentPage(1);
+                }}
                 className="mt-2 text-primary-600 font-semibold text-sm hover:underline"
               >
                 Clear filter
@@ -387,7 +401,7 @@ const BrandsPage = ({ catalog, setCatalog, selectedCity }) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 bg-white">
-                {filteredBrands.map((s, idx) => {
+                {services.map((s, idx) => {
                   const uniqueKey = s.id ? `${s.id}-${idx}` : `brand-${idx}`;
                   return (
                     <tr key={uniqueKey} className="hover:bg-gray-50 transition-colors">
@@ -478,6 +492,26 @@ const BrandsPage = ({ catalog, setCatalog, selectedCity }) => {
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+        
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between p-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl mt-4">
+            <button 
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1 || fetching}
+              className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <span className="text-sm text-gray-600 font-medium">Page {currentPage} of {totalPages}</span>
+            <button 
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages || fetching}
+              className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
           </div>
         )}
       </CardShell>

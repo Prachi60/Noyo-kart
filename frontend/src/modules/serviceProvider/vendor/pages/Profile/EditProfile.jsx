@@ -355,6 +355,8 @@ const EditProfile = () => {
       const payload = {
         name: formData.name,
         businessName: formData.businessName,
+        phone: formData.phone,
+        email: formData.email,
         address: formData.address,
         serviceCategory: formData.serviceCategories,
         profilePhoto: photoUrl,

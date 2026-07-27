@@ -5,14 +5,30 @@ import { SP_SERVICE_STATUS } from '../../constants.js';
 
 const getAllBrands = async (req, res) => {
   try {
-    const { status, categoryId, cityId } = req.query;
+    const { status, categoryId, cityId, page = 1, limit = 20 } = req.query;
     const query = {};
     if (status) query.status = status;
     if (categoryId) query.categoryIds = categoryId;
-    if (cityId) query.cityIds = cityId;
-    const brands = await SpBrand.find(query).select('-__v').sort({ createdAt: -1 }).lean();
+    if (cityId) {
+      query.$or = [
+        { cityIds: cityId },
+        { cityIds: { $exists: false } },
+        { cityIds: { $size: 0 } }
+      ];
+    }
+    
+    let dbQuery = SpBrand.find(query).select('-__v').sort({ createdAt: -1 });
+
+    const currentPage = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
+    const totalCount = await SpBrand.countDocuments(query);
+    const totalPages = Math.ceil(totalCount / limitNum);
+    const skip = (currentPage - 1) * limitNum;
+
+    const brands = await dbQuery.skip(skip).limit(limitNum).lean();
+    
     const cleanMongoIds = (obj) => { if (!obj) return obj; if (Array.isArray(obj)) return obj.map(item => cleanMongoIds(item)); if (typeof obj === 'object' && obj !== null) { const cleaned = {}; for (const [key, value] of Object.entries(obj)) { if (key === '_id') continue; cleaned[key] = cleanMongoIds(value); } return cleaned; } return obj; };
-    res.status(200).json({ success: true, count: brands.length, brands: brands.map(brand => { const validCats = (Array.isArray(brand.categoryIds) ? brand.categoryIds : []).filter(c => c); const catIds = validCats.map(cat => { if (cat._id) return cat._id.toString(); if (typeof cat === 'string') return cat; if (cat.toString) return cat.toString(); return null; }).filter(Boolean); const catTitles = validCats.map(cat => cat.title).filter(Boolean); return { id: brand._id.toString(), title: brand.title, slug: brand.slug, cityIds: brand.cityIds || [], categoryIds: catIds, categoryTitles: catTitles, categoryId: catIds[0] || null, categoryTitle: catTitles[0] || null, iconUrl: brand.iconUrl, badge: brand.badge, routePath: brand.routePath, status: brand.status, isPopular: brand.isPopular, isFeatured: brand.isFeatured, rating: brand.rating, totalBookings: brand.totalBookings, page: cleanMongoIds(brand.page) || {}, sections: cleanMongoIds(brand.sections) || [], createdAt: brand.createdAt, updatedAt: brand.updatedAt }; }) });
+    res.status(200).json({ success: true, count: brands.length, total: totalCount, totalPages, currentPage, brands: brands.map(brand => { const validCats = (Array.isArray(brand.categoryIds) ? brand.categoryIds : []).filter(c => c); const catIds = validCats.map(cat => { if (cat._id) return cat._id.toString(); if (typeof cat === 'string') return cat; if (cat.toString) return cat.toString(); return null; }).filter(Boolean); const catTitles = validCats.map(cat => cat.title).filter(Boolean); return { id: brand._id.toString(), title: brand.title, slug: brand.slug, cityIds: brand.cityIds || [], categoryIds: catIds, categoryTitles: catTitles, categoryId: catIds[0] || null, categoryTitle: catTitles[0] || null, iconUrl: brand.iconUrl, badge: brand.badge, routePath: brand.routePath, status: brand.status, isPopular: brand.isPopular, isFeatured: brand.isFeatured, rating: brand.rating, totalBookings: brand.totalBookings, page: cleanMongoIds(brand.page) || {}, sections: cleanMongoIds(brand.sections) || [], createdAt: brand.createdAt, updatedAt: brand.updatedAt }; }) });
   } catch (error) { console.error('Get all brands error:', error); res.status(500).json({ success: false, message: 'Failed to fetch brands.' }); }
 };
 

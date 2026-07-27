@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, startTransition } from 'react';
 import { FiMenu, FiBell, FiLogOut } from 'react-icons/fi';
 import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -173,7 +173,7 @@ const AdminHeader = ({ onMenuClick }) => {
         {/* Right: Notifications & Logout */}
         <div className="flex items-center gap-4">
           <Button
-            onClick={() => navigate('/admin')}
+            onClick={() => startTransition(() => navigate('/admin'))}
             variant="ghost"
             size="sm"
             className="hidden lg:flex items-center bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:opacity-90 transition-all font-bold shadow-sm px-3 py-1.5"

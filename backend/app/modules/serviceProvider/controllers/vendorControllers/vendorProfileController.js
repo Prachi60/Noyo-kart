@@ -78,7 +78,7 @@ const updateProfile = async (req, res) => {
     }
 
     const vendorId = req.user.id;
-    const { name, businessName, address, profilePhoto, serviceCategory, skills, aadharNumber, aadharDocument, panNumber, panDocument, serviceRange } = req.body;
+    const { name, businessName, address, profilePhoto, serviceCategory, skills, aadharNumber, aadharDocument, panNumber, panDocument, serviceRange, phone, email } = req.body;
 
     console.log('Update Vendor Profile Body:', JSON.stringify(req.body, null, 2));
 
@@ -94,6 +94,8 @@ const updateProfile = async (req, res) => {
     // Update fields
     if (name) vendor.name = name.trim();
     if (businessName !== undefined) vendor.businessName = businessName ? businessName.trim() : null;
+    if (phone !== undefined) vendor.phone = phone ? phone.trim() : vendor.phone;
+    if (email !== undefined) vendor.email = email ? email.trim() : vendor.email;
     if (address) {
       if (typeof address === 'string') {
         vendor.address = {

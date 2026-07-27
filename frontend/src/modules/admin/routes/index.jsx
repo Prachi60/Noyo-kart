@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { useSettings } from "@core/context/SettingsContext";
 
-const Dashboard = React.lazy(() => import("../pages/Dashboard"));
+import Dashboard from "../pages/Dashboard";
 const CategoryManagement = React.lazy(
   () => import("../pages/CategoryManagement"),
 );
