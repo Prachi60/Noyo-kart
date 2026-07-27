@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useLayoutEffect, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { themeColors } from '../../../theme';
-import MainLocationHeader from '../../../../customer/components/shared/MainLocationHeader';
+import SPHomeHeader from './components/SPHomeHeader';
 import HomeIcon from "@mui/icons-material/Home";
 import BuildIcon from "@mui/icons-material/Build";
 import LocalCafeIcon from "@mui/icons-material/LocalCafe";
@@ -512,57 +512,26 @@ const Home = () => {
   return (
     <div className="min-h-screen pb-16 relative bg-white">
       <LenisScroll />
-      {/* Refined Brand Mesh Gradient Background */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute inset-0"
-          style={{
-            background: `
-              radial-gradient(at 0% 0%, ${themeColors?.brand?.teal || '#347989'}25 0%, transparent 70%),
-              radial-gradient(at 100% 0%, ${themeColors?.brand?.yellow || '#D68F35'}20 0%, transparent 70%),
-              radial-gradient(at 100% 100%, ${themeColors?.brand?.orange || '#BB5F36'}15 0%, transparent 75%),
-              radial-gradient(at 0% 100%, ${themeColors?.brand?.teal || '#347989'}10 0%, transparent 70%),
-              radial-gradient(at 50% 50%, ${themeColors?.brand?.teal || '#347989'}03 0%, transparent 100%),
-              #FFFFFF
-            `
-          }}
-        />
-        {/* Elegant Dot Grid Pattern */}
-        <div className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage: `radial-gradient(${themeColors?.brand?.teal || '#347989'} 0.8px, transparent 0.8px)`,
-            backgroundSize: '32px 32px'
-          }}
-        />
-      </div>
-
+      
       <motion.div
         className="relative z-10"
         initial="hidden"
         animate="visible"
         variants={containerVariants}
       >
-        <MainLocationHeader
-          categories={globalCategories.length > 0 ? globalCategories : GLOBAL_CATEGORIES}
-          activeCategory={
-            (globalCategories.length > 0 ? globalCategories : GLOBAL_CATEGORIES).find(c => c.name === 'Services' || c.title === 'Services') || 
-            (globalCategories.length > 0 ? globalCategories[0] : GLOBAL_CATEGORIES[1])
-          } // Services
-          onCategorySelect={(c) => {
-            if (c.id === 'sp-link' || c.name === 'Services' || c.title === 'Services') return; // Already on services
-            // Navigate back to main app with category state
-            navigate('/', { state: { openCategoryName: c.name || c.title } });
-          }}
+        <SPHomeHeader
+          currentCity={currentCity}
+          fullAddress={address}
+          onLocationClick={() => setIsAddressModalOpen(true)}
           onSearchClick={() => setIsSearchOpen(true)}
-          searchPlaceholderText="Search Services..."
-          typingPhrases={['"plumbers"', '"electricians"', '"cleaning"', '"repairs"']}
+          searchPlaceholderText="Search for services..."
           cartCount={cartCount}
           onCartClick={() => navigate('/sp/user/cart')}
           onProfileClick={() => navigate('/sp/user/account')}
-          onLogoClick={() => navigate('/')}
-          onWishlistClick={() => navigate('/sp/user/my-bookings')}
+          onSwitchAppClick={() => React.startTransition(() => navigate('/'))}
         />
 
-        <main className="pt-[205px] md:pt-[235px] space-y-4 pb-4 max-w-screen-xl mx-auto w-full">
+        <main className="pt-[140px] space-y-6 pb-4 max-w-screen-xl mx-auto w-full">
           {!isLocationSupported ? (
             <div className="flex flex-col items-center justify-center pt-20 pb-10 px-6 text-center min-h-[60vh]">
               <div className="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mb-6">

@@ -256,10 +256,10 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
                       </button>
                     )}
                     <div>
-                      <h1 className="text-xl font-bold text-gray-900">
+                      <h1 className="font-roboto text-xl font-bold text-gray-900 uppercase">
                         {view === 'brands' ? (category?.title || 'Brands') : (selectedBrand?.title || 'Services')}
                       </h1>
-                      {view === 'services' && <p className="text-xs text-gray-500">Select a service to add</p>}
+                      {view === 'services' && <p className="font-roboto text-xs text-gray-500 mt-0.5">Select a service to add</p>}
                     </div>
                     {loading && <div className="w-5 h-5 border-2 border-primary-500 border-t-transparent rounded-full animate-spin ml-auto"></div>}
                   </div>
@@ -321,9 +321,9 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
                             {services.map((svc) => (
                               <div key={svc.id || svc._id} className="flex justify-between items-center p-3 border border-gray-100 rounded-xl hover:shadow-md transition-shadow">
                                 <div className="flex-1 pr-4">
-                                  <h3 className="font-black text-gray-900 text-[15px] leading-snug mb-0.5">{svc.title}</h3>
+                                  <h3 className="font-roboto font-black text-gray-900 text-[15px] leading-snug mb-0.5 capitalize">{svc.title}</h3>
                                   <div className="flex items-center gap-2">
-                                    <span className="text-lg font-black text-emerald-600">₹{svc.discountPrice || svc.basePrice}</span>
+                                    <span className="font-roboto text-lg font-black text-emerald-600">₹{svc.discountPrice || svc.basePrice}</span>
                                     {svc.discountPrice && svc.discountPrice < svc.basePrice && (
                                       <span className="text-xs text-gray-400 line-through font-bold opacity-60">₹{svc.basePrice}</span>
                                     )}
@@ -331,7 +331,7 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
                                 </div>
                                 <button
                                   onClick={() => handleServiceClick(svc)}
-                                  className="px-4 py-2 bg-green-50 text-green-700 rounded-lg text-sm font-bold flex items-center gap-1 hover:bg-green-100"
+                                  className="font-roboto px-4 py-2 bg-green-50 text-green-700 rounded-lg text-sm font-bold flex items-center gap-1 hover:bg-green-100"
                                 >
                                   <FiPlus /> Add
                                 </button>
@@ -344,7 +344,7 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                               </div>
-                              <p className="text-[11px] text-rose-500 font-normal italic leading-snug">
+                              <p className="font-roboto text-[11px] text-rose-500 font-normal italic leading-snug">
                                 * It is a base price only, additional charges may be applicable after service
                               </p>
                             </div>

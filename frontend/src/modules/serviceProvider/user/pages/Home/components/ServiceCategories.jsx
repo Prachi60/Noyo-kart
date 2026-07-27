@@ -35,30 +35,38 @@ const ServiceCategories = React.memo(({ categories, onCategoryClick, onSeeAllCli
 
       </div>
 
-      {/* White Card Container for Grid as per new design */}
-      <div className="bg-white rounded-[24px] p-3 shadow-[0_2px_15px_-4px_rgba(0,0,0,0.05)] border border-gray-50/50">
+      <div className="pt-2">
         <div 
-          className="grid grid-rows-2 grid-flow-col gap-y-4 gap-x-2 pb-1 overflow-x-auto overscroll-x-contain scrollbar-hide"
+          className="grid grid-rows-2 grid-flow-col gap-y-6 gap-x-4 pb-2 overflow-x-auto overscroll-x-contain scrollbar-hide"
           style={{ 
-            gridAutoColumns: '32%',
+            gridAutoColumns: 'minmax(80px, 1fr)',
             scrollbarWidth: 'none', 
             msOverflowStyle: 'none' 
           }}
         >
-          {serviceCategories.slice(0, showAll ? undefined : 5).map((category, index) => {
-            const iconSrc = toAssetUrl(category.icon || category.image);
+          {serviceCategories.slice(0, showAll ? undefined : 7).map((category, index) => {
+            // Temporary mapping to show 3D icons to the user
+            const titleLower = category.title?.toLowerCase() || '';
+            let iconSrc = toAssetUrl(category.icon || category.image);
+            if (titleLower.includes('electrician')) iconSrc = '/assets/3d-icons/electrician.png';
+            if (titleLower.includes('plumber')) iconSrc = '/assets/3d-icons/plumber.png';
+            if (titleLower.includes('painter') || titleLower.includes('panter')) iconSrc = '/assets/3d-icons/painter.png';
+            if (titleLower.includes('carpenter')) iconSrc = '/assets/3d-icons/carpenter.png';
+
             return (
               <div key={category.id || index} className="flex justify-center h-full">
                 <CategoryCard
                   title={category.title}
                   icon={
-                    <img
-                      src={iconSrc}
-                      alt={category.title}
-                      className="w-12 h-12 rounded-xl object-cover group-hover:scale-110 transition-transform duration-500 will-change-transform shadow-sm"
-                      loading="lazy"
-                      decoding="async"
-                    />
+                    <div className="w-[72px] h-[64px] rounded-[14px] bg-[#F4F4F5] flex items-center justify-center group-hover:scale-105 transition-transform duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.04)] overflow-hidden">
+                      <img
+                        src={iconSrc}
+                        alt={category.title}
+                        className="w-full h-full object-contain p-1.5 mix-blend-multiply"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    </div>
                   }
                   onClick={() => onCategoryClick?.(category)}
                   hasSaleBadge={category.hasSaleBadge}
@@ -69,19 +77,19 @@ const ServiceCategories = React.memo(({ categories, onCategoryClick, onSeeAllCli
           })}
           
           {/* Explore More / Show Less Card */}
-          {categories.length > 5 && (
+          {categories.length > 7 && (
             <div className="flex justify-center h-full">
               <CategoryCard
-                title={showAll ? "Show Less" : "All Services"}
+                title={showAll ? "Less" : "See All"}
                 icon={
-                  <div className="w-full h-full flex items-center justify-center text-gray-700 bg-gray-50/50">
+                  <div className="w-[72px] h-[64px] rounded-[14px] flex items-center justify-center text-gray-600 bg-[#F4F4F5] shadow-[0_2px_8px_rgba(0,0,0,0.04)] group-hover:scale-105 transition-transform duration-300">
                     {showAll ? (
-                      <svg className="w-8 h-8 group-hover:scale-110 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
                       </svg>
                     ) : (
-                      <svg className="w-8 h-8 group-hover:scale-110 transition-transform duration-500" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M4 4h4v4H4V4zm6 0h4v4h-4V4zm6 0h4v4h-4V4zM4 10h4v4H4v-4zm6 0h4v4h-4v-4zm6 0h4v4h-4v-4zM4 16h4v4H4v-4zm6 0h4v4h-4v-4zm6 0h4v4h-4v-4z" />
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
                     )}
                   </div>
@@ -90,7 +98,7 @@ const ServiceCategories = React.memo(({ categories, onCategoryClick, onSeeAllCli
                   setShowAll(!showAll);
                   if (onSeeAllClick && !showAll) onSeeAllClick();
                 }}
-                index={showAll ? categories.length : 5}
+                index={showAll ? categories.length : 7}
               />
             </div>
           )}

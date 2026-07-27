@@ -34,14 +34,7 @@ const CategoryCard = memo(({ icon, title, onClick, hasSaleBadge = false, index =
       }}
     >
       <div
-        className="w-[96px] h-[72px] rounded-[18px] flex items-center justify-center mb-2 relative flex-shrink-0 transition-all duration-300 group-hover:shadow-[0_8px_24px_rgba(40,116,240,0.2)] group-hover:-translate-y-1 overflow-hidden"
-        style={{
-          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.3) 100%)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          border: '1px solid rgba(255, 255, 255, 0.6)',
-          boxShadow: '0 4px 16px rgba(0,0,0,0.06)'
-        }}
+        className="flex items-center justify-center mb-1 relative flex-shrink-0"
       >
         <div className="absolute inset-0 bg-primary-50/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 pointer-events-none"></div>
         {icon || (
@@ -64,22 +57,18 @@ const CategoryCard = memo(({ icon, title, onClick, hasSaleBadge = false, index =
         )}
         {hasSaleBadge && (
           <div
-            className="absolute -top-1.5 -right-1.5 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-lg z-10 border border-white"
-            style={{
-              background: themeColors.gradient,
-              boxShadow: `0 4px 12px ${themeColors.brand.teal}4D`
-            }}
+            className="absolute -top-2 -right-2 bg-gradient-to-r from-rose-500 to-pink-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-md z-20 border-2 border-white uppercase tracking-wider"
           >
             SALE
           </div>
         )}
       </div>
       <span
-        className="text-[10px] text-center text-slate-800 font-normal leading-[1.1] tracking-tight mt-1 transition-colors duration-300 w-full line-clamp-2 px-0.5"
+        className="text-[11px] text-center text-slate-800 font-medium leading-[1.2] tracking-tight mt-1 transition-colors duration-300 w-full line-clamp-2 px-0.5"
         style={{
           wordWrap: 'break-word',
           color: 'inherit',
-          fontFamily: "'DM Sans', sans-serif"
+          fontFamily: "'Roboto', sans-serif"
         }}
         onMouseEnter={(e) => e.currentTarget.style.color = themeColors.button}
         onMouseLeave={(e) => e.currentTarget.style.color = 'inherit'}
