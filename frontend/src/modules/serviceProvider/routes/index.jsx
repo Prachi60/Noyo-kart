@@ -15,7 +15,7 @@ const LoadingFallback = () => (
 
 const SPRoutes = () => {
   return (
-    <div className="font-work-sans">
+    <div className="font-roboto">
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
           {/* Landing Page */}

@@ -167,6 +167,17 @@ body {
 }
 
 @layer utilities {
+  .font-roboto {
+    font-family: 'Roboto', sans-serif;
+  }
+  .font-roboto h1, 
+  .font-roboto h2, 
+  .font-roboto h3, 
+  .font-roboto h4, 
+  .font-roboto h5, 
+  .font-roboto h6 {
+    font-weight: 700;
+  }
   .font-work-sans {
     font-family: 'Work Sans', sans-serif;
   }
