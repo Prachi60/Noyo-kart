@@ -571,7 +571,7 @@ const Home = () => {
 
               {/* Hero Section - Promo Carousel */}
               {homeContent?.isPromosVisible !== false && homeContent?.promos?.length > 0 && (
-                <motion.section variants={itemVariants} className="relative z-0">
+                <motion.section variants={itemVariants} className="relative z-0 pb-2">
                   <PromoCarousel
                     promos={(homeContent.promos).sort((a, b) => (a.order || 0) - (b.order || 0)).map(promo => ({
                       id: promo.id || promo._id,

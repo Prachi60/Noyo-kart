@@ -96,7 +96,7 @@ const WorkerPaymentModal = ({ isOpen, onClose, workerName, amountDue = 0, onConf
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="px-8 pb-8 space-y-5 max-h-[80vh] overflow-y-auto custom-scrollbar">
+            <form data-lenis-prevent="true" onSubmit={handleSubmit} className="px-8 pb-8 space-y-5 max-h-[80vh] overflow-y-auto custom-scrollbar">
               {/* Worker Info */}
               <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 flex items-center gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-white border border-gray-100 flex items-center justify-center text-green-600 shadow-sm">

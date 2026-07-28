@@ -12,7 +12,7 @@ const DEFAULT_REDIRECTS = {
   user: '/login',
   vendor: '/sp/vendor/login',
   worker: '/sp/worker/login',
-  admin: '/sp/admin/login'
+  admin: '/admin/auth'
 };
 
 // Prevent concurrent SSO calls from rotating loginSessionId multiple times

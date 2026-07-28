@@ -7,19 +7,18 @@ const BannerWithRefer = ({ imageUrl, onBannerClick, onReferClick }) => {
       <div className="mb-4 cursor-pointer" onClick={onBannerClick}>
         {imageUrl ? (
           <div
-            className="relative overflow-hidden shadow-xl"
+            className="relative overflow-hidden shadow-xl aspect-[2/1] w-full"
             style={{
               borderRadius: '0',
               backgroundImage: `url(${imageUrl})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               backgroundRepeat: 'no-repeat',
-              minHeight: '200px'
             }}
           />
         ) : (
           <div 
-            className="w-full min-h-[200px] bg-gradient-to-r from-blue-700 via-indigo-700 to-teal-700 flex flex-col justify-center px-8 text-white relative overflow-hidden"
+            className="w-full aspect-[2/1] bg-gradient-to-r from-blue-700 via-indigo-700 to-teal-700 flex flex-col justify-center px-8 text-white relative overflow-hidden"
           >
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-24 translate-x-24"></div>
             <div className="relative z-10 max-w-[70%]">

@@ -451,7 +451,11 @@ const EditProfile = () => {
               </div>
 
               {isCategoryOpen && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 z-50 max-h-60 overflow-y-auto">
+                <div 
+                  data-lenis-prevent="true" 
+                  onWheel={(e) => e.stopPropagation()}
+                  className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 z-50 max-h-60 overflow-y-auto"
+                >
                   {categories.map((cat, index) => {
                     const isSelected = formData.serviceCategories.includes(cat.title);
                     return (

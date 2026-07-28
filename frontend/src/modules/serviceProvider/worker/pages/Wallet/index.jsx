@@ -5,6 +5,7 @@ import { workerTheme as themeColors } from '../../../theme';
 import Header from '../../components/layout/Header';
 import BottomNav from '../../components/layout/BottomNav';
 import workerWalletService from '../../../services/workerWalletService';
+import workerService from '../../../services/workerService';
 import { toast } from 'react-hot-toast';
 import LogoLoader from '@sp/worker/components/common/LogoLoader';
 
@@ -20,6 +21,7 @@ const Wallet = () => {
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [stats, setStats] = useState({ totalEarnings: 0, thisMonthEarnings: 0 });
 
   useLayoutEffect(() => {
     const html = document.documentElement;
@@ -45,9 +47,10 @@ const Wallet = () => {
   const loadWalletData = async () => {
     try {
       setLoading(true);
-      const [walletRes, txnRes] = await Promise.all([
+      const [walletRes, txnRes, statsRes] = await Promise.all([
         workerWalletService.getWallet(),
-        workerWalletService.getTransactions({ limit: 50 })
+        workerWalletService.getTransactions({ limit: 50 }),
+        workerService.getDashboardStats()
       ]);
 
       if (walletRes.success) {
@@ -56,6 +59,13 @@ const Wallet = () => {
 
       if (txnRes.success) {
         setTransactions(txnRes.data || []);
+      }
+
+      if (statsRes.success) {
+        setStats({
+          totalEarnings: statsRes.data.totalEarnings || 0,
+          thisMonthEarnings: statsRes.data.thisMonthEarnings || 0
+        });
       }
     } catch (error) {
       console.error('Error loading wallet:', error);
@@ -159,6 +169,18 @@ const Wallet = () => {
       <Header title="My Wallet" />
 
       <main className="px-4 py-6">
+        {/* Earnings Stats Cards */}
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col justify-center">
+            <p className="text-gray-500 text-xs font-semibold mb-1">Total Earnings</p>
+            <p className="text-xl font-bold text-gray-900">₹{stats.totalEarnings?.toLocaleString() || 0}</p>
+          </div>
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col justify-center">
+            <p className="text-gray-500 text-xs font-semibold mb-1">This Month</p>
+            <p className="text-xl font-bold text-gray-900">₹{stats.thisMonthEarnings?.toLocaleString() || 0}</p>
+          </div>
+        </div>
+
         {/* Balance Card */}
         <div className="rounded-2xl p-6 shadow-xl relative overflow-hidden mb-6 bg-gradient-to-br from-teal-600 to-teal-800">
           <div className="relative z-10 text-white">

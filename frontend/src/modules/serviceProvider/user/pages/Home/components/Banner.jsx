@@ -8,7 +8,7 @@ const Banner = React.memo(({ imageUrl, onClick }) => {
   return (
     <div className="px-4 cursor-pointer group" onClick={onClick}>
       <div
-        className="relative overflow-hidden transition-all duration-500 group-hover:shadow-2xl group-hover:scale-[1.01]"
+        className="relative overflow-hidden transition-all duration-500 group-hover:shadow-2xl group-hover:scale-[1.01] aspect-[2/1] w-full"
         style={{
           borderRadius: '20px',
           boxShadow: '0 15px 35px -5px rgba(0, 0, 0, 0.1), 0 5px 15px -3px rgba(0, 0, 0, 0.05)'
@@ -18,12 +18,12 @@ const Banner = React.memo(({ imageUrl, onClick }) => {
           <img
             src={optimizedUrl}
             alt="Banner"
-            className="w-full h-full object-cover max-h-[120px] md:max-h-[160px] min-h-[100px]"
+            className="w-full h-full object-cover"
             loading="lazy"
             decoding="async"
           />
         ) : (
-          <div className="w-full min-h-[150px] bg-gradient-to-r from-teal-600 to-emerald-600 flex items-center justify-between p-8 text-white relative">
+          <div className="w-full h-full bg-gradient-to-r from-teal-600 to-emerald-600 flex items-center justify-between p-8 text-white relative">
             <div className="relative z-10 max-w-[60%]">
               <span className="bg-white/20 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider backdrop-blur-md">Special Offer</span>
               <h3 className="text-xl font-black mt-3 leading-tight">Super Clean & Smart Home Services</h3>

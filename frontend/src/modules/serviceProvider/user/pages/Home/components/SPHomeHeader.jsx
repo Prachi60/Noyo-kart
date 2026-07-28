@@ -1,5 +1,5 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import SearchIcon from "@mui/icons-material/Search";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
@@ -18,13 +18,23 @@ const SPHomeHeader = ({
   onLocationClick,
   onSwitchAppClick
 }) => {
+  const qcLabels = ["Quick Commerce", "Go Shop", "10 Min Delivery"];
+  const [qcIndex, setQcIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setQcIndex((prev) => (prev + 1) % qcLabels.length);
+    }, 3000); // Change text every 3 seconds
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm pb-3">
       <div className="max-w-screen-xl mx-auto px-4 md:px-6">
         {/* Top Row: Location, Icons */}
         <div className="flex items-center justify-between h-16">
           {/* Left: Location (Urban Company style puts location prominently) */}
-          <div className="flex flex-col cursor-pointer max-w-[60%] lg:max-w-[40%]" onClick={onLocationClick}>
+          <div className="flex flex-col cursor-pointer max-w-[40%] lg:max-w-[40%]" onClick={onLocationClick}>
             <div className="flex items-center text-gray-900 font-bold text-sm md:text-base">
               <LocationOnIcon className="w-5 h-5 mr-1 text-slate-800" sx={{ fontSize: 22 }} />
               <span className="truncate">
@@ -40,27 +50,32 @@ const SPHomeHeader = ({
           </div>
 
           {/* Right: Cart and Profile */}
-          <div className="flex items-center space-x-3 md:space-x-4">
+          <div className="flex items-center space-x-1.5 md:space-x-4">
             <button
               onClick={onSwitchAppClick}
-              className="flex items-center space-x-1.5 px-3 py-1.5 md:px-4 md:py-2 bg-gray-900 hover:bg-black text-white rounded-full transition-all duration-300 font-medium text-[11px] md:text-sm shadow-sm active:scale-95"
-              title="Switch to Grocery"
+              className="flex items-center space-x-1 px-2 py-1.5 md:px-4 md:py-2 bg-gray-900 hover:bg-black text-white rounded-full transition-all duration-300 font-medium text-[10px] md:text-sm shadow-sm active:scale-95"
+              title="Switch to Quick Commerce"
             >
-              <StorefrontIcon sx={{ fontSize: 18 }} className="text-white" />
-              <span className="hidden md:inline">Grocery</span>
-              <span className="md:hidden">QC</span>
-            </button>
-
-            <button
-              onClick={onProfileClick}
-              className="p-1.5 md:p-2 text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
-            >
-              <AccountCircleOutlinedIcon sx={{ fontSize: 26 }} />
+              <StorefrontIcon sx={{ fontSize: 16 }} className="text-white z-10" />
+              <div className="relative h-4 md:h-5 overflow-hidden flex items-center min-w-[85px] md:min-w-[110px]">
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={qcIndex}
+                    initial={{ y: 15, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: -15, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
+                    className="absolute whitespace-nowrap"
+                  >
+                    {qcLabels[qcIndex]}
+                  </motion.span>
+                </AnimatePresence>
+              </div>
             </button>
             
             <button
               onClick={onCartClick}
-              className="p-2 text-gray-700 hover:bg-gray-100 rounded-full transition-colors relative"
+              className="p-1.5 md:p-2 text-gray-700 hover:bg-gray-100 rounded-full transition-colors relative"
             >
               <ShoppingCartOutlinedIcon sx={{ fontSize: 24 }} />
               {cartCount > 0 && (
@@ -68,6 +83,13 @@ const SPHomeHeader = ({
                   {cartCount}
                 </span>
               )}
+            </button>
+
+            <button
+              onClick={onProfileClick}
+              className="p-1.5 md:p-2 text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <AccountCircleOutlinedIcon sx={{ fontSize: 26 }} />
             </button>
           </div>
         </div>

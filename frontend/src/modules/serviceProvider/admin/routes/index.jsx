@@ -4,8 +4,6 @@ import AdminLayout from '../components/layout/AdminLayout';
 import ProtectedRoute from '../../components/auth/ProtectedRoute';
 import PublicRoute from '../../components/auth/PublicRoute';
 
-// Login page (not lazy loaded for faster initial access)
-import Login from '../pages/login';
 
 // Lazy load admin pages for code splitting
 import Dashboard from '../pages/Dashboard';
@@ -35,8 +33,6 @@ const AdminRoutes = () => {
 
   return (
       <Routes>
-        {/* Login route - outside of layout (public) */}
-        <Route path="/login" element={<PublicRoute userType="admin"><Login /></PublicRoute>} />
 
         {/* Protected routes - inside layout */}
         <Route path="/" element={

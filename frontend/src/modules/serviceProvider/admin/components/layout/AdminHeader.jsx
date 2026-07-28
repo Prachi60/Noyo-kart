@@ -15,7 +15,7 @@ const AdminHeader = ({ onMenuClick }) => {
     try {
       await adminAuthService.logout();
       toast.success('Logged out successfully');
-      navigate('/sp/admin/login');
+      navigate('/admin/auth');
     } catch (error) {
       console.error('Logout error:', error);
       // Even if API call fails, clear SP admin session and redirect
@@ -26,7 +26,7 @@ const AdminHeader = ({ onMenuClick }) => {
       sessionStorage.removeItem('spAdminRefreshToken');
       sessionStorage.removeItem('spAdminData');
       toast.success('Logged out successfully');
-      navigate('/sp/admin/login');
+      navigate('/admin/auth');
     }
   };
 
@@ -173,7 +173,7 @@ const AdminHeader = ({ onMenuClick }) => {
         {/* Right: Notifications & Logout */}
         <div className="flex items-center gap-4">
           <Button
-            onClick={() => startTransition(() => navigate('/admin'))}
+            onClick={() => window.location.href = '/admin'}
             variant="ghost"
             size="sm"
             className="hidden lg:flex items-center bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:opacity-90 transition-all font-bold shadow-sm px-3 py-1.5"

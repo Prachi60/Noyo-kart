@@ -83,7 +83,7 @@ const BannerSection = ({ banners = [], onBack, onSearch, onShare, showStickyNav 
         </div>
       </div>
 
-      <div ref={bannerRef} className="relative w-full aspect-[1500/860]" style={{ overflow: 'hidden' }}>
+      <div ref={bannerRef} className="relative w-full aspect-[2/1]" style={{ overflow: 'hidden' }}>
         {/* Banner Container with Absolute Stacking */}
         {banners.map((banner, index) => {
           const isActive = index === currentIndex;

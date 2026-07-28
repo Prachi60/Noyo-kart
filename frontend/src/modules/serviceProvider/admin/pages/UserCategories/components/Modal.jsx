@@ -1,7 +1,18 @@
-import React from "react";
+  import React, { useEffect } from "react";
 import { FiX } from "react-icons/fi";
 
 const Modal = ({ isOpen, onClose, title, children, size = "md" }) => {
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const sizeClasses = {
@@ -23,7 +34,9 @@ const Modal = ({ isOpen, onClose, title, children, size = "md" }) => {
             <FiX className="w-5 h-5" />
           </button>
         </div>
-        <div className="overflow-y-auto flex-1 p-6">{children}</div>
+        <div className="overflow-y-auto flex-1 p-6" data-lenis-prevent="true">
+          {children}
+        </div>
       </div>
     </div>
   );

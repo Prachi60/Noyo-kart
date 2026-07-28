@@ -115,6 +115,10 @@ const WorkerRoutes = () => {
               <Route path="/settings" element={<ProtectedRoute userType="worker"><Settings /></ProtectedRoute>} />
               <Route path="/notifications" element={<ProtectedRoute userType="worker"><Notifications /></ProtectedRoute>} />
               <Route path="/wallet" element={<ProtectedRoute userType="worker"><Wallet /></ProtectedRoute>} />
+              <Route path="/earnings" element={<ProtectedRoute userType="worker"><Wallet /></ProtectedRoute>} />
+              
+              {/* Catch-all to prevent white screens on invalid routes */}
+              <Route path="*" element={<Navigate to="dashboard" replace />} />
             </Routes>
           </PageTransition>
         </Suspense>

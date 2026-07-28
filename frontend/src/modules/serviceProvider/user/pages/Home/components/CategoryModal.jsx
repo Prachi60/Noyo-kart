@@ -291,7 +291,7 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
                                     <img
                                       src={toAssetUrl(brand.iconUrl || brand.icon || brand.logo)}
                                       alt={brand.title}
-                                      className="w-14 h-14 object-contain group-hover:scale-110 transition-transform"
+                                      className="w-full h-full object-cover group-hover:scale-110 transition-transform"
                                       loading="lazy"
                                     />
                                   ) : (

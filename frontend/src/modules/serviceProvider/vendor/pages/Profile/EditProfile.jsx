@@ -616,7 +616,11 @@ const EditProfile = () => {
                     className="fixed inset-0 z-10 bg-transparent"
                     onClick={() => setIsCategoryOpen(false)}
                   />
-                  <div className="absolute z-20 w-full mt-2 bg-white rounded-xl shadow-xl border border-gray-100 max-h-60 overflow-y-auto">
+                  <div 
+                    data-lenis-prevent="true" 
+                    onWheel={(e) => e.stopPropagation()} 
+                    className="absolute z-20 w-full mt-2 bg-white rounded-xl shadow-xl border border-gray-100 max-h-60 overflow-y-auto"
+                  >
                     {categories.length > 0 ? (
                       categories.map((cat, index) => {
                         const isSelected = formData.serviceCategories.includes(cat.title);
