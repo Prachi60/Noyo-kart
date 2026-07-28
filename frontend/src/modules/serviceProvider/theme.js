@@ -11,6 +11,8 @@ export const userTheme = {
     gradient: 'linear-gradient(135deg, #347989 0%, #1d4d57 100%)',
   },
   backgroundGradient: 'linear-gradient(180deg, #F8FAFC 0%, #E2E8F0 100%)',
+  cardBorder: '1px solid #CBD5E1', // Sharp, visible border for cards
+  cardShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
 };
 
 export const workerTheme = {
