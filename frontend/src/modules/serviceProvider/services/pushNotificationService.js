@@ -58,7 +58,7 @@ async function getFCMToken() {
 
     return token || null;
   } catch (error) {
-    console.error('Error getting FCM token:', error);
+    // Silently fail in local/incognito environments to avoid spooking the user in dev tools
     return null;
   }
 }
@@ -114,7 +114,7 @@ async function registerFCMToken(userType = 'user', forceUpdate = false) {
     }
     return null;
   } catch (error) {
-    console.error('Error registering FCM token:', error);
+    console.warn('FCM registration skipped:', error.message);
     return null;
   }
 }
@@ -177,7 +177,7 @@ async function initializePushNotifications() {
     if (!('Notification' in window)) return;
     await registerServiceWorker();
   } catch (error) {
-    console.error('Error initializing push notifications:', error);
+    console.warn('Push initialization skipped:', error.message);
   }
 }
 
