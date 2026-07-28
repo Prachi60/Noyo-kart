@@ -4,6 +4,42 @@ import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import flutterBridge from '../../../utils/flutterBridge';
 
+const compressImage = (dataUrl) => {
+  return new Promise((resolve) => {
+    if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image')) {
+      return resolve(dataUrl);
+    }
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const MAX_WIDTH = 1200;
+      const MAX_HEIGHT = 1200;
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > MAX_WIDTH) {
+          height = Math.round((height * MAX_WIDTH) / width);
+          width = MAX_WIDTH;
+        }
+      } else {
+        if (height > MAX_HEIGHT) {
+          width = Math.round((width * MAX_HEIGHT) / height);
+          height = MAX_HEIGHT;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', 0.7));
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+};
+
 const WorkCompletionModal = ({ isOpen, onClose, job, onComplete, loading }) => {
   const [workPhotos, setWorkPhotos] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -18,13 +54,15 @@ const WorkCompletionModal = ({ isOpen, onClose, job, onComplete, loading }) => {
           const imageSrc = file.startsWith('data:') || file.startsWith('http') || file.startsWith('file:') 
             ? file 
             : `data:image/jpeg;base64,${file}`;
-          setWorkPhotos(prev => [...prev, imageSrc]);
+          const compressed = await compressImage(imageSrc);
+          setWorkPhotos(prev => [...prev, compressed]);
           setIsUploading(false);
           flutterBridge.hapticFeedback('success');
         } else {
           const reader = new FileReader();
-          reader.onloadend = () => {
-            setWorkPhotos(prev => [...prev, reader.result]);
+          reader.onloadend = async () => {
+            const compressed = await compressImage(reader.result);
+            setWorkPhotos(prev => [...prev, compressed]);
             setIsUploading(false);
             flutterBridge.hapticFeedback('success');
           };
@@ -47,7 +85,10 @@ const WorkCompletionModal = ({ isOpen, onClose, job, onComplete, loading }) => {
     const uploadPromises = files.map(file => {
       return new Promise((resolve) => {
         const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
+        reader.onloadend = async () => {
+          const compressed = await compressImage(reader.result);
+          resolve(compressed);
+        };
         reader.readAsDataURL(file);
       });
     });
