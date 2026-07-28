@@ -117,7 +117,27 @@ const flutterBridge = {
    */
   openCamera: async () => {
     if (isFlutter) {
-      return await callFlutterHandler('openCamera');
+      const response = await callFlutterHandler('openCamera');
+      if (response && typeof response === 'string') {
+        try {
+          if (response.startsWith('data:image') || (!response.startsWith('http') && !response.startsWith('file:') && response.length > 100)) {
+            const str = response.startsWith('data:') ? response : `data:image/jpeg;base64,${response}`;
+            const arr = str.split(',');
+            const match = arr[0].match(/:(.*?);/);
+            const mime = match ? match[1] : 'image/jpeg';
+            const bstr = atob(arr[1] || arr[0]); // fallback if missing 'data:' prefix initially
+            let n = bstr.length;
+            const u8arr = new Uint8Array(n);
+            while (n--) {
+              u8arr[n] = bstr.charCodeAt(n);
+            }
+            return new File([u8arr], `camera_${Date.now()}.jpg`, { type: mime });
+          }
+        } catch (e) {
+          console.error('[FlutterBridge] Error converting base64 to File:', e);
+        }
+      }
+      return response;
     }
     
     // Web fallback: resolve with null so standard input works

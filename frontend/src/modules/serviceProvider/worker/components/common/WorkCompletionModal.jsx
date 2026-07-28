@@ -14,13 +14,22 @@ const WorkCompletionModal = ({ isOpen, onClose, job, onComplete, loading }) => {
       setIsUploading(true);
       const file = await flutterBridge.openCamera();
       if (file) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setWorkPhotos(prev => [...prev, reader.result]);
+        if (typeof file === 'string') {
+          const imageSrc = file.startsWith('data:') || file.startsWith('http') || file.startsWith('file:') 
+            ? file 
+            : `data:image/jpeg;base64,${file}`;
+          setWorkPhotos(prev => [...prev, imageSrc]);
           setIsUploading(false);
           flutterBridge.hapticFeedback('success');
-        };
-        reader.readAsDataURL(file);
+        } else {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setWorkPhotos(prev => [...prev, reader.result]);
+            setIsUploading(false);
+            flutterBridge.hapticFeedback('success');
+          };
+          reader.readAsDataURL(file);
+        }
       } else {
         setIsUploading(false);
       }
@@ -46,6 +55,9 @@ const WorkCompletionModal = ({ isOpen, onClose, job, onComplete, loading }) => {
     Promise.all(uploadPromises).then(urls => {
       setWorkPhotos(prev => [...prev, ...urls]);
       setIsUploading(false);
+      if (e.target) {
+        e.target.value = '';
+      }
     });
   };
 
