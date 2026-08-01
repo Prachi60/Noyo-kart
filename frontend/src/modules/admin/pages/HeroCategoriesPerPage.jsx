@@ -377,6 +377,31 @@ export default function HeroCategoriesPerPage() {
                               className="w-full p-2 bg-slate-50 rounded-xl text-xs font-bold border-none outline-none"
                               placeholder="Subtitle (optional)"
                             />
+                            <div className="flex items-center gap-3 pt-1">
+                              <label className="text-[11px] font-bold text-slate-500">Banner Type:</label>
+                              <div className="flex bg-slate-100 p-1 rounded-lg">
+                                <button
+                                  type="button"
+                                  onClick={() => updateBannerItem(idx, { linkType: 'none' })}
+                                  className={cn(
+                                    "px-3 py-1 rounded-md text-[10px] font-bold transition-all",
+                                    item.linkType !== 'sp' ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                                  )}
+                                >
+                                  QC Banner
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => updateBannerItem(idx, { linkType: 'sp' })}
+                                  className={cn(
+                                    "px-3 py-1 rounded-md text-[10px] font-bold transition-all",
+                                    item.linkType === 'sp' ? "bg-[#0284c7] text-white shadow-sm" : "text-slate-500 hover:text-slate-700"
+                                  )}
+                                >
+                                  SP Banner
+                                </button>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>

@@ -541,131 +541,211 @@ const Checkout = () => {
         finalTimeDisplay = getTimeSlots().find(slot => slot.value === selectedTime)?.display || selectedTime;
       }
 
-      // Create booking request
-      toast.loading('Searching for nearby vendors...');
+      // Helper function to create booking and start search
+      const createBookingAndSearch = async (paymentDetails = null) => {
+        toast.loading(paymentDetails ? 'Payment successful! Creating booking...' : 'Creating booking...');
+        
+        // Ensure serviceId is a string
+        const serviceId = typeof firstItem.serviceId === 'object'
+          ? firstItem.serviceId._id || firstItem.serviceId.id
+          : firstItem.serviceId;
 
-      // Ensure serviceId is a string (handle populated cart data)
-      const serviceId = typeof firstItem.serviceId === 'object'
-        ? firstItem.serviceId._id || firstItem.serviceId.id
-        : firstItem.serviceId;
+        // Prepare bookedItems
+        const bookedItemsData = cartItems.map(item => ({
+          brandName: item.sectionTitle || item.brand || '',
+          brandIcon: item.sectionIcon || null,
+          card: {
+            title: item.card?.title || item.title || 'Unknown Service',
+            subtitle: item.card?.subtitle || item.description || '',
+            price: item.card?.price || item.price || 0,
+            originalPrice: item.card?.originalPrice || item.originalPrice || null,
+            duration: item.card?.duration || item.duration || '',
+            description: item.card?.description || item.description || '',
+            imageUrl: item.card?.imageUrl || item.icon || '',
+            features: item.card?.features || []
+          },
+          quantity: item.serviceCount || 1
+        }));
 
-      // Prepare bookedItems array matching Service catalog structure
-      // Prepare bookedItems array matching Service catalog structure
-      const bookedItemsData = cartItems.map(item => ({
-        brandName: item.sectionTitle || item.brand || '',
-        brandIcon: item.sectionIcon || null,
-        card: {
-          title: item.card?.title || item.title || 'Unknown Service',
-          subtitle: item.card?.subtitle || item.description || '',
-          price: item.card?.price || item.price || 0,
-          originalPrice: item.card?.originalPrice || item.originalPrice || null,
-          duration: item.card?.duration || item.duration || '',
-          description: item.card?.description || item.description || '',
-          imageUrl: item.card?.imageUrl || item.icon || '',
-          features: item.card?.features || []
-        },
-        quantity: item.serviceCount || 1
-      }));
+        const bookingResponse = await bookingService.create({
+          bookingType,
+          serviceId: serviceId,
+          address: addressObj,
+          scheduledDate: finalDate.toISOString(),
+          scheduledTime: finalTimeDisplay,
+          timeSlot: timeSlotObj,
+          paymentMethod: paymentDetails ? 'online' : (amountToPay === 0 ? 'plan_benefit' : 'pay_at_home'),
+          amount: amountToPay,
+          basePrice: totalOriginalPrice,
+          discount: savings,
+          tax: taxesAndFee,
+          visitationFee: finalVisitedFee,
+          serviceCategory: firstItem.categoryTitle || firstItem.category || 'General',
+          categoryIcon: firstItem.categoryIcon || firstItem.icon || null,
+          brandName: firstItem.sectionTitle || firstItem.brand || '',
+          brandIcon: firstItem.sectionIcon || null,
+          bookedItems: bookedItemsData,
+          paymentDetails
+        });
 
-
-
-      const bookingResponse = await bookingService.create({
-        bookingType, // 'instant' or 'scheduled'
-        serviceId: serviceId,
-        address: addressObj,
-        scheduledDate: finalDate.toISOString(),
-        scheduledTime: finalTimeDisplay,
-        timeSlot: timeSlotObj,
-        // userNotes: null, // Removed per request
-        paymentMethod: amountToPay === 0 ? 'plan_benefit' : 'pay_at_home',
-        amount: amountToPay,
-
-        // Pass Full Breakdown to Backend
-        basePrice: totalOriginalPrice,
-        discount: savings,
-        tax: taxesAndFee,
-        visitationFee: finalVisitedFee,
-
-        // Metadata for better data capture
-        serviceCategory: firstItem.categoryTitle || firstItem.category || 'General',
-        categoryIcon: firstItem.categoryIcon || firstItem.icon || null,
-        brandName: firstItem.sectionTitle || firstItem.brand || '',
-        brandIcon: firstItem.sectionIcon || null,
-
-        bookedItems: bookedItemsData
-      });
-
-      if (!bookingResponse.success) {
-        toast.dismiss();
-        toast.error(bookingResponse.message || 'Failed to search for vendors');
-        setCurrentStep('details');
-        setSearchingVendors(false);
-        setShowVendorModal(false);
-        return;
-      }
-
-      const booking = bookingResponse.data;
-      setBookingRequest(booking);
-      toast.dismiss();
-
-      // Clear cart immediately as search starts (consumes items) - ONLY if vendors found
-      if (!bookingResponse.noVendorsFound) {
-        try {
-          if (category) {
-            await removeCategoryGlobal(category);
-          } else {
-            await clearCartGlobal();
-          }
-          setCartItems([]);
-        } catch (err) {
-          console.error('Failed to clear cart after search start', err);
-        }
-      }
-
-      // If no vendors found, redirect or refresh immediately
-      if (bookingResponse.noVendorsFound) {
-        toast.dismiss();
-        const bookingId = booking?._id || booking?.id;
-
-        // Ensure we stop searching and close the modal
-        setSearchingVendors(false);
-        setShowVendorModal(false);
-
-        if (bookingId) {
-          toast.error('No vendors currently available for this service.');
-
-          // Auto-cancel and refresh
-          const cancelAndRefresh = async () => {
-            try {
-              await bookingService.cancel(bookingId, 'Initial search found no available vendors');
-              setTimeout(() => {
-                window.location.reload();
-              }, 2000);
-            } catch (err) {
-              console.error('Auto-cancel failed:', err);
-              window.location.reload();
-            }
-          };
-          cancelAndRefresh();
-        } else {
-          // Fallback if ID is missing for some reason
+        if (!bookingResponse.success) {
+          toast.dismiss();
+          toast.error(bookingResponse.message || 'Failed to create booking');
           setCurrentStep('details');
-          toast.error('Search failed. Please try again.');
-          setTimeout(() => window.location.reload(), 2000);
+          setSearchingVendors(false);
+          setShowVendorModal(false);
+          return;
         }
-      } else {
-        // Move to waiting state - alerts sent to nearby vendors
-        setCurrentStep('waiting');
-        toast.success('Finding nearby vendors... Alerts sent to vendors within 10km!');
-      }
 
-      // REMOVED local setCartItems([]) - The summary should remain visible while searching
-      // The cart is already cleared in server database by the backend and previous API call.
+        const booking = bookingResponse.data;
+        setBookingRequest(booking);
+        toast.dismiss();
+
+        // Clear cart
+        if (!bookingResponse.noVendorsFound) {
+          try {
+            if (category) {
+              await removeCategoryGlobal(category);
+            } else {
+              await clearCartGlobal();
+            }
+            setCartItems([]);
+          } catch (err) {
+            console.error('Failed to clear cart', err);
+          }
+        }
+
+        // Handle vendors found or not found
+        if (bookingResponse.noVendorsFound) {
+          toast.dismiss();
+          const bookingId = booking?._id || booking?.id;
+          setSearchingVendors(false);
+          setShowVendorModal(false);
+
+          if (bookingId) {
+            toast.error('No vendors currently available for this service.');
+            const cancelAndRefresh = async () => {
+              try {
+                await bookingService.cancel(bookingId, 'Initial search found no available vendors');
+                setTimeout(() => window.location.reload(), 2000);
+              } catch (err) {
+                console.error('Auto-cancel failed:', err);
+                window.location.reload();
+              }
+            };
+            cancelAndRefresh();
+          } else {
+            setCurrentStep('details');
+            toast.error('Search failed. Please try again.');
+            setTimeout(() => window.location.reload(), 2000);
+          }
+        } else {
+          setCurrentStep('waiting');
+          toast.success('Finding nearby vendors... Alerts sent to vendors within 10km!');
+        }
+      };
+
+      if (amountToPay > 0 && paymentMethod === 'online') {
+        toast.loading(`Initiating advance payment of ₹${amountToPay}...`);
+        const orderResponse = await paymentService.createPrebookingOrder(amountToPay);
+        
+        if (!orderResponse.success) {
+          toast.dismiss();
+          toast.error(orderResponse.message || 'Failed to initialize payment');
+          setCurrentStep('details');
+          setSearchingVendors(false);
+          setShowVendorModal(false);
+          return;
+        }
+        
+        toast.dismiss();
+        
+        const razorpayKey = orderResponse.data?.key || import.meta.env.VITE_RAZORPAY_KEY_ID;
+        if (!razorpayKey) {
+          toast.error('Razorpay key not configured');
+          setCurrentStep('details');
+          setSearchingVendors(false);
+          setShowVendorModal(false);
+          return;
+        }
+
+        const loadRazorpay = () => {
+          return new Promise((resolve) => {
+            if (window.Razorpay) {
+              resolve(true);
+              return;
+            }
+            const script = document.createElement('script');
+            script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+            script.onload = () => resolve(true);
+            script.onerror = () => resolve(false);
+            document.body.appendChild(script);
+          });
+        };
+
+        const res = await loadRazorpay();
+        if (!res || !window.Razorpay) {
+          toast.error('Razorpay SDK not loaded');
+          setCurrentStep('details');
+          setSearchingVendors(false);
+          setShowVendorModal(false);
+          return;
+        }
+
+        let formattedPhone = (contactDetails.phone || userPhone || '').replace(/\D/g, '').slice(-10);
+        if (!formattedPhone || formattedPhone === '9999999999' || formattedPhone === '0000000000' || formattedPhone.length < 10) {
+            formattedPhone = '9876543210';
+        }
+
+        const options = {
+          key: razorpayKey,
+          amount: orderResponse.data.amount * 100,
+          currency: orderResponse.data.currency || 'INR',
+          order_id: orderResponse.data.orderId,
+          name: 'Homestr',
+          description: `Advance Payment for ${firstItem.title || 'service'}`,
+          handler: async function (response) {
+            try {
+              await createBookingAndSearch(response);
+            } catch (err) {
+              toast.dismiss();
+              toast.error('Failed to create booking after payment');
+              setCurrentStep('details');
+              setSearchingVendors(false);
+              setShowVendorModal(false);
+            }
+          },
+          prefill: {
+            name: contactDetails.name || JSON.parse(localStorage.getItem('userData'))?.name || 'User',
+            email: JSON.parse(localStorage.getItem('userData'))?.email || 'customer@example.com',
+            contact: formattedPhone
+          },
+          theme: {
+            color: themeColors.button
+          }
+        };
+
+        const razorpay = new window.Razorpay(options);
+        razorpay.on('payment.failed', function (response) {
+          toast.dismiss();
+          toast.error(`Payment failed: ${response.error.description || 'Unknown error'}`);
+          setCurrentStep('details');
+          setSearchingVendors(false);
+          setShowVendorModal(false);
+        });
+        
+        // When modal is closed without payment
+        // We can't perfectly detect this, but if we wanted to we could handle modal close.
+        
+        razorpay.open();
+      } else {
+        await createBookingAndSearch(null);
+      }
 
     } catch (error) {
       toast.dismiss();
-      console.error('Search vendors error:', error);
-      toast.error('Failed to search for vendors. Please try again.');
+      console.error('Checkout error:', error);
+      toast.error('Failed to process checkout. Please try again.');
       setCurrentStep('details');
       setSearchingVendors(false);
       setShowVendorModal(false);
@@ -693,7 +773,7 @@ const Checkout = () => {
       toast.dismiss();
 
       // Get Razorpay key
-      const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
+      const razorpayKey = orderResponse.data?.key || import.meta.env.VITE_RAZORPAY_KEY_ID;
       if (!razorpayKey) {
         toast.error('Razorpay key not configured');
         return;
@@ -702,6 +782,11 @@ const Checkout = () => {
       if (!window.Razorpay) {
         toast.error('Razorpay SDK not loaded');
         return;
+      }
+
+      let formattedPhone = (contactDetails.phone || userPhone || '').replace(/\D/g, '').slice(-10);
+      if (!formattedPhone || formattedPhone === '9999999999' || formattedPhone === '0000000000' || formattedPhone.length < 10) {
+          formattedPhone = '9876543210';
       }
 
       const options = {
@@ -750,8 +835,8 @@ const Checkout = () => {
         },
         prefill: {
           name: contactDetails.name || JSON.parse(localStorage.getItem('userData'))?.name || 'User',
-          email: JSON.parse(localStorage.getItem('userData'))?.email || '',
-          contact: contactDetails.phone || userPhone
+          email: JSON.parse(localStorage.getItem('userData'))?.email || 'customer@example.com',
+          contact: formattedPhone
         },
         theme: {
           color: themeColors.button
@@ -1148,7 +1233,7 @@ const Checkout = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white pb-80">
+    <div className="min-h-screen bg-white pb-[400px]">
       {/* Header */}
       <header className="bg-white">
         <div className="px-4 pt-4 pb-3">
@@ -1433,7 +1518,7 @@ const Checkout = () => {
       </main>
 
       {/* Bottom Action Button */}
-      <div className="fixed bottom-[84px] lg:bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
 
         {/* Booking Type Toggle */}
         <div className="px-4 pt-3 pb-0">
@@ -1529,6 +1614,44 @@ const Checkout = () => {
           )}
         </div>
 
+        {/* Payment Method Selector */}
+        {!plan && totalAmount > 0 && (
+          <div className="px-4 py-3 border-b border-gray-100 bg-white">
+            <p className="text-sm font-bold text-gray-800 mb-2">Payment Method</p>
+            <div className="flex flex-col gap-2">
+              <label className="flex items-center gap-3 p-2.5 rounded-lg border border-gray-200 cursor-pointer transition-colors" style={{ borderColor: paymentMethod === 'online' ? themeColors.button : '#e5e7eb', backgroundColor: paymentMethod === 'online' ? `${themeColors.button}10` : 'transparent' }}>
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="online"
+                  checked={paymentMethod === 'online'}
+                  onChange={() => setPaymentMethod('online')}
+                  className="w-4 h-4 text-teal-600 focus:ring-teal-500 border-gray-300"
+                />
+                <div>
+                  <span className="block text-sm font-bold text-gray-900">Pay Online (Recommended)</span>
+                  <span className="block text-xs text-gray-500">Pay advance via UPI / Cards securely</span>
+                </div>
+              </label>
+              
+              <label className="flex items-center gap-3 p-2.5 rounded-lg border border-gray-200 cursor-pointer transition-colors" style={{ borderColor: paymentMethod === 'pay_at_home' ? themeColors.button : '#e5e7eb', backgroundColor: paymentMethod === 'pay_at_home' ? `${themeColors.button}10` : 'transparent' }}>
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="pay_at_home"
+                  checked={paymentMethod === 'pay_at_home'}
+                  onChange={() => setPaymentMethod('pay_at_home')}
+                  className="w-4 h-4 text-teal-600 focus:ring-teal-500 border-gray-300"
+                />
+                <div>
+                  <span className="block text-sm font-bold text-gray-900">Pay at Home (COD)</span>
+                  <span className="block text-xs text-gray-500">Pay securely to the vendor after work</span>
+                </div>
+              </label>
+            </div>
+          </div>
+        )}
+
         <div className="p-4">
           <button
             onClick={plan ? handlePlanPayment :
@@ -1549,9 +1672,6 @@ const Checkout = () => {
           </button>
         </div>
       </div>
-
-      {/* Live Booking Status Card (Visible when minimized) */}
-      <LiveBookingCard key={bookingRequest?._id || 'default'} />
 
       {/* Vendor Search Modal */}
       <VendorSearchModal
@@ -1653,8 +1773,18 @@ const Checkout = () => {
         onClose={() => setShowTimeSlotModal(false)}
         selectedDate={selectedDate}
         selectedTime={selectedTime}
-        onDateSelect={setSelectedDate}
-        onTimeSelect={setSelectedTime}
+        onDateSelect={(date) => {
+          setSelectedDate(date);
+          setSelectedTime(null);
+        }}
+        onTimeSelect={(time) => {
+          setSelectedTime(time);
+          if (selectedDate) {
+            setTimeout(() => {
+              handleTimeSlotSave(selectedDate, time);
+            }, 300);
+          }
+        }}
         onSave={handleTimeSlotSave}
         getDates={getDates}
         getTimeSlots={getTimeSlots}

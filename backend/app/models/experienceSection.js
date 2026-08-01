@@ -7,7 +7,7 @@ const bannerItemSchema = new mongoose.Schema(
     subtitle: { type: String, trim: true },
     linkType: {
       type: String,
-      enum: ["none", "header", "category", "subcategory", "product", "url"],
+      enum: ["none", "header", "category", "subcategory", "product", "url", "sp"],
       default: "none",
     },
     linkValue: { type: String, trim: true },

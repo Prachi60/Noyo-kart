@@ -11,7 +11,8 @@ import {
   confirmPayAtHome,
   createPlanOrder,
   verifyPlanPayment,
-  getUpgradeDetails
+  getUpgradeDetails,
+  createPrebookingOrder
 } from '../controllers/paymentController.js';
 
 const router = Router();
@@ -36,6 +37,7 @@ const refundValidation = [
 ];
 
 // Routes
+router.post('/create-prebooking-order', authenticate, isUser, createPrebookingOrder);
 router.post('/create-order', authenticate, isUser, createOrderValidation, createPaymentOrder);
 router.post('/verify', authenticate, isUser, verifyPaymentValidation, verifyPaymentWebhook);
 router.post('/wallet', authenticate, isUser, walletPaymentValidation, processWalletPayment);

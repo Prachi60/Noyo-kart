@@ -1,7 +1,10 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 const ExperienceBannerCarousel = ({ section, items, fullWidth = false, slideGap = 0, edgeToEdge = false }) => {
+  const navigate = useNavigate();
+
   if (!items.length) return null;
 
   const effectiveSlideGap = fullWidth ? 0 : slideGap;
@@ -55,8 +58,20 @@ const ExperienceBannerCarousel = ({ section, items, fullWidth = false, slideGap 
         {loopedItems.map((banner, idx) => (
           <div
             key={idx}
+            onClick={() => {
+              if (banner.linkType === 'sp') {
+                navigate('/sp/user');
+              } else if (banner.linkType === 'url' && banner.linkValue) {
+                window.open(banner.linkValue, '_blank');
+              } else if (banner.linkType === 'category' && banner.linkValue) {
+                navigate(`/category/${banner.linkValue}`);
+              } else if (banner.linkType === 'product' && banner.linkValue) {
+                navigate(`/product/${banner.linkValue}`);
+              }
+            }}
             className={cn(
               "relative shrink-0 overflow-hidden bg-slate-100 flex items-center justify-center box-border",
+              (banner.linkType && banner.linkType !== 'none') && "cursor-pointer",
               fullWidth ? "h-[190px] rounded-none px-0" : "h-[190px] px-4 md:px-8"
             )}
             style={{

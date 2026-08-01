@@ -5,6 +5,11 @@ import api from './api';
  */
 
 export const paymentService = {
+  createPrebookingOrder: async (amount) => {
+    const response = await api.post('/payments/create-prebooking-order', { amount });
+    return response.data;
+  },
+
   createOrder: async (bookingId) => {
     const response = await api.post('/payments/create-order', { bookingId });
     return response.data;

@@ -14,14 +14,39 @@ import {
   FiLoader,
   FiArrowLeft,
   FiBell,
-  FiXCircle
+  FiXCircle,
+  FiUser,
+  FiNavigation,
+  FiShield
 } from 'react-icons/fi';
+import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
+import { motion, AnimatePresence } from 'framer-motion';
 import { bookingService } from '../../../services/bookingService';
 import NotificationBell from '../../components/common/NotificationBell';
 import ConfirmDialog from '../../../vendor/components/common/ConfirmDialog';
 
-// Inline Searching Animation Component
-const SearchingAnimation = () => {
+const mapStyles = [
+  { "elementType": "geometry", "stylers": [{ "color": "#f5f5f5" }] },
+  { "elementType": "labels.icon", "stylers": [{ "visibility": "off" }] },
+  { "elementType": "labels.text.fill", "stylers": [{ "color": "#616161" }] },
+  { "elementType": "labels.text.stroke", "stylers": [{ "color": "#f5f5f5" }] },
+  { "featureType": "administrative.land_parcel", "elementType": "labels.text.fill", "stylers": [{ "color": "#bdbdbd" }] },
+  { "featureType": "poi", "elementType": "geometry", "stylers": [{ "color": "#eeeeee" }] },
+  { "featureType": "poi", "elementType": "labels.text.fill", "stylers": [{ "color": "#757575" }] },
+  { "featureType": "poi.park", "elementType": "geometry", "stylers": [{ "color": "#e5e5e5" }] },
+  { "featureType": "road", "elementType": "geometry", "stylers": [{ "color": "#ffffff" }] },
+  { "featureType": "road.arterial", "elementType": "labels.text.fill", "stylers": [{ "color": "#757575" }] },
+  { "featureType": "road.highway", "elementType": "geometry", "stylers": [{ "color": "#dadada" }] },
+  { "featureType": "road.highway", "elementType": "labels.text.fill", "stylers": [{ "color": "#616161" }] },
+  { "featureType": "road.local", "elementType": "labels.text.fill", "stylers": [{ "color": "#9e9e9e" }] },
+  { "featureType": "transit.line", "elementType": "geometry", "stylers": [{ "color": "#e5e5e5" }] },
+  { "featureType": "transit.station", "elementType": "geometry", "stylers": [{ "color": "#eeeeee" }] },
+  { "featureType": "water", "elementType": "geometry", "stylers": [{ "color": "#c9c9c9" }] },
+  { "featureType": "water", "elementType": "labels.text.fill", "stylers": [{ "color": "#9e9e9e" }] }
+];
+
+const SearchingMapUI = ({ booking, onBack, onCancel, apiKey }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
   const [dots, setDots] = useState('.');
 
   useEffect(() => {
@@ -31,61 +56,180 @@ const SearchingAnimation = () => {
     return () => clearInterval(interval);
   }, []);
 
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: apiKey,
+  });
+
+  const center = booking?.address?.lat && booking?.address?.lng 
+    ? { lat: parseFloat(booking.address.lat), lng: parseFloat(booking.address.lng) }
+    : { lat: 28.6139, lng: 77.2090 }; // default Delhi
+
   return (
-    <div className="flex flex-col items-center justify-center py-8 px-6 relative">
-      {/* Map-like Background (Subtle) */}
-      <div className="absolute inset-0 opacity-5 pointer-events-none">
-        <div className="w-full h-full" style={{
-          backgroundImage: 'radial-gradient(#000 1px, transparent 1px)',
-          backgroundSize: '20px 20px'
-        }}></div>
+    <div className="fixed inset-0 z-50 bg-white">
+      {/* Header Over Map */}
+      <div className="absolute top-4 left-4 right-4 z-20 flex items-start gap-3 pointer-events-none">
+        <button 
+          onClick={onBack}
+          className="pointer-events-auto w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-all shrink-0"
+        >
+          <FiArrowLeft className="w-5 h-5 text-gray-800" />
+        </button>
+        
+        <div className="pointer-events-auto flex-1 bg-white rounded-3xl shadow-lg p-3 flex items-center gap-3 max-w-[280px]">
+          <div className="w-10 h-10 rounded-full border border-teal-200 flex items-center justify-center bg-teal-50 shrink-0">
+            <div className="w-5 h-5 border-[2.5px] border-teal-500 rounded-full border-t-transparent animate-spin"></div>
+          </div>
+          <div className="min-w-0">
+            <h3 className="text-[13px] font-bold text-gray-900 truncate">Searching nearby experts...</h3>
+            <p className="text-[10px] text-gray-500 font-medium tracking-wide truncate">Estimated wait: 30-60 sec</p>
+          </div>
+        </div>
       </div>
 
-      {/* Central Radar Animation */}
-      <div className="relative w-48 h-48 flex items-center justify-center mb-6">
-        {/* Outer Ripples */}
-        <div className="absolute inset-0 rounded-full border-2 opacity-20 animate-ping"
-          style={{ borderColor: themeColors.brand.teal, animationDuration: '3s' }}></div>
-        <div className="absolute inset-4 rounded-full border opacity-40 animate-ping"
-          style={{ borderColor: themeColors.brand.teal, animationDuration: '3s', animationDelay: '0.6s' }}></div>
+      {/* Map Background */}
+      <div className="absolute inset-0 z-0">
+        {isLoaded ? (
+           <GoogleMap
+             mapContainerStyle={{ width: '100%', height: '100%' }}
+             center={center}
+             zoom={14}
+             options={{
+               styles: mapStyles,
+               disableDefaultUI: true,
+               gestureHandling: 'greedy'
+             }}
+           >
+             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center pointer-events-none">
+                <div className="w-12 h-12 bg-gray-900 rounded-full flex items-center justify-center border-4 border-white shadow-xl">
+                  <FiHome className="text-white w-5 h-5" />
+                </div>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-teal-500/10 rounded-full animate-ping z-[-1]"></div>
+             </div>
+           </GoogleMap>
+        ) : (
+           <div className="w-full h-full bg-gray-100 animate-pulse"></div>
+        )}
+      </div>
 
-        {/* Rotating Scanner Gradient */}
-        <div className="absolute inset-0 rounded-full animate-spin opacity-30"
-          style={{
-            background: `conic-gradient(transparent 180deg, ${themeColors.brand.teal})`,
-            animationDuration: '4s'
-          }}></div>
+      {/* Search Radius Indicator on Map */}
+      <motion.div 
+        animate={{ opacity: isExpanded ? 0 : 1, y: isExpanded ? 20 : 0 }}
+        className="absolute bottom-[20vh] left-4 z-10 bg-white/90 backdrop-blur-sm rounded-3xl p-2 pr-4 flex items-center gap-3 shadow-lg pointer-events-none"
+      >
+        <div className="w-8 h-8 rounded-full bg-teal-50 flex items-center justify-center">
+          <FiNavigation className="text-teal-600 w-4 h-4 -rotate-45" />
+        </div>
+        <div>
+          <p className="text-[9px] font-bold text-gray-500 tracking-wider">SEARCH RADIUS</p>
+          <p className="text-sm font-black text-teal-600">5 KM</p>
+        </div>
+      </motion.div>
 
-        {/* Center Core */}
-        <div className="relative z-10 w-20 h-20 bg-white rounded-full shadow-lg flex items-center justify-center p-1">
-          <div className="w-full h-full rounded-full flex items-center justify-center relative overflow-hidden"
-            style={{ background: `linear-gradient(135deg, ${themeColors.brand.teal}15, ${themeColors.brand.teal}05)` }}>
-            <div className="w-3 h-3 rounded-full shadow-lg animate-pulse"
-              style={{ backgroundColor: themeColors.brand.teal }}></div>
-            <div className="absolute w-full h-full animate-pulse opacity-30 rounded-full"
-              style={{ backgroundColor: themeColors.brand.teal }}></div>
+      {/* Bottom Sheet */}
+      <motion.div 
+        className="absolute bottom-0 left-0 right-0 bg-white rounded-t-[32px] shadow-[0_-8px_30px_rgba(0,0,0,0.12)] z-20 flex flex-col"
+        animate={{ height: isExpanded ? '75vh' : 'auto' }}
+        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+      >
+        {/* Drag handle area */}
+        <div 
+          className="p-4 pb-2 cursor-pointer flex flex-col items-center"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          <div className="w-12 h-1.5 bg-gray-200 rounded-full mb-6"></div>
+          
+          <div className="flex items-center justify-between w-full px-2">
+            <h3 className="text-xl font-bold text-gray-900 tracking-tight">Searching nearby experts</h3>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-teal-500 animate-pulse delay-75"></div>
+              <div className="w-2 h-2 rounded-full bg-teal-500 animate-pulse delay-150"></div>
+              <div className="w-2 h-2 rounded-full bg-teal-500 animate-pulse delay-300"></div>
+            </div>
           </div>
         </div>
 
-        {/* Floating Dots Animation */}
-        <div className="absolute top-8 right-8 w-2 h-2 rounded-full animate-bounce opacity-50" style={{ backgroundColor: themeColors.brand.orange, animationDelay: '0.2s' }}></div>
-        <div className="absolute bottom-6 left-6 w-2 h-2 rounded-full animate-bounce opacity-50" style={{ backgroundColor: themeColors.brand.yellow, animationDelay: '1.5s' }}></div>
-      </div>
+        {/* Expanded Content */}
+        <div className="px-6 pb-8 overflow-y-auto flex-1 mt-2">
+          {/* Steps */}
+          <div className="mt-4 space-y-7">
+             <div className="flex items-center gap-4 relative">
+               <div className="absolute left-3 top-8 bottom-[-20px] w-0.5 bg-gray-200"></div>
+               <div className="w-6 h-6 rounded-full bg-teal-500 flex items-center justify-center relative z-10 shadow-sm shadow-teal-500/30 shrink-0">
+                 <FiCheckCircle className="text-white w-4 h-4" />
+               </div>
+               <span className="font-bold text-gray-900 text-[15px]">Booking Created</span>
+             </div>
+             
+             <div className="flex items-center gap-4 relative">
+               <div className="absolute left-3 top-8 bottom-[-20px] w-0.5 bg-gray-100"></div>
+               <div className="w-6 h-6 rounded-full border-2 border-blue-500 border-t-transparent animate-spin relative z-10 bg-white shrink-0"></div>
+               <span className="font-semibold text-gray-600 text-[15px]">Searching Nearby Workers</span>
+             </div>
 
-      {/* Status Text */}
-      <div className="text-center relative z-20">
-        <h3 className="text-lg font-bold text-gray-900 mb-2">Searching nearby experts</h3>
-        <p className="text-gray-500 text-sm max-w-[240px] mx-auto leading-relaxed">
-          Searching within 10km radius{dots}
-        </p>
-      </div>
+             <div className="flex items-center gap-4 relative opacity-50">
+               <div className="absolute left-3 top-8 bottom-[-20px] w-0.5 bg-gray-100"></div>
+               <div className="w-6 h-6 rounded-full border-[2.5px] border-gray-300 relative z-10 bg-white shrink-0"></div>
+               <span className="font-semibold text-gray-500 text-[15px]">Checking Availability</span>
+             </div>
 
-      {/* Bottom Pill */}
-      <div className="mt-4">
-        <div className="px-4 py-1.5 bg-gray-50 rounded-full border border-gray-100 text-xs font-medium text-gray-400">
-          Process runs in background
+             <div className="flex items-center gap-4 relative opacity-50">
+               <div className="absolute left-3 top-8 bottom-[-20px] w-0.5 bg-gray-100"></div>
+               <div className="w-6 h-6 rounded-full border-[2.5px] border-gray-300 relative z-10 bg-white shrink-0"></div>
+               <span className="font-semibold text-gray-500 text-[15px]">Waiting For Acceptance</span>
+             </div>
+
+             <div className="flex items-center gap-4 relative opacity-50">
+               <div className="w-6 h-6 rounded-full border-[2.5px] border-gray-300 relative z-10 bg-white shrink-0"></div>
+               <span className="font-semibold text-gray-500 text-[15px]">Technician Assigned</span>
+             </div>
+          </div>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 gap-3 mt-10">
+             <div className="bg-gray-50 p-4 rounded-[20px] flex flex-col items-start gap-1">
+               <div className="flex items-center gap-2 text-gray-500">
+                  <FiUser className="w-4 h-4" />
+                  <span className="text-[11px] font-bold uppercase tracking-wider">Workers Found</span>
+               </div>
+               <span className="text-2xl font-black text-gray-900 ml-1">0</span>
+             </div>
+             <div className="bg-gray-50 p-4 rounded-[20px] flex flex-col items-start gap-1">
+               <div className="flex items-center gap-2 text-gray-500">
+                  <FiCheckCircle className="w-4 h-4 text-green-500" />
+                  <span className="text-[11px] font-bold uppercase tracking-wider">Available</span>
+               </div>
+               <span className="text-2xl font-black text-gray-900 ml-1">0</span>
+             </div>
+             <div className="bg-gray-50 p-4 rounded-[20px] flex flex-col items-start gap-1">
+               <div className="flex items-center gap-2 text-gray-500">
+                  <FiNavigation className="w-4 h-4 text-blue-500 -rotate-45" />
+                  <span className="text-[11px] font-bold uppercase tracking-wider">Requests Sent</span>
+               </div>
+               <span className="text-2xl font-black text-gray-900 ml-1">0</span>
+             </div>
+             <div className="bg-gray-50 p-4 rounded-[20px] flex flex-col items-start gap-1">
+               <div className="flex items-center gap-2 text-gray-500">
+                  <FiMapPin className="w-4 h-4 text-purple-500" />
+                  <span className="text-[11px] font-bold uppercase tracking-wider">Radius</span>
+               </div>
+               <span className="text-2xl font-black text-gray-900 ml-1">5 KM</span>
+             </div>
+          </div>
+
+          <div className="mt-6 bg-teal-50/50 rounded-2xl p-4 flex items-center justify-center gap-2 border border-teal-100/50">
+             <FiShield className="text-teal-600 w-5 h-5 shrink-0" />
+             <span className="text-[13px] font-bold text-gray-700">Verified & Background Checked Experts</span>
+          </div>
+
+          <button 
+            onClick={onCancel}
+            className="w-full mt-6 py-4 rounded-2xl font-bold text-red-500 bg-red-50 hover:bg-red-100 transition-colors"
+          >
+            Cancel Request
+          </button>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };
@@ -235,6 +379,29 @@ const BookingConfirmation = () => {
     }
   };
 
+  if (isSearching) {
+    return (
+      <>
+        <SearchingMapUI 
+          booking={booking} 
+          onBack={() => navigate(-1)} 
+          onCancel={() => setConfirmDialog(true)} 
+          apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY} 
+        />
+        <ConfirmDialog
+          isOpen={confirmDialog}
+          onClose={() => setConfirmDialog(false)}
+          onConfirm={handleCancelBooking}
+          title="Cancel Booking Request"
+          message="Are you sure you want to cancel this booking search?"
+          confirmLabel="Yes, Cancel"
+          cancelLabel="No, Keep It"
+          type="danger"
+        />
+      </>
+    );
+  }
+
   return (
     <div className="min-h-screen pb-20 relative bg-white">
       {/* Refined Brand Mesh Gradient Background */}
@@ -276,13 +443,6 @@ const BookingConfirmation = () => {
         </header>
 
         <main className="px-4 py-6">
-          {/* Searching Animation - Show at top when searching for vendor */}
-          {isSearching && (
-            <div className="bg-white rounded-2xl shadow-md border border-gray-100 mb-4 overflow-hidden">
-              <SearchingAnimation />
-            </div>
-          )}
-
           {/* Success Icon - Show when confirmed */}
           {!isSearching && ['confirmed', 'assigned', 'journey_started', 'work_in_progress', 'visited', 'work_done', 'completed'].includes(booking?.status?.toLowerCase()) && (
             <div className="flex flex-col items-center justify-center mb-6">

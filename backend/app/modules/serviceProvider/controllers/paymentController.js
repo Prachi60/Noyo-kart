@@ -9,22 +9,125 @@ import { validationResult } from 'express-validator';
 import { SP_PAYMENT_STATUS, SP_BOOKING_STATUS } from '../constants.js';
 import { createNotification } from './notificationController.js';
 
-// Note: Razorpay service would need to be configured at the app level
-// These are placeholder imports - integrate with your payment gateway
+import Razorpay from 'razorpay';
+import crypto from 'crypto';
+
+// Initialize Razorpay
+const getRazorpayInstance = () => {
+  if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+    console.error('Razorpay keys missing from environment');
+    throw new Error('Razorpay keys not configured');
+  }
+  return new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET,
+  });
+};
+
 const createOrder = async (amount, currency, receipt, notes) => {
-  // TODO: Integrate with razorpay or other payment gateway
-  console.warn('[Payment] createOrder not yet integrated with payment gateway');
-  return { success: false, error: 'Payment gateway not configured' };
+  try {
+    const razorpay = getRazorpayInstance();
+    const options = {
+      amount: Math.round(amount * 100), // amount in smallest currency unit
+      currency,
+      receipt,
+      notes
+    };
+    const order = await razorpay.orders.create(options);
+    return { success: true, orderId: order.id, amount: order.amount, currency: order.currency };
+  } catch (error) {
+    console.error('[Payment] Razorpay createOrder error:', error);
+    const errorMsg = error.error ? error.error.description : (error.message || JSON.stringify(error));
+    return { success: false, error: errorMsg };
+  }
 };
 
 const verifyPaymentSignature = (orderId, paymentId, signature) => {
-  // TODO: Integrate with razorpay
-  return false;
+  try {
+    const body = orderId + "|" + paymentId;
+    const expectedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .update(body.toString())
+      .digest("hex");
+
+    return expectedSignature === signature;
+  } catch (error) {
+    console.error('[Payment] Signature verification error:', error);
+    return false;
+  }
 };
 
 const refundPayment = async (paymentId, amount, notes) => {
-  // TODO: Integrate with razorpay
-  return { success: false };
+  try {
+    const razorpay = getRazorpayInstance();
+    const options = { amount: Math.round(amount * 100), notes };
+    const refund = await razorpay.payments.refund(paymentId, options);
+    return { success: true, data: refund };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Create Pre-booking Razorpay order (Advance Payment)
+ */
+export const createPrebookingOrder = async (req, res) => {
+  try {
+    const { amount } = req.body;
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ success: false, message: 'Valid amount is required' });
+    }
+
+    // Hot reload .env to ensure keys are picked up without server restart
+    const fs = await import('fs');
+    const path = await import('path');
+    const dotenv = await import('dotenv');
+    
+    // Find the right .env file
+    let envPath = path.resolve(process.cwd(), '.env');
+    if (!fs.existsSync(envPath) || !fs.readFileSync(envPath).toString().includes('RAZORPAY_KEY_ID')) {
+      envPath = path.resolve(process.cwd(), 'backend', '.env');
+    }
+    if (!fs.existsSync(envPath) || !fs.readFileSync(envPath).toString().includes('RAZORPAY_KEY_ID')) {
+      envPath = path.resolve('d:/Noyo-kart/backend/.env'); // hard fallback
+    }
+
+    if (fs.existsSync(envPath)) {
+      const dotenvParse = dotenv.parse || dotenv.default.parse;
+      if (dotenvParse) {
+        const envConfig = dotenvParse(fs.readFileSync(envPath));
+        for (const k in envConfig) {
+          process.env[k] = envConfig[k];
+        }
+      }
+    }
+
+    const orderResult = await createOrder(
+      amount,
+      'INR',
+      `PREBOOK_${Date.now()}`,
+      { userId: req.user && req.user.id ? req.user.id.toString() : 'unknown', type: 'advance_payment' }
+    );
+
+    if (!orderResult.success) {
+      return res.status(500).json({ success: false, message: 'Failed to create pre-booking order', error: orderResult.error });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Pre-booking order created successfully',
+      data: {
+        orderId: orderResult.orderId,
+        amount: orderResult.amount / 100,
+        currency: orderResult.currency,
+        key: process.env.RAZORPAY_KEY_ID,
+        isMock: false
+      }
+    });
+  } catch (error) {
+    console.error('Create pre-booking order error:', error);
+    res.status(500).json({ success: false, message: 'Failed to create pre-booking order.', error: error.message || error });
+  }
 };
 
 /**
@@ -47,6 +150,30 @@ export const createPaymentOrder = async (req, res) => {
 
     if (booking.paymentStatus === SP_PAYMENT_STATUS.SUCCESS) {
       return res.status(400).json({ success: false, message: 'Payment already completed for this booking' });
+    }
+
+    // Hot reload .env to ensure keys are picked up without server restart
+    const fs = await import('fs');
+    const path = await import('path');
+    const dotenv = await import('dotenv');
+    
+    // Find the right .env file
+    let envPath = path.resolve(process.cwd(), '.env');
+    if (!fs.existsSync(envPath) || !fs.readFileSync(envPath).toString().includes('RAZORPAY_KEY_ID')) {
+      envPath = path.resolve(process.cwd(), 'backend', '.env');
+    }
+    if (!fs.existsSync(envPath) || !fs.readFileSync(envPath).toString().includes('RAZORPAY_KEY_ID')) {
+      envPath = path.resolve('d:/Noyo-kart/backend/.env'); // hard fallback
+    }
+
+    if (fs.existsSync(envPath)) {
+      const dotenvParse = dotenv.parse || dotenv.default.parse;
+      if (dotenvParse) {
+        const envConfig = dotenvParse(fs.readFileSync(envPath));
+        for (const k in envConfig) {
+          process.env[k] = envConfig[k];
+        }
+      }
     }
 
     const orderResult = await createOrder(
@@ -387,6 +514,30 @@ export const createPlanOrder = async (req, res) => {
 
     const user = await SpUser.findById(req.user.id);
     const amountWithTax = Math.ceil(plan.price * 1.18);
+
+    // Hot reload .env to ensure keys are picked up without server restart
+    const fs = await import('fs');
+    const path = await import('path');
+    const dotenv = await import('dotenv');
+    
+    // Find the right .env file
+    let envPath = path.resolve(process.cwd(), '.env');
+    if (!fs.existsSync(envPath) || !fs.readFileSync(envPath).toString().includes('RAZORPAY_KEY_ID')) {
+      envPath = path.resolve(process.cwd(), 'backend', '.env');
+    }
+    if (!fs.existsSync(envPath) || !fs.readFileSync(envPath).toString().includes('RAZORPAY_KEY_ID')) {
+      envPath = path.resolve('d:/Noyo-kart/backend/.env'); // hard fallback
+    }
+
+    if (fs.existsSync(envPath)) {
+      const dotenvParse = dotenv.parse || dotenv.default.parse;
+      if (dotenvParse) {
+        const envConfig = dotenvParse(fs.readFileSync(envPath));
+        for (const k in envConfig) {
+          process.env[k] = envConfig[k];
+        }
+      }
+    }
 
     const orderResult = await createOrder(amountWithTax, 'INR', `PLAN_${Date.now()}`, { type: 'plan', planId, userId: req.user.id });
     if (!orderResult.success) {

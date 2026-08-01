@@ -48,7 +48,8 @@ const createBooking = async (req, res) => {
       categoryIcon: reqCategoryIcon,
       brandName: reqBrandName,
       brandIcon: reqBrandIcon,
-      bookingType
+      bookingType,
+      paymentDetails
     } = req.body;
 
     let visitingCharges = reqVisitingCharges !== undefined ? reqVisitingCharges : (reqVisitationFee || 0);
@@ -208,6 +209,30 @@ const createBooking = async (req, res) => {
       finalAmount = 1;
     }
 
+    // Verify Advance Payment if provided
+    let razorpayOrderId = null;
+    let razorpayPaymentId = null;
+
+    if (paymentDetails && paymentDetails.razorpay_payment_id) {
+      const crypto = await import('crypto');
+      const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = paymentDetails;
+      
+      const body = razorpay_order_id + "|" + razorpay_payment_id;
+      const expectedSignature = crypto
+        .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+        .update(body.toString())
+        .digest("hex");
+
+      if (expectedSignature !== razorpay_signature) {
+        return res.status(400).json({ success: false, message: 'Invalid payment signature' });
+      }
+
+      bookingPaymentStatus = SP_PAYMENT_STATUS.SUCCESS;
+      paymentMethod = 'online';
+      razorpayOrderId = razorpay_order_id;
+      razorpayPaymentId = razorpay_payment_id;
+    }
+
     // Create booking
     const bookingNumber = `BK${Date.now()}${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
 
@@ -274,7 +299,9 @@ const createBooking = async (req, res) => {
       timeSlot: { start: timeSlot.start, end: timeSlot.end },
       paymentMethod: paymentMethod || null,
       status: bookingStatus,
-      paymentStatus: bookingPaymentStatus
+      paymentStatus: bookingPaymentStatus,
+      razorpayOrderId: razorpayOrderId,
+      razorpayPaymentId: razorpayPaymentId
     });
 
     // --- IMMEDIATE RESPONSE ---

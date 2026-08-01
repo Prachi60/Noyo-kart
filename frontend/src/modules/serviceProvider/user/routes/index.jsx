@@ -108,8 +108,10 @@ const UserRoutes = () => {
   const path = location.pathname;
 
   const isPublicPage = path.includes('/login') || path.includes('/signup');
-  // Bottom nav on every user page except auth screens
-  const shouldShowBottomNav = path.startsWith('/sp/user') && !isPublicPage;
+  const isCheckoutPage = path.includes('/checkout');
+  
+  // Bottom nav on every user page except auth screens and checkout
+  const shouldShowBottomNav = path.startsWith('/sp/user') && !isPublicPage && !isCheckoutPage;
 
   const isBookingDetailsPage = /^\/sp\/user\/booking\/[^/]+(\/track)?$/.test(path);
   const isBookingConfirmationPage = path.includes('/booking-confirmation');
@@ -154,7 +156,7 @@ const UserRoutes = () => {
             </Suspense>
           </div>
 
-          {!isBookingDetailsPage && !isBookingConfirmationPage && !isPublicPage && (
+          {!isBookingDetailsPage && !isBookingConfirmationPage && !isPublicPage && !isCheckoutPage && (
             <LiveBookingCard hasBottomNav={shouldShowBottomNav} />
           )}
           {shouldShowBottomNav && <BottomNav />}

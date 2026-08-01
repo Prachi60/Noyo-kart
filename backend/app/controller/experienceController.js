@@ -390,7 +390,7 @@ export const uploadBannerImage = async (req, res) => {
         resourceType: "image",
       });
       await invalidate("cache:experience:public:*");
-      return handleResponse(res, 200, "Banner image uploaded", { url: uploadedUrl });
+      return handleResponse(res, 200, "Banner image uploaded", { url: uploadedUrl.secure_url });
     }
 
     const url = normalizeUrl(req.body?.url || req.body?.imageUrl);

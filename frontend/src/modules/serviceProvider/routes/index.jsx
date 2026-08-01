@@ -1,5 +1,6 @@
 import React, { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 
 import UserRoutes from '../user/routes';
 import VendorRoutes from '../vendor/routes';
@@ -16,6 +17,7 @@ const LoadingFallback = () => (
 const SPRoutes = () => {
   return (
     <div className="font-roboto">
+      <Toaster position="top-right" />
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
           {/* Landing Page */}
